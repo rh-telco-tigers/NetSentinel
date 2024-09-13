@@ -1,0 +1,41 @@
+# requirements.txt
+
+# Core packages
+pandas==1.5.3
+numpy==1.24.2
+scikit-learn==1.2.2
+joblib==1.2.0
+
+# Model training and NLP
+torch==2.0.1
+transformers==4.31.0
+datasets==2.12.0
+
+# Flask and Backend API
+Flask==2.3.2
+Flask-RESTful==0.3.9
+
+# Slack Bot
+slack-bolt==1.17.0
+
+# Utilities
+gunicorn==20.1.0   # For deploying the Flask app
+python-dotenv==1.0.0   # For environment variable management
+
+# Data Processing
+tqdm==4.65.0
+
+# For GPU support (if available)
+# torch with CUDA (adjust the version according to your CUDA version)
+# Install separately if needed
+
+# Testing
+pytest==7.1.2
+pytest-cov==3.0.0
+
+# OpenShift Deployment (if interacting with OpenShift APIs)
+kubernetes==26.1.0
+openshift-client==0.0.1
+
+# Optional: For downloading data from Kaggle
+kaggle==1.5.12
