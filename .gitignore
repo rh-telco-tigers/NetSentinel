@@ -1,3 +1,4 @@
 venv
 *.csv
 .ipynb_checkpoints/
+*.pkl

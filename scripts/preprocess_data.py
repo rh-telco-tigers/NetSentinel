@@ -21,10 +21,13 @@ def load_dataset(file_path):
     try:
         df = pd.read_csv(file_path)
         print(f"Dataset loaded successfully from {file_path}")
+        print("Columns in the dataset:")
+        print(df.columns.tolist())
         return df
     except Exception as e:
         print(f"Error loading dataset: {e}")
         return None
+
 
 def handle_missing_values(df):
     """
@@ -59,7 +62,7 @@ def select_features(df):
     """
     selected_columns = [
         'proto', 'service', 'state', 'sbytes', 'dbytes', 'sttl', 'dttl',
-        'sloss', 'dloss', 'Sload', 'Dload', 'Spkts', 'Dpkts', 'attack_cat', 'label'
+        'sloss', 'dloss', 'sload', 'dload', 'spkts', 'dpkts', 'attack_cat', 'label'
     ]
     df = df[selected_columns]
     print("Features selected.")
