@@ -1,6 +1,8 @@
 # scripts/train_llm.py
 
 import os
+os.environ["TRANSFORMERS_NO_TF"] = "1" 
+
 import sys
 import argparse
 import logging
@@ -13,8 +15,9 @@ from transformers import (
     DataCollatorForLanguageModeling,
     EarlyStoppingCallback
 )
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 import torch
+from sklearn.model_selection import train_test_split
 
 def setup_logging(log_level, log_file=None):
     """
@@ -132,6 +135,18 @@ def parse_args():
         default=1,
         help='Number of evaluation steps with no improvement after which training will be stopped.'
     )
+    parser.add_argument(
+        '--evaluation_strategy',
+        type=str,
+        default='steps',  # or 'epoch'
+        help='Evaluation strategy to use.'
+    )
+    parser.add_argument(
+        '--eval_steps',
+        type=int,
+        default=500,
+        help='Number of steps between evaluations (if evaluation_strategy="steps").'
+    )
     args = parser.parse_args()
     return args
 
@@ -194,9 +209,21 @@ def main():
     # Load configuration from file if provided
     if args.config_file:
         config = load_config(args.config_file)
+        # Update config with args to prioritize command-line arguments
+        for key, value in vars(args).items():
+            if value is not None:
+                config[key] = value
         # Update args with config values
         for key, value in config.items():
             setattr(args, key, value)
+            
+
+    # Ensure critical parameters are set correctly
+    if not hasattr(args, 'load_best_model_at_end') or args.load_best_model_at_end is not True:
+        args.load_best_model_at_end = True
+
+    if not hasattr(args, 'evaluation_strategy') or args.evaluation_strategy not in ['steps', 'epoch']:
+        args.evaluation_strategy = 'steps'
 
     # Setup logging
     setup_logging(args.log_level.upper(), args.log_file)
@@ -212,6 +239,21 @@ def main():
     # Load dataset
     dataset = load_dataset_for_fine_tuning(args.data_file)
 
+    # Split the dataset into training and evaluation sets
+    train_size = 0.9
+    test_size = 1 - train_size
+    # Convert Dataset to pandas DataFrame for splitting
+    dataset_df = dataset.to_pandas()
+    train_df, eval_df = train_test_split(
+        dataset_df, test_size=test_size, random_state=42
+    )
+    # Convert back to Dataset objects
+    train_dataset = Dataset.from_pandas(train_df)
+    eval_dataset = Dataset.from_pandas(eval_df)
+
+    logger.info(f"Training dataset size: {len(train_dataset)}")
+    logger.info(f"Evaluation dataset size: {len(eval_dataset)}")
+
     # Load tokenizer and model
     try:
         tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
@@ -223,13 +265,20 @@ def main():
         logger.error(f"Error loading model or tokenizer: {e}")
         sys.exit(1)
 
-    # Tokenize the dataset
+    # Tokenize the datasets
     try:
-        tokenized_dataset = dataset.map(
+        tokenized_train_dataset = train_dataset.map(
             lambda examples: tokenize_function(examples, tokenizer, args.max_length),
             batched=True,
             remove_columns=['question', 'answer']
         )
+
+        tokenized_eval_dataset = eval_dataset.map(
+            lambda examples: tokenize_function(examples, tokenizer, args.max_length),
+            batched=True,
+            remove_columns=['question', 'answer']
+        )
+
         logger.info("Dataset tokenization completed.")
     except Exception as e:
         logger.error(f"Error during tokenization: {e}")
@@ -254,7 +303,12 @@ def main():
         no_cuda=not torch.cuda.is_available() or not args.use_gpu,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_dir=os.path.join(args.output_dir, 'logs'),
-        report_to="none",  # Disable default logging to avoid duplicate logs
+        report_to="none",
+        load_best_model_at_end=True,
+        evaluation_strategy=args.evaluation_strategy,
+        eval_steps=args.eval_steps if args.evaluation_strategy == 'steps' else None,
+        metric_for_best_model='eval_loss',
+        greater_is_better=False,
     )
 
     # Callbacks
@@ -266,13 +320,27 @@ def main():
         callbacks.append(early_stopping_callback)
         logger.info("Early stopping enabled.")
 
+    # Optional: Define compute_metrics function
+    def compute_metrics(eval_pred):
+        logits, labels = eval_pred
+        # Shift so that tokens < n predict n
+        shift_logits = logits[..., :-1, :].contiguous()
+        shift_labels = labels[..., 1:].contiguous()
+        # Flatten the tokens
+        loss_fct = torch.nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+        perplexity = torch.exp(loss)
+        return {'eval_loss': loss.item(), 'perplexity': perplexity.item()}
+
     # Initialize Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_dataset,
+        train_dataset=tokenized_train_dataset,
+        eval_dataset=tokenized_eval_dataset,
         data_collator=data_collator,
         callbacks=callbacks,
+        compute_metrics=compute_metrics,
     )
 
     # Fine-tune the model

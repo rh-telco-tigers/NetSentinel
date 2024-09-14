@@ -9,6 +9,11 @@
   "gradient_accumulation_steps": 1,
   "max_length": 512,
   "early_stopping": true,
-  "early_stopping_patience": 2
+  "early_stopping_patience": 2,
+  "evaluation_strategy": "steps",
+  "eval_steps": 500,
+  "load_best_model_at_end": true,
+  "metric_for_best_model": "eval_loss",
+  "greater_is_better": false
 }
 
