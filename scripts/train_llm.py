@@ -147,6 +147,12 @@ def parse_args():
         default=500,
         help='Number of steps between evaluations (if evaluation_strategy="steps").'
     )
+    parser.add_argument(
+        '--resume_from_checkpoint',
+        type=str,
+        default=None,
+        help='Path to a checkpoint from which training will be resumed.'
+    )
     args = parser.parse_args()
     return args
 
@@ -346,7 +352,8 @@ def main():
     # Fine-tune the model
     try:
         logger.info("Starting model training.")
-        trainer.train()
+        resume_checkpoint = args.resume_from_checkpoint if args.resume_from_checkpoint else None
+        trainer.train(resume_from_checkpoint=resume_checkpoint)
         logger.info("Model training completed.")
     except Exception as e:
         logger.error(f"Error during training: {e}")

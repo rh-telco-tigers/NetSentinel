@@ -24,7 +24,7 @@ gunicorn==20.1.0   # For deploying the Flask app
 python-dotenv==1.0.0   # For environment variable management
 
 # Data Processing
-tqdm==4.65.0
+tqdm==4.66.3
 
 # For GPU support (if available)
 # torch with CUDA (adjust the version according to your CUDA version)
@@ -36,3 +36,4 @@ pytest-cov==3.0.0
 
 # Optional: For downloading data from Kaggle
 kaggle==1.5.12
+accelerate==0.34.2
