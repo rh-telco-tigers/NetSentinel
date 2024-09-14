@@ -1,7 +1,7 @@
 # scripts/train_llm.py
 
 import os
-os.environ["TRANSFORMERS_NO_TF"] = "1" 
+os.environ["TRANSFORMERS_NO_TF"] = "1"
 
 import sys
 import argparse
@@ -20,13 +20,6 @@ import torch
 from sklearn.model_selection import train_test_split
 
 def setup_logging(log_level, log_file=None):
-    """
-    Sets up logging with the specified level and optional file handler.
-
-    Args:
-        log_level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
-        log_file (str): Optional path to a log file.
-    """
     log_format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
     handlers = [logging.StreamHandler(sys.stdout)]
     if log_file:
@@ -39,12 +32,6 @@ def setup_logging(log_level, log_file=None):
     )
 
 def parse_args():
-    """
-    Parses command-line arguments.
-
-    Returns:
-        argparse.Namespace: Parsed arguments.
-    """
     parser = argparse.ArgumentParser(description="Fine-tune GPT-2 on custom QA pairs.")
 
     parser.add_argument(
@@ -148,6 +135,12 @@ def parse_args():
         help='Number of steps between evaluations (if evaluation_strategy="steps").'
     )
     parser.add_argument(
+        '--save_strategy',
+        type=str,
+        default='steps',  # or 'epoch'
+        help='Checkpoint save strategy to use.'
+    )
+    parser.add_argument(
         '--resume_from_checkpoint',
         type=str,
         default=None,
@@ -157,29 +150,11 @@ def parse_args():
     return args
 
 def load_config(config_file):
-    """
-    Loads configuration from a JSON file.
-
-    Args:
-        config_file (str): Path to the configuration file.
-
-    Returns:
-        dict: Configuration dictionary.
-    """
     with open(config_file, 'r') as f:
         config = json.load(f)
     return config
 
 def load_dataset_for_fine_tuning(data_file):
-    """
-    Loads the dataset for fine-tuning.
-
-    Args:
-        data_file (str): Path to the JSONL file with QA pairs.
-
-    Returns:
-        Dataset: A Hugging Face Dataset object.
-    """
     try:
         dataset = load_dataset('json', data_files=data_file)['train']
         logging.info(f"Dataset loaded successfully from {data_file}")
@@ -189,17 +164,6 @@ def load_dataset_for_fine_tuning(data_file):
         sys.exit(1)
 
 def tokenize_function(examples, tokenizer, max_length):
-    """
-    Tokenizes the input examples.
-
-    Args:
-        examples (dict): Examples from the dataset.
-        tokenizer: The tokenizer.
-        max_length (int): Maximum sequence length.
-
-    Returns:
-        dict: Tokenized inputs.
-    """
     inputs = [f"Question: {q}\nAnswer: {a}" for q, a in zip(examples['question'], examples['answer'])]
     return tokenizer(
         inputs,
@@ -222,7 +186,6 @@ def main():
         # Update args with config values
         for key, value in config.items():
             setattr(args, key, value)
-            
 
     # Ensure critical parameters are set correctly
     if not hasattr(args, 'load_best_model_at_end') or args.load_best_model_at_end is not True:
@@ -230,6 +193,9 @@ def main():
 
     if not hasattr(args, 'evaluation_strategy') or args.evaluation_strategy not in ['steps', 'epoch']:
         args.evaluation_strategy = 'steps'
+
+    if not hasattr(args, 'save_strategy') or args.save_strategy not in ['steps', 'epoch']:
+        args.save_strategy = 'steps'
 
     # Setup logging
     setup_logging(args.log_level.upper(), args.log_file)
@@ -301,20 +267,22 @@ def main():
         output_dir=args.output_dir,
         num_train_epochs=args.num_train_epochs,
         per_device_train_batch_size=args.per_device_train_batch_size,
-        save_steps=args.save_steps,
-        save_total_limit=2,
-        logging_steps=args.logging_steps,
         learning_rate=args.learning_rate,
+        logging_steps=args.logging_steps,
         fp16=torch.cuda.is_available() and args.use_gpu,
         no_cuda=not torch.cuda.is_available() or not args.use_gpu,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_dir=os.path.join(args.output_dir, 'logs'),
         report_to="none",
-        load_best_model_at_end=True,
+        load_best_model_at_end=args.load_best_model_at_end,
         evaluation_strategy=args.evaluation_strategy,
-        eval_steps=args.eval_steps if args.evaluation_strategy == 'steps' else None,
-        metric_for_best_model='eval_loss',
-        greater_is_better=False,
+        save_strategy=args.save_strategy,
+        metric_for_best_model=args.metric_for_best_model,
+        greater_is_better=args.greater_is_better,
+        save_total_limit=2,
+        # Include save_steps and eval_steps only if strategies are 'steps'
+        **({'save_steps': args.save_steps} if args.save_strategy == 'steps' else {}),
+        **({'eval_steps': args.eval_steps} if args.evaluation_strategy == 'steps' else {}),
     )
 
     # Callbacks
@@ -352,8 +320,9 @@ def main():
     # Fine-tune the model
     try:
         logger.info("Starting model training.")
-        resume_checkpoint = args.resume_from_checkpoint if args.resume_from_checkpoint else None
-        trainer.train(resume_from_checkpoint=resume_checkpoint)
+        if args.resume_from_checkpoint:
+            logger.info(f"Resuming training from checkpoint: {args.resume_from_checkpoint}")
+        trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
         logger.info("Model training completed.")
     except Exception as e:
         logger.error(f"Error during training: {e}")
