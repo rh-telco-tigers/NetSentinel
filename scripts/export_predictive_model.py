@@ -5,7 +5,6 @@ import joblib
 from sklearn.pipeline import Pipeline
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType, StringTensorType
-from skl2onnx.common.shape_calculator import calculate_linear_classifier_output_shapes
 
 def load_model(model_path):
     """
@@ -63,13 +62,16 @@ def get_feature_details(preprocessor):
         List of tuples with feature names and their data types.
     """
     feature_details = []
+    # Assuming the preprocessor is a ColumnTransformer
     for transformer in preprocessor.transformers_:
         # Each transformer is a tuple: (name, transformer_object, columns)
         transformer_name, transformer_object, columns = transformer
         for column in columns:
             if column in ['proto', 'service', 'state']:
+                # Categorical features
                 feature_details.append((column, StringTensorType([None, 1])))
             else:
+                # Numerical features
                 feature_details.append((column, FloatTensorType([None, 1])))
     return feature_details
 

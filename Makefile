@@ -23,3 +23,6 @@ evaluate_predictive:
 
 export_predictive:
 	python scripts/export_predictive_model.py
+
+validate_predictive:
+	python scripts/validate_predictive_model.py
