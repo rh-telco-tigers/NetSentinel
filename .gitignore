@@ -16,3 +16,4 @@ roc_curve.png
 *.onnx
 .coverage
 app/.env
+.$netsentenial.drawio.bkp
