@@ -13,6 +13,30 @@ from prometheus_client import REGISTRY, CollectorRegistry
 from prometheus_flask_exporter import PrometheusMetrics
 from .models import PredictiveModel, LLMModel
 from .slack_integration import SlackClient
+import requests
+
+logger = logging.getLogger(__name__)
+
+def fetch_and_set_bot_user_id(app):
+    slack_bot_token = app.config['SLACK_CONFIG'].get('slack_bot_token')
+    if not slack_bot_token:
+        raise ValueError("Slack bot token is missing from the configuration.")
+    
+    response = requests.post(
+        "https://slack.com/api/auth.test",
+        headers={"Authorization": f"Bearer {slack_bot_token}"}
+    )
+    
+    if response.status_code == 200:
+        bot_info = response.json()
+        if bot_info.get('ok'):
+            app.config['SLACK_CONFIG']['bot_user_id'] = bot_info.get('user_id')
+            logger.info(f"Bot User ID set to: {bot_info.get('user_id')}")
+        else:
+            raise ValueError(f"Error fetching bot info: {bot_info.get('error')}")
+    else:
+        raise ValueError(f"Failed to fetch bot user ID from Slack API. Status code: {response.status_code}")
+
 
 def create_app(config_path='config.yaml', registry=None):
     # Configure logging
@@ -51,7 +75,7 @@ def create_app(config_path='config.yaml', registry=None):
     app.config['SLACK_CONFIG'] = {
         'slack_bot_token': os.getenv('SLACK_BOT_TOKEN', config.get('slack_config', {}).get('slack_bot_token', '')),
         'slack_signing_secret': os.getenv('SLACK_SIGNING_SECRET', config.get('slack_config', {}).get('slack_signing_secret', '')),
-        'slack_channel': config.get('slack_config', {}).get('slack_channel', '#general')
+        'slack_channel': config.get('slack_config', {}).get('slack_channel', '#netsentenial')
     }
     app.config['TRAINING_CONFIG'] = config.get('training_config', {})
 
@@ -96,6 +120,8 @@ def create_app(config_path='config.yaml', registry=None):
             logger.error("Slack bot token is not configured.")
             raise ValueError("Slack bot token is missing.")
         slack_client = SlackClient(slack_bot_token)
+        
+        fetch_and_set_bot_user_id(app)
 
         # Attach models and slack_client to app for access in routes
         app.persistent_state = {

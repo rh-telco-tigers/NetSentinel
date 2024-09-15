@@ -12,6 +12,10 @@ api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
 
 def verify_slack_request(signing_secret, request):
+    import hmac
+    import hashlib
+    import time
+
     timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
     if not timestamp:
         logger.warning("No X-Slack-Request-Timestamp header found.")
@@ -151,10 +155,22 @@ def slack_events():
 
     user_text = event['text']
     channel = event.get('channel')
+    user = event.get('user')
 
     if not channel:
         logger.warning("No channel specified in Slack event.")
         return jsonify({"error": "No channel specified"}), 400
+
+    # **Prevent the bot from responding to its own messages**
+    bot_user_id = current_app.config['SLACK_CONFIG'].get('bot_user_id')
+    
+    # Print bot user ID for debugging
+    logger.info(f"Bot User ID: {bot_user_id}")
+    logger.info(f"User ID in the event: {user}")
+    
+    if user == bot_user_id:
+        logger.info("Message is from the bot itself. Ignoring.")
+        return jsonify({"status": "Message from bot ignored"}), 200
 
     try:
         # Access LLM model and Slack client from current_app.persistent_state

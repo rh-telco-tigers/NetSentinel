@@ -4,8 +4,9 @@ api_config:
   debug: true
 
 model_config:
-  llm_model_path: "../models/llm_model"
-  predictive_model_path: "../models/predictive_model/model.onnx"
+  llm_model_path: "models/llm_model"
+  predictive_model_path: "models/predictive_model/model.onnx"
 
 slack_config:
-  slack_channel: "#general"  # Replace with your desired channel
+  slack_channel: "#netsentenial"
+  

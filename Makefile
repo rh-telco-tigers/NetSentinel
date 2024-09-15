@@ -26,3 +26,15 @@ export_predictive:
 
 validate_predictive:
 	python scripts/validate_predictive_model.py
+
+ngrok:
+	/opt/app-root/src/ngrok http --domain=newly-advanced-dane.ngrok-free.app 5000
+
+run_tests:
+	pytest --cov=app app/tests/
+
+run_app:
+	python -m app.run
+    
+get_slack_botid:
+	. app/.env && curl -X POST -H "Authorization: Bearer $$SLACK_BOT_TOKEN" https://slack.com/api/auth.test
