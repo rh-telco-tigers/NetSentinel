@@ -1,0 +1,11 @@
+api_config:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true
+
+model_config:
+  llm_model_path: "../models/llm_model"
+  predictive_model_path: "../models/predictive_model/model.onnx"
+
+slack_config:
+  slack_channel: "#general"  # Replace with your desired channel

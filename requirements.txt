@@ -40,3 +40,5 @@ accelerate==0.34.2
 
 pyyaml
 seaborn==0.13.2
+
+onnxruntime

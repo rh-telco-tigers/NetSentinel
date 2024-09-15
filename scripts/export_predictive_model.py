@@ -4,7 +4,8 @@ import os
 import joblib
 from sklearn.pipeline import Pipeline
 from skl2onnx import convert_sklearn
-from skl2onnx.common.data_types import FloatTensorType
+from skl2onnx.common.data_types import FloatTensorType, StringTensorType
+from skl2onnx.common.shape_calculator import calculate_linear_classifier_output_shapes
 
 def load_model(model_path):
     """
@@ -34,25 +35,43 @@ def load_preprocessor(preprocessor_path):
     print(f"Preprocessor loaded from {preprocessor_path}")
     return preprocessor
 
-def export_model_to_onnx(pipeline, output_path):
+def export_model_to_onnx(pipeline, output_path, initial_type):
     """
     Exports the pipeline (preprocessor and model) to ONNX format.
 
     Args:
         pipeline: The scikit-learn Pipeline object.
         output_path (str): Path to save the ONNX model.
+        initial_type (list): List of tuples specifying input feature names and their data types.
     """
-    # Get the number of features before preprocessing
-    num_features = len(pipeline.named_steps['preprocessor'].transformers_[0][2]) + len(pipeline.named_steps['preprocessor'].transformers_[1][2])
-
-    # Define initial types
-    initial_type = [('float_input', FloatTensorType([None, num_features]))]
-
-    # Convert to ONNX
-    onnx_model = convert_sklearn(pipeline, initial_types=initial_type)
+    # Convert the sklearn pipeline to ONNX format
+    onnx_model = convert_sklearn(pipeline, initial_types=initial_type, target_opset=12)
+    
+    # Save the ONNX model to the specified path
     with open(output_path, 'wb') as f:
         f.write(onnx_model.SerializeToString())
     print(f"Model exported to ONNX format at {output_path}")
+
+def get_feature_details(preprocessor):
+    """
+    Extracts feature names and their data types from the preprocessor.
+
+    Args:
+        preprocessor: The preprocessor object (e.g., ColumnTransformer).
+
+    Returns:
+        List of tuples with feature names and their data types.
+    """
+    feature_details = []
+    for transformer in preprocessor.transformers_:
+        # Each transformer is a tuple: (name, transformer_object, columns)
+        transformer_name, transformer_object, columns = transformer
+        for column in columns:
+            if column in ['proto', 'service', 'state']:
+                feature_details.append((column, StringTensorType([None, 1])))
+            else:
+                feature_details.append((column, FloatTensorType([None, 1])))
+    return feature_details
 
 if __name__ == "__main__":
     # Paths
@@ -70,5 +89,8 @@ if __name__ == "__main__":
         ('classifier', model)
     ])
 
+    # Extract feature details for initial_type
+    initial_type = get_feature_details(preprocessor)
+
     # Export to ONNX
-    export_model_to_onnx(pipeline, OUTPUT_PATH)
+    export_model_to_onnx(pipeline, OUTPUT_PATH, initial_type)
