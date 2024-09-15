@@ -11,3 +11,5 @@ models/llm_model/checkpoint**
 models/llm_model/runs/**
 notebook.ipynb
 models/llm_model/**
+confusion_matrix.png
+roc_curve.png
