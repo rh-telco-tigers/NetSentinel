@@ -4,7 +4,7 @@
 
 train:
 	# Start the training process with nohup and redirect output to train_llm.log
-	nohup python scripts/train_llm.py --config_file config.json --log_file log/train_llm.log > log/train_llm.out 2>&1 & disown
+	nohup python scripts/train_llm.py --config_file config.yaml --log_file log/train_llm.log > log/train_llm.out 2>&1 & disown
 
 download_data:
 	python scripts/download_data.py

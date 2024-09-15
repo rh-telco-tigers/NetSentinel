@@ -3,10 +3,11 @@
 import os
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 
+import glob
 import sys
 import argparse
 import logging
-import json
+import yaml  # Import yaml module
 from transformers import (
     GPT2LMHeadModel,
     GPT2Tokenizer,
@@ -92,7 +93,7 @@ def parse_args():
         '--config_file',
         type=str,
         default=None,
-        help='Path to a JSON configuration file.'
+        help='Path to a YAML configuration file.'
     )
     parser.add_argument(
         '--use_gpu',
@@ -146,18 +147,27 @@ def parse_args():
         default=None,
         help='Path to a checkpoint from which training will be resumed.'
     )
+    parser.add_argument(
+        '--subset_size',
+        type=int,
+        default=None,
+        help='Number of examples to use from the dataset. If None, use the full dataset.'
+    )
     args = parser.parse_args()
     return args
 
 def load_config(config_file):
     with open(config_file, 'r') as f:
-        config = json.load(f)
+        config = yaml.safe_load(f)
     return config
 
-def load_dataset_for_fine_tuning(data_file):
+def load_dataset_for_fine_tuning(data_file, subset_size=None):
     try:
         dataset = load_dataset('json', data_files=data_file)['train']
         logging.info(f"Dataset loaded successfully from {data_file}")
+        if subset_size is not None:
+            logging.info(f"Selecting a subset of size {subset_size}")
+            dataset = dataset.shuffle(seed=42).select(range(subset_size))
         return dataset
     except Exception as e:
         logging.error(f"Error loading dataset: {e}")
@@ -171,6 +181,13 @@ def tokenize_function(examples, tokenizer, max_length):
         max_length=max_length,
         padding='max_length',
     )
+
+def get_last_checkpoint(output_dir):
+    checkpoints = glob.glob(os.path.join(output_dir, 'checkpoint-*'))
+    if not checkpoints:
+        return None
+    checkpoints = sorted(checkpoints, key=lambda x: int(x.split('-')[-1]))
+    return checkpoints[-1]
 
 def main():
     # Parse arguments
@@ -209,7 +226,7 @@ def main():
     logger.info(f"Using device: {device}")
 
     # Load dataset
-    dataset = load_dataset_for_fine_tuning(args.data_file)
+    dataset = load_dataset_for_fine_tuning(args.data_file, subset_size=args.subset_size)
 
     # Split the dataset into training and evaluation sets
     train_size = 0.9
@@ -262,7 +279,7 @@ def main():
         mlm=False
     )
 
-    # Training arguments
+    # Replace 'no_cuda' with 'use_cpu' (if using Transformers 4.44.2 or later)
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         num_train_epochs=args.num_train_epochs,
@@ -270,7 +287,7 @@ def main():
         learning_rate=args.learning_rate,
         logging_steps=args.logging_steps,
         fp16=torch.cuda.is_available() and args.use_gpu,
-        no_cuda=not torch.cuda.is_available() or not args.use_gpu,
+        use_cpu=not torch.cuda.is_available() or not args.use_gpu,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_dir=os.path.join(args.output_dir, 'logs'),
         report_to="none",
@@ -284,6 +301,9 @@ def main():
         **({'save_steps': args.save_steps} if args.save_strategy == 'steps' else {}),
         **({'eval_steps': args.eval_steps} if args.evaluation_strategy == 'steps' else {}),
     )
+
+    # Log training arguments
+    logger.debug(f"Training arguments: {training_args}")
 
     # Callbacks
     callbacks = []
@@ -319,6 +339,14 @@ def main():
 
     # Fine-tune the model
     try:
+        if args.resume_from_checkpoint is None:
+            last_checkpoint = get_last_checkpoint(args.output_dir)
+            if last_checkpoint:
+                logger.info(f"No checkpoint specified. Resuming from last checkpoint: {last_checkpoint}")
+                args.resume_from_checkpoint = last_checkpoint
+            else:
+                logger.info("No checkpoints found. Starting training from scratch.")
+
         logger.info("Starting model training.")
         if args.resume_from_checkpoint:
             logger.info(f"Resuming training from checkpoint: {args.resume_from_checkpoint}")
