@@ -1,2 +1,4 @@
 flask_limiter==3.8.0
 prometheus_flask_exporter==0.23.1
+pytest==7.1.2
+pytest-mock

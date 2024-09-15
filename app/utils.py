@@ -1,19 +1,22 @@
 # app/utils.py
 
 import logging
-import sys
-import os
 
-def setup_logging(log_level, log_file=None):
-    log_format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
-    handlers = [logging.StreamHandler(sys.stdout)]
+def setup_logging(log_level='INFO', log_file=None):
+    logger = logging.getLogger()
+    logger.setLevel(getattr(logging, log_level, logging.INFO))
+    
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
+    # Console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(getattr(logging, log_level, logging.INFO))
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    
     if log_file:
-        log_dir = os.path.dirname(log_file)
-        os.makedirs(log_dir, exist_ok=True)  # Create log directory if it doesn't exist
-        handlers.append(logging.FileHandler(log_file))
-
-    logging.basicConfig(
-        level=log_level,
-        format=log_format,
-        handlers=handlers
-    )
+        # File handler
+        fh = logging.FileHandler(log_file)
+        fh.setLevel(getattr(logging, log_level, logging.INFO))
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)

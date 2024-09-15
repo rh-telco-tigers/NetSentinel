@@ -14,3 +14,4 @@ models/llm_model/**
 confusion_matrix.png
 roc_curve.png
 *.onnx
+.coverage

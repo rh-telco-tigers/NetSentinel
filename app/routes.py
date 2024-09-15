@@ -1,8 +1,6 @@
 # app/routes.py
 
-from flask import Blueprint, request, jsonify
-from .models import PredictiveModel, LLMModel
-from .slack_integration import SlackClient
+from flask import Blueprint, request, jsonify, current_app
 import logging
 import os
 import hmac
@@ -12,43 +10,6 @@ import time
 api_bp = Blueprint('api', __name__)
 
 logger = logging.getLogger(__name__)
-
-# Initialize models and Slack client once
-predictive_model = None
-llm_model = None
-slack_client = None
-
-def initialize_models(app):
-    global predictive_model, llm_model, slack_client
-    model_config = app.config['MODEL_CONFIG']
-
-    # Initialize Predictive Model
-    predictive_model_path = model_config.get('predictive_model_path')
-    if not predictive_model_path or not os.path.exists(predictive_model_path):
-        logger.error(f"Predictive model path is invalid: {predictive_model_path}")
-        raise FileNotFoundError(f"Predictive model not found at {predictive_model_path}")
-    predictive_model = PredictiveModel(predictive_model_path)
-
-    # Initialize LLM Model
-    llm_model_path = model_config.get('llm_model_path')
-    if not llm_model_path or not os.path.exists(llm_model_path):
-        logger.error(f"LLM model path is invalid: {llm_model_path}")
-        raise FileNotFoundError(f"LLM model not found at {llm_model_path}")
-    llm_model = LLMModel(llm_model_path)
-
-    # Initialize Slack Client
-    slack_config = app.config['SLACK_CONFIG']
-    slack_bot_token = slack_config.get('slack_bot_token')
-    if not slack_bot_token:
-        logger.error("Slack bot token is not configured.")
-        raise ValueError("Slack bot token is missing.")
-    slack_client = SlackClient(slack_bot_token)
-
-# @api_bp.before_app_first_request
-# def before_first_request():
-#     app = api_bp.blueprints['api'].app
-#     initialize_models(app)
-#     logger.info("Models and Slack client initialized.")
 
 def verify_slack_request(signing_secret, request):
     timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
@@ -85,6 +46,10 @@ def verify_slack_request(signing_secret, request):
 
     return True
 
+@api_bp.route('/')
+def health_check():
+    return 'OK', 200
+
 @api_bp.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
@@ -93,8 +58,47 @@ def predict():
         return jsonify({"error": "No input data provided"}), 400
 
     try:
-        result = predictive_model.predict(data)
-        return jsonify(result)
+        # Access the model from current_app.persistent_state
+        predictive_model = current_app.persistent_state.get('predictive_model')
+        if not predictive_model:
+            logger.error("Predictive model is not loaded.")
+            return jsonify({"error": "Model is not loaded."}), 500
+
+        # Extract features in the correct order
+        required_fields = [
+            'proto', 'service', 'state',
+            'sbytes', 'dbytes', 'sttl', 'dttl',
+            'sloss', 'dloss', 'sload', 'dload',
+            'spkts', 'dpkts'
+        ]
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            logger.warning(f"Missing required fields: {', '.join(missing_fields)}")
+            return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+
+        features = [
+            data['proto'],
+            data['service'],
+            data['state'],
+            float(data['sbytes']),
+            float(data['dbytes']),
+            float(data['sttl']),
+            float(data['dttl']),
+            float(data['sloss']),
+            float(data['dloss']),
+            float(data['sload']),
+            float(data['dload']),
+            float(data['spkts']),
+            float(data['dpkts'])
+        ]
+
+        # The model expects a 2D array
+        features = [features]
+
+        # Make prediction
+        prediction = predictive_model.predict(features)[0]
+
+        return jsonify({"prediction": prediction}), 200
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         return jsonify({"error": "Prediction failed."}), 500
@@ -108,8 +112,14 @@ def chat():
 
     question = data['question']
     try:
+        # Access the LLM model from current_app.persistent_state
+        llm_model = current_app.persistent_state.get('llm_model')
+        if not llm_model:
+            logger.error("LLM model is not loaded.")
+            return jsonify({"error": "LLM model is not loaded."}), 500
+
         response = llm_model.generate_response(question)
-        return jsonify({"response": response})
+        return jsonify({"response": response}), 200
     except Exception as e:
         logger.error(f"LLM generation error: {e}")
         return jsonify({"error": "Failed to generate response."}), 500
@@ -122,7 +132,7 @@ def slack_events():
         return jsonify({"error": "No data received"}), 400
 
     # Verify request
-    signing_secret = api_bp.blueprints['api'].app.config['SLACK_CONFIG'].get('slack_signing_secret')
+    signing_secret = current_app.config['SLACK_CONFIG'].get('slack_signing_secret')
     if not signing_secret:
         logger.error("Slack signing secret is not configured.")
         return jsonify({"error": "Server configuration error."}), 500
@@ -147,6 +157,16 @@ def slack_events():
         return jsonify({"error": "No channel specified"}), 400
 
     try:
+        # Access LLM model and Slack client from current_app.persistent_state
+        llm_model = current_app.persistent_state.get('llm_model')
+        slack_client = current_app.persistent_state.get('slack_client')
+        if not llm_model:
+            logger.error("LLM model is not loaded.")
+            return jsonify({"error": "LLM model is not loaded."}), 500
+        if not slack_client:
+            logger.error("Slack client is not initialized.")
+            return jsonify({"error": "Slack client is not initialized."}), 500
+
         # Generate response using LLM
         response_text = llm_model.generate_response(user_text)
         # Send response back to Slack channel

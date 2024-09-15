@@ -9,11 +9,29 @@ import logging
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from prometheus_client import REGISTRY, CollectorRegistry
 from prometheus_flask_exporter import PrometheusMetrics
 from .models import PredictiveModel, LLMModel
 from .slack_integration import SlackClient
 
-def create_app(config_path='config.yaml'):
+def create_app(config_path='config.yaml', registry=None):
+    # Configure logging
+    setup_logging()
+
+    logger = logging.getLogger(__name__)
+    logger.info("Starting app creation.")
+
+    # Set up Prometheus CollectorRegistry
+    if registry is None:
+        registry = REGISTRY
+
+    # Unregister existing collectors to prevent duplicates
+    collectors_to_unregister = ['app_info']  # List of collectors to unregister
+    for collector in collectors_to_unregister:
+        if collector in registry._names_to_collectors:
+            registry.unregister(registry._names_to_collectors[collector])
+            logger.info(f"Unregistered collector: {collector}")
+
     # Load environment variables from .env
     load_dotenv()
 
@@ -21,6 +39,10 @@ def create_app(config_path='config.yaml'):
 
     # Load configuration
     config_file_path = os.path.join(os.path.dirname(__file__), config_path)
+    if not os.path.exists(config_file_path):
+        logger.error(f"Configuration file not found at {config_file_path}")
+        raise FileNotFoundError(f"Configuration file not found at {config_file_path}")
+
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
 
@@ -41,7 +63,7 @@ def create_app(config_path='config.yaml'):
     logger.info("Logging is set up.")
 
     # Initialize Prometheus Metrics
-    metrics = PrometheusMetrics(app)
+    metrics = PrometheusMetrics(app, registry=registry)
     metrics.info('app_info', 'NetSentenial Backend API', version='1.0.0')
 
     # Initialize Limiter
