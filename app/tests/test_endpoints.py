@@ -76,3 +76,67 @@ def test_predict_missing_fields(client):
     json_data = rv.get_json()
     assert "error" in json_data
     assert "Missing required fields" in json_data["error"]
+
+    
+def test_chat_valid(client):
+    """Test the /chat endpoint with valid data."""
+    data = {
+        'question': "How's the network performance?"
+    }
+    rv = client.post('/chat', json=data)
+    assert rv.status_code == 200
+    json_data = rv.get_json()
+    assert "response" in json_data
+    assert json_data["response"] == "This is a mock response."  # As mocked
+
+def test_chat_missing_question(client):
+    """Test the /chat endpoint with missing 'question' field."""
+    data = {
+        # 'question' is missing
+    }
+    rv = client.post('/chat', json=data)
+    assert rv.status_code == 400  # Expecting bad request for missing question
+    json_data = rv.get_json()
+    assert "error" in json_data
+    assert "No question provided" in json_data["error"]
+    
+
+def test_slack_events_valid(client, monkeypatch):
+    """Test the Slack events endpoint with a valid event."""
+    # Mock the generate_response and send_message methods
+    mock_llm_model = MagicMock()
+    mock_llm_model.generate_response.return_value = "Mocked Slack response."
+
+    mock_slack_client = MagicMock()
+    mock_slack_client.send_message.return_value = True
+
+    # Patch the app.persistent_state
+    with client.application.app_context():
+        client.application.persistent_state['llm_model'] = mock_llm_model
+        client.application.persistent_state['slack_client'] = mock_slack_client
+
+    # Sample Slack event payload
+    data = {
+        "token": "XXYYZZ",
+        "team_id": "TXXXXXXXX",
+        "api_app_id": "AXXXXXXXXX",
+        "event": {
+            "type": "message",
+            "user": "UXXXXXXX",
+            "text": "Hello bot!",
+            "ts": "1612095967.000200",
+            "channel": "CXXXXXXX",
+            "event_ts": "1612095967.000200"
+        },
+        "type": "event_callback",
+        "authed_users": ["UXXXXXXX"]
+    }
+
+    # Mock the verify_slack_request function to always return True
+    monkeypatch.setattr('app.routes.verify_slack_request', lambda x, y: True)
+
+    rv = client.post('/slack/events', json=data)
+    assert rv.status_code == 200
+    json_data = rv.get_json()
+    assert "status" in json_data
+    assert json_data["status"] == "Message sent to Slack"
