@@ -9,4 +9,8 @@ model_config:
 
 slack_config:
   slack_channel: "#netsentenial"
+  # slack_bot_token: "xoxb-your-slack-bot-token"
+  # slack_signing_secret: "your-slack-signing-secret"
   
+kafka:
+  bootstrap: netsentenial-kafka-kafka-bootstrap.openshift-operators:9092

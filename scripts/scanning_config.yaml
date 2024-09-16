@@ -1,0 +1,83 @@
+api_config:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true
+
+model_config:
+  llm_model_path: "models/llm_model"
+  predictive_model_path: "models/predictive_model/model.onnx"
+
+slack_config:
+  slack_channel: "#netsentential"
+  slack_bot_token: "xoxb-your-slack-bot-token"       # Replace with your actual Slack bot token
+  slack_signing_secret: "your-slack-signing-secret" # Replace with your actual Slack signing secret
+
+kafka:
+  bootstrap: "netsentenial-kafka-kafka-bootstrap.openshift-operators:9092"
+
+scanning_tool:
+  publish_interval_seconds: 10  # Interval between data publications in seconds
+  subnets:
+    src_subnets:
+      - "192.168.1.0/24"
+      - "10.0.0.0/24"
+    dst_subnets:
+      - "172.16.0.0/24"
+      - "10.1.1.0/24"
+  protocols:
+    TCP:
+      ports:
+        - 80
+        - 443
+        - 22
+        - 21
+    UDP:
+      ports:
+        - 53
+        - 67
+        - 68
+    ICMP: []
+    HTTP:
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+      status_codes:
+        - 200
+        - 201
+        - 400
+        - 401
+        - 403
+        - 404
+        - 500
+      urls:
+        - "/home"
+        - "/login"
+        - "/dashboard"
+        - "/api/data"
+        - "/logout"
+        - "/register"
+        - "/profile"
+        - "/settings"
+        - "/search"
+        - "/contact"
+        - "/products"
+        - "/cart"
+        - "/checkout"
+        - "/help"
+        - "/about"
+        - "/terms"
+        - "/privacy"
+        - "/blog"
+        - "/news"
+        - "/support"
+    DNS:
+      query_types:
+        - A
+        - AAAA
+        - MX
+        - CNAME
+        - TXT
+  logging:
+    level: "INFO"
