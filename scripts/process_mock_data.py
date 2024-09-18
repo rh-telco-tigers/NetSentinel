@@ -27,7 +27,7 @@ def setup_logging(config):
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-def load_config(config_path='scanning_config.yaml'):
+def load_config(config_path='config.yaml'):
     """
     Load configuration from the YAML file.
     """
@@ -133,7 +133,13 @@ def process_data(raw_data, preprocessor):
         feature_names = get_feature_names(preprocessor)
 
         # Convert to dictionary
-        processed_data = dict(zip(feature_names, X_processed[0]))
+        processed_features = dict(zip(feature_names, X_processed[0]))
+
+        # Prepare the processed data with features and original data
+        processed_data = {
+            'features': processed_features,   # Processed features for prediction
+            'original_data': raw_data         # Original raw data for enrichment
+        }
 
         return processed_data
     except Exception as e:

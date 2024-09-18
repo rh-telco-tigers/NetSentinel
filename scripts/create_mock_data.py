@@ -30,7 +30,7 @@ def setup_logging(config):
 logger = logging.getLogger(__name__)
 
 
-def load_config(config_path="scanning_config.yaml"):
+def load_config(config_path="config.yaml"):
     """
     Load configuration from the YAML file.
     """
@@ -266,6 +266,7 @@ def generate_mock_data(config):
         mock_data = {
             "timestamp": datetime.utcnow().isoformat(),
             "session_id": session_id,
+            "event_id": session_id,
             "src_ip": src_ip,
             "dst_ip": dst_ip,
             "proto": proto,
@@ -289,6 +290,7 @@ def generate_mock_data(config):
             mock_data["src_port"] = src_port
         if dst_port:
             mock_data["dst_port"] = dst_port
+            
 
         # Add protocol-specific details
         mock_data.update(protocol_details)

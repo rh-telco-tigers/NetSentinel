@@ -17,3 +17,4 @@ roc_curve.png
 .coverage
 app/.env
 .$netsentenial.drawio.bkp
+faiss_index/
