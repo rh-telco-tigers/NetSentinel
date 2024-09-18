@@ -14,6 +14,11 @@ slack_config:
 
 kafka:
   bootstrap: "netsentenial-kafka-kafka-bootstrap.openshift-operators:9092"
+  raw_topic: "raw-traffic-data"
+  processed_topic: "processed-traffic-data"
+  
+preprocessor:
+  path: "../data/processed/preprocessor.pkl"
 
 scanning_tool:
   publish_interval_seconds: 10  # Interval between data publications in seconds

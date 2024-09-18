@@ -1,4 +1,4 @@
-# scripts/scanning_tool.py
+# scripts/create_mock_data.py
 
 import json
 import os
