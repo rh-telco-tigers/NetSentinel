@@ -17,6 +17,13 @@ kafka:
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
   
+embedding_model:
+  name: "all-MiniLM-L6-v2"
+
+llm_model:
+  name: "google/flan-t5-base"
+
+  
 preprocessor:
   path: "../data/processed/preprocessor.pkl"
 

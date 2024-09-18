@@ -6,6 +6,7 @@ import os
 import hmac
 import hashlib
 import time
+import numpy as np
 
 api_bp = Blueprint('api', __name__)
 
@@ -116,14 +117,41 @@ def chat():
 
     question = data['question']
     try:
-        # Access the LLM model from current_app.persistent_state
+        # Access models and FAISS index from app's persistent_state
+        embedding_model = current_app.persistent_state.get('embedding_model')
+        tokenizer = current_app.persistent_state.get('tokenizer')
         llm_model = current_app.persistent_state.get('llm_model')
-        if not llm_model:
-            logger.error("LLM model is not loaded.")
-            return jsonify({"error": "LLM model is not loaded."}), 500
+        faiss_index = current_app.persistent_state.get('faiss_index')
+        metadata_store = current_app.persistent_state.get('metadata_store')
 
-        response = llm_model.generate_response(question)
-        return jsonify({"response": response}), 200
+        if not all([embedding_model, tokenizer, llm_model, faiss_index, metadata_store]):
+            logger.error("One or more RAG components are not loaded.")
+            return jsonify({"error": "RAG components are not loaded."}), 500
+
+        # Retrieve relevant data using the embedding model and FAISS index
+        query_embedding = embedding_model.encode(question, convert_to_numpy=True)
+        distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k=5)
+
+        # Build context from metadata
+        context = ""
+        for idx in indices[0]:
+            if idx < len(metadata_store):
+                item = metadata_store[idx]
+                context += (
+                    f"Event ID: {item.get('event_id', 'N/A')}, "
+                    f"Prediction: {'Attack' if item.get('prediction') == 1 else 'Normal'}, "
+                    f"Protocol: {item.get('protocol', 'N/A')}, "
+                    f"Source IP: {item.get('src_ip', 'N/A')}, "
+                    f"Destination IP: {item.get('dst_ip', 'N/A')}\n"
+                )
+
+        # Generate response using the LLM model
+        input_text = f"Question: {question}\nContext: {context}\nAnswer:"
+        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=512, truncation=True)
+        outputs = llm_model.generate(inputs, max_length=150, num_beams=5, early_stopping=True)
+        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        return jsonify({"response": response_text.strip()}), 200
     except Exception as e:
         logger.error(f"LLM generation error: {e}")
         return jsonify({"error": "Failed to generate response."}), 500
@@ -161,32 +189,54 @@ def slack_events():
         logger.warning("No channel specified in Slack event.")
         return jsonify({"error": "No channel specified"}), 400
 
-    # **Prevent the bot from responding to its own messages**
+    # Prevent the bot from responding to its own messages
     bot_user_id = current_app.config['SLACK_CONFIG'].get('bot_user_id')
-    
-    # Print bot user ID for debugging
     logger.info(f"Bot User ID: {bot_user_id}")
     logger.info(f"User ID in the event: {user}")
-    
+
     if user == bot_user_id:
         logger.info("Message is from the bot itself. Ignoring.")
         return jsonify({"status": "Message from bot ignored"}), 200
 
     try:
-        # Access LLM model and Slack client from current_app.persistent_state
+        # Access models and FAISS index from app's persistent_state
+        embedding_model = current_app.persistent_state.get('embedding_model')
+        tokenizer = current_app.persistent_state.get('tokenizer')
         llm_model = current_app.persistent_state.get('llm_model')
+        faiss_index = current_app.persistent_state.get('faiss_index')
+        metadata_store = current_app.persistent_state.get('metadata_store')
         slack_client = current_app.persistent_state.get('slack_client')
-        if not llm_model:
-            logger.error("LLM model is not loaded.")
-            return jsonify({"error": "LLM model is not loaded."}), 500
-        if not slack_client:
-            logger.error("Slack client is not initialized.")
-            return jsonify({"error": "Slack client is not initialized."}), 500
 
-        # Generate response using LLM
-        response_text = llm_model.generate_response(user_text)
+        if not all([embedding_model, tokenizer, llm_model, faiss_index, metadata_store, slack_client]):
+            logger.error("One or more RAG components or Slack client are not loaded.")
+            return jsonify({"error": "Server components are not loaded."}), 500
+
+        # Retrieve relevant data using the embedding model and FAISS index
+        query_embedding = embedding_model.encode(user_text, convert_to_numpy=True)
+        distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k=5)
+
+        # Build context from metadata
+        context = ""
+        for idx in indices[0]:
+            if idx < len(metadata_store):
+                item = metadata_store[idx]
+                context += (
+                    f"Event ID: {item.get('event_id', 'N/A')}, "
+                    f"Prediction: {'Attack' if item.get('prediction') == 1 else 'Normal'}, "
+                    f"Protocol: {item.get('protocol', 'N/A')}, "
+                    f"Source IP: {item.get('src_ip', 'N/A')}, "
+                    f"Destination IP: {item.get('dst_ip', 'N/A')}\n"
+                )
+
+        # Generate response using the LLM model
+        input_text = f"Question: {user_text}\nContext: {context}\nAnswer:"
+        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=512, truncation=True)
+        outputs = llm_model.generate(inputs, max_length=150, num_beams=5, early_stopping=True)
+        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
         # Send response back to Slack channel
-        slack_client.send_message(channel, response_text)
+        slack_client.send_message(channel, response_text.strip())
+
         return jsonify({"status": "Message sent to Slack"}), 200
     except Exception as e:
         logger.error(f"Error handling Slack event: {e}")

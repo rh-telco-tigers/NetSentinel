@@ -3,17 +3,19 @@
 from flask import Flask
 import yaml
 import os
-from .routes import api_bp
-from .utils import setup_logging
 import logging
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from prometheus_client import REGISTRY, CollectorRegistry
+from prometheus_client import REGISTRY
 from prometheus_flask_exporter import PrometheusMetrics
+import requests
+
+# Import your blueprints and utilities
+from .routes import api_bp
+from .utils import setup_logging
 from .models import PredictiveModel, LLMModel
 from .slack_integration import SlackClient
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -21,28 +23,27 @@ def fetch_and_set_bot_user_id(app):
     slack_bot_token = app.config['SLACK_CONFIG'].get('slack_bot_token')
     if not slack_bot_token:
         raise ValueError("Slack bot token is missing from the configuration.")
-    
+
     response = requests.post(
         "https://slack.com/api/auth.test",
         headers={"Authorization": f"Bearer {slack_bot_token}"}
     )
-    
+
     if response.status_code == 200:
         bot_info = response.json()
         if bot_info.get('ok'):
             app.config['SLACK_CONFIG']['bot_user_id'] = bot_info.get('user_id')
             logger.info(f"Bot User ID set to: {bot_info.get('user_id')}")
         else:
-            raise ValueError(f"Error fetching bot info: {bot_info.get('error')}")
+            error_msg = bot_info.get('error', 'Unknown error')
+            raise ValueError(f"Error fetching bot info: {error_msg}")
     else:
         raise ValueError(f"Failed to fetch bot user ID from Slack API. Status code: {response.status_code}")
-
 
 def create_app(config_path='config.yaml', registry=None):
     # Configure logging
     setup_logging()
 
-    logger = logging.getLogger(__name__)
     logger.info("Starting app creation.")
 
     # Set up Prometheus CollectorRegistry
@@ -70,6 +71,7 @@ def create_app(config_path='config.yaml', registry=None):
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
 
+    # Application configurations
     app.config['API_CONFIG'] = config.get('api_config', {})
     app.config['MODEL_CONFIG'] = config.get('model_config', {})
     app.config['SLACK_CONFIG'] = {
@@ -79,18 +81,17 @@ def create_app(config_path='config.yaml', registry=None):
     }
     app.config['TRAINING_CONFIG'] = config.get('training_config', {})
 
-    # Setup logging
+    # Setup logging with configured log level and file
     log_level = app.config['TRAINING_CONFIG'].get('log_level', 'INFO').upper()
     log_file = os.path.join(os.path.dirname(__file__), '..', 'logs', 'app.log')
     setup_logging(log_level, log_file)
-    logger = logging.getLogger(__name__)
     logger.info("Logging is set up.")
 
     # Initialize Prometheus Metrics
     metrics = PrometheusMetrics(app, registry=registry)
     metrics.info('app_info', 'NetSentenial Backend API', version='1.0.0')
 
-    # Initialize Limiter
+    # Initialize Rate Limiter
     limiter = Limiter(
         key_func=get_remote_address,
         default_limits=["200 per day", "50 per hour"]
@@ -101,36 +102,56 @@ def create_app(config_path='config.yaml', registry=None):
     try:
         model_config = app.config['MODEL_CONFIG']
         predictive_model_path = model_config.get('predictive_model_path')
-        llm_model_path = model_config.get('llm_model_path')
+        llm_model_name = model_config.get('llm_model_name', 'google/flan-t5-base')
+        embedding_model_name = model_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
 
+        # Load the predictive model
         if not predictive_model_path or not os.path.exists(predictive_model_path):
             logger.error(f"Predictive model path is invalid: {predictive_model_path}")
             raise FileNotFoundError(f"Predictive model not found at {predictive_model_path}")
 
-        if not llm_model_path or not os.path.exists(llm_model_path):
-            logger.error(f"LLM model path is invalid: {llm_model_path}")
-            raise FileNotFoundError(f"LLM model not found at {llm_model_path}")
-
         predictive_model = PredictiveModel(predictive_model_path)
-        llm_model = LLMModel(llm_model_path)
 
+        # Load the embedding model for RAG
+        from sentence_transformers import SentenceTransformer
+        embedding_model = SentenceTransformer(embedding_model_name)
+        logger.info(f"Embedding model '{embedding_model_name}' loaded.")
+
+        # Load the LLM model for RAG
+        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+        tokenizer = AutoTokenizer.from_pretrained(llm_model_name)
+        llm_model = AutoModelForSeq2SeqLM.from_pretrained(llm_model_name)
+        logger.info(f"LLM model '{llm_model_name}' loaded.")
+
+        # Load FAISS index and metadata
+        from .utils import load_faiss_index_and_metadata  # You need to implement this function
+        faiss_index, metadata_store = load_faiss_index_and_metadata()
+
+        # Initialize Slack Client
         slack_config = app.config['SLACK_CONFIG']
         slack_bot_token = slack_config.get('slack_bot_token')
         if not slack_bot_token:
             logger.error("Slack bot token is not configured.")
             raise ValueError("Slack bot token is missing.")
         slack_client = SlackClient(slack_bot_token)
-        
+
+        # Fetch and set the bot user ID
         fetch_and_set_bot_user_id(app)
 
-        # Attach models and slack_client to app for access in routes
+        # Attach models and clients to app for access in routes
         app.persistent_state = {
             'predictive_model': predictive_model,
+            'embedding_model': embedding_model,
+            'tokenizer': tokenizer,
             'llm_model': llm_model,
+            'faiss_index': faiss_index,
+            'metadata_store': metadata_store,
             'slack_client': slack_client
         }
 
-        logger.info("Models and Slack client initialized.")
+        logger.info("Models, FAISS index, and Slack client initialized.")
+        logger.info("Persistent state set with components: %s", list(app.persistent_state.keys()))
+
 
     except Exception as e:
         logger.error(f"Failed to initialize models or Slack client: {e}")
