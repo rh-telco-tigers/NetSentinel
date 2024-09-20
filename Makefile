@@ -1,40 +1,81 @@
 # Makefile
 
-.PHONY: train download_data preprocess train_predictive evaluate_predictive export_predictive
+# Define directories and log files
+DATA_DIR = data
+MODEL_DIR = models
+LOG_DIR = log
+ENV_DIR = venv
 
-train:
-	# Start the training process with nohup and redirect output to train_llm.log
-	nohup python scripts/train_llm.py --config_file config.yaml --log_file log/train_llm.log > log/train_llm.out 2>&1 & disown
+# Define commands
+PYTHON = $(ENV_DIR)/bin/python
+PIP = $(ENV_DIR)/bin/pip
 
-export_llm:
-	python scripts/export_llm_model.py
+# Define files
+CONFIG_FILE = config.yaml
+REQUIREMENTS_FILE = requirements.txt
 
-download_data:
-	python scripts/download_data.py
+# Create log and model directories if they don't exist
+setup_dirs:
+	@mkdir -p $(LOG_DIR)
+	@mkdir -p $(MODEL_DIR)
+	@echo "Directories for logs and models are set up."
 
-preprocess:
-	python scripts/preprocess_data.py
+# Set up the Python environment
+setup_env: setup_dirs
+	@echo "Setting up Python virtual environment..."
+	python3 -m venv $(ENV_DIR)
+	@echo "Installing dependencies from $(REQUIREMENTS_FILE)..."
+	$(PIP) install --upgrade pip
+	$(PIP) install -r $(REQUIREMENTS_FILE)
+	@echo "Python environment setup complete."
 
-train_predictive:
-	python scripts/train_predictive_model.py
+# Download the data
+download_data: setup_env
+	@echo "Downloading data..."
+	$(PYTHON) scripts/download_data.py
 
-evaluate_predictive:
-	python scripts/evaluate_predictive_model.py
+# Preprocess the downloaded data
+preprocess_data: download_data
+	@echo "Preprocessing data..."
+	$(PYTHON) scripts/preprocess_data.py
 
-export_predictive:
-	python scripts/export_predictive_model.py
+# Train the predictive model
+train_predictive_model: preprocess_data
+	@echo "Training the predictive model..."
+	$(PYTHON) scripts/train_predictive_model.py > $(LOG_DIR)/train_predictive.log 2>&1
 
-validate_predictive:
-	python scripts/validate_predictive_model.py
+# Evaluate the predictive model
+evaluate_predictive_model: train_predictive_model
+	@echo "Evaluating the predictive model..."
+	$(PYTHON) scripts/evaluate_predictive_model.py > $(LOG_DIR)/evaluate_predictive.log 2>&1
 
-ngrok:
-	/opt/app-root/src/ngrok http --domain=newly-advanced-dane.ngrok-free.app 5000
+# Export the predictive model
+export_predictive_model: evaluate_predictive_model
+	@echo "Exporting the predictive model..."
+	$(PYTHON) scripts/export_predictive_model.py
 
+# Set up LLM (RAG flow, no need for LLM training)
+setup_llm: export_predictive_model
+	@echo "Setting up the LLM model (RAG)..."
+	$(PYTHON) scripts/export_llm_model.py
+
+# Run the application
+run_app: setup_llm
+	@echo "Starting the application..."
+	$(PYTHON) -m app.run
+
+# Run all steps in order
+start: setup_env download_data preprocess_data train_predictive_model evaluate_predictive_model export_predictive_model setup_llm run_app
+	@echo "Project setup completed and application started."
+
+# Run tests
 run_tests:
-	pytest --cov=app app/tests/
+	@echo "Running tests..."
+	$(PYTHON) -m pytest --cov=app app/tests/
 
-run_app:
-	python -m app.run
-    
-get_slack_botid:
-	. app/.env && curl -X POST -H "Authorization: Bearer $$SLACK_BOT_TOKEN" https://slack.com/api/auth.test
+# Clean the log, model directories, and virtual environment
+clean:
+	@echo "Cleaning logs, models, and virtual environment..."
+	rm -rf $(LOG_DIR)/*
+	rm -rf $(MODEL_DIR)/*
+	rm -rf $(ENV_DIR)
