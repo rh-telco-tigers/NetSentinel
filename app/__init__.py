@@ -1,20 +1,20 @@
 # app/__init__.py
 
-from flask import Flask
-import yaml
 import os
 import logging
+from flask import Flask
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from prometheus_client import REGISTRY
 from prometheus_flask_exporter import PrometheusMetrics
 import requests
+import yaml
 
 # Import your blueprints and utilities
 from .routes import api_bp
-from .utils import setup_logging
-from .models import PredictiveModel, LLMModel
+from .utils import setup_logging, load_faiss_index_and_metadata
+from .models import PredictiveModel
 from .slack_integration import SlackClient
 
 logger = logging.getLogger(__name__)
@@ -40,10 +40,9 @@ def fetch_and_set_bot_user_id(app):
     else:
         raise ValueError(f"Failed to fetch bot user ID from Slack API. Status code: {response.status_code}")
 
-def create_app(config_path='config.yaml', registry=None):
+def create_app(config_path='../config.yaml', registry=None):
     # Configure logging
     setup_logging()
-
     logger.info("Starting app creation.")
 
     # Set up Prometheus CollectorRegistry
@@ -73,17 +72,25 @@ def create_app(config_path='config.yaml', registry=None):
 
     # Application configurations
     app.config['API_CONFIG'] = config.get('api_config', {})
-    app.config['MODEL_CONFIG'] = config.get('model_config', {})
+    app.config['PREDICTIVE_MODEL_CONFIG'] = config.get('predictive_model_config', {})
     app.config['SLACK_CONFIG'] = {
         'slack_bot_token': os.getenv('SLACK_BOT_TOKEN', config.get('slack_config', {}).get('slack_bot_token', '')),
         'slack_signing_secret': os.getenv('SLACK_SIGNING_SECRET', config.get('slack_config', {}).get('slack_signing_secret', '')),
         'slack_channel': config.get('slack_config', {}).get('slack_channel', '#netsentenial')
     }
     app.config['TRAINING_CONFIG'] = config.get('training_config', {})
+    app.config['RAG_CONFIG'] = config.get('rag_config', {})
 
     # Setup logging with configured log level and file
     log_level = app.config['TRAINING_CONFIG'].get('log_level', 'INFO').upper()
     log_file = os.path.join(os.path.dirname(__file__), '..', 'logs', 'app.log')
+
+    # Ensure the logs directory exists
+    logs_dir = os.path.dirname(log_file)
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+        logger.info(f"Created logs directory at {logs_dir}")
+
     setup_logging(log_level, log_file)
     logger.info("Logging is set up.")
 
@@ -100,32 +107,44 @@ def create_app(config_path='config.yaml', registry=None):
 
     # Initialize Models and Slack Client
     try:
-        model_config = app.config['MODEL_CONFIG']
-        predictive_model_path = model_config.get('predictive_model_path')
-        llm_model_name = model_config.get('llm_model_name', 'google/flan-t5-base')
-        embedding_model_name = model_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
+        # Load predictive model configuration
+        predictive_model_config = app.config['PREDICTIVE_MODEL_CONFIG']
+        model_dir = predictive_model_config.get('model_dir')
+        onnx_model_filename = predictive_model_config.get('onnx_model_filename')
 
-        # Load the predictive model
-        if not predictive_model_path or not os.path.exists(predictive_model_path):
+        if not model_dir or not onnx_model_filename:
+            logger.error("Model directory or ONNX filename is not specified in the configuration.")
+            raise ValueError("Model directory or ONNX filename is missing in the predictive model configuration.")
+
+        predictive_model_path = os.path.join(model_dir, onnx_model_filename)
+
+        # Load the predictive model (ONNX model)
+        if not os.path.exists(predictive_model_path):
             logger.error(f"Predictive model path is invalid: {predictive_model_path}")
             raise FileNotFoundError(f"Predictive model not found at {predictive_model_path}")
 
         predictive_model = PredictiveModel(predictive_model_path)
+        logger.info("Predictive model loaded.")
 
         # Load the embedding model for RAG
+        rag_config = app.config['RAG_CONFIG']
+        embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
         from sentence_transformers import SentenceTransformer
         embedding_model = SentenceTransformer(embedding_model_name)
         logger.info(f"Embedding model '{embedding_model_name}' loaded.")
 
         # Load the LLM model for RAG
+        llm_model_name = rag_config.get('llm_model_name', 'google/flan-t5-base')
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
         tokenizer = AutoTokenizer.from_pretrained(llm_model_name)
         llm_model = AutoModelForSeq2SeqLM.from_pretrained(llm_model_name)
         logger.info(f"LLM model '{llm_model_name}' loaded.")
 
         # Load FAISS index and metadata
-        from .utils import load_faiss_index_and_metadata  # You need to implement this function
-        faiss_index, metadata_store = load_faiss_index_and_metadata()
+        faiss_index_path = rag_config.get('faiss_index_path')
+        metadata_store_path = rag_config.get('metadata_store_path')
+        faiss_index, metadata_store = load_faiss_index_and_metadata(faiss_index_path, metadata_store_path)
+        logger.info("FAISS index and metadata store loaded.")
 
         # Initialize Slack Client
         slack_config = app.config['SLACK_CONFIG']
@@ -151,7 +170,6 @@ def create_app(config_path='config.yaml', registry=None):
 
         logger.info("Models, FAISS index, and Slack client initialized.")
         logger.info("Persistent state set with components: %s", list(app.persistent_state.keys()))
-
 
     except Exception as e:
         logger.error(f"Failed to initialize models or Slack client: {e}")

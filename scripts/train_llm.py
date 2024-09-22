@@ -7,7 +7,7 @@ import glob
 import sys
 import argparse
 import logging
-import yaml  # Import yaml module
+import yaml
 from transformers import (
     GPT2LMHeadModel,
     GPT2Tokenizer,
@@ -32,134 +32,60 @@ def setup_logging(log_level, log_file=None):
         handlers=handlers
     )
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Fine-tune GPT-2 on custom QA pairs.")
-
-    parser.add_argument(
-        '--data_file',
-        type=str,
-        default=os.path.join('data', 'processed', 'qa_pairs.jsonl'),
-        help='Path to the JSONL file containing QA pairs.'
-    )
-    parser.add_argument(
-        '--output_dir',
-        type=str,
-        default=os.path.join('models', 'llm_model'),
-        help='Directory to save the fine-tuned model.'
-    )
-    parser.add_argument(
-        '--num_train_epochs',
-        type=int,
-        default=3,
-        help='Number of training epochs.'
-    )
-    parser.add_argument(
-        '--per_device_train_batch_size',
-        type=int,
-        default=4,
-        help='Batch size per device during training.'
-    )
-    parser.add_argument(
-        '--learning_rate',
-        type=float,
-        default=5e-5,
-        help='Learning rate.'
-    )
-    parser.add_argument(
-        '--logging_steps',
-        type=int,
-        default=100,
-        help='Log every X updates steps.'
-    )
-    parser.add_argument(
-        '--save_steps',
-        type=int,
-        default=500,
-        help='Save checkpoint every X updates steps.'
-    )
-    parser.add_argument(
-        '--log_level',
-        type=str,
-        default='INFO',
-        help='Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).'
-    )
-    parser.add_argument(
-        '--log_file',
-        type=str,
-        default=None,
-        help='Optional path to a log file.'
-    )
-    parser.add_argument(
-        '--config_file',
-        type=str,
-        default=None,
-        help='Path to a YAML configuration file.'
-    )
-    parser.add_argument(
-        '--use_gpu',
-        action='store_true',
-        help='Flag to enable GPU usage if available.'
-    )
-    parser.add_argument(
-        '--gradient_accumulation_steps',
-        type=int,
-        default=1,
-        help='Number of gradient accumulation steps.'
-    )
-    parser.add_argument(
-        '--max_length',
-        type=int,
-        default=512,
-        help='Maximum sequence length.'
-    )
-    parser.add_argument(
-        '--early_stopping',
-        action='store_true',
-        help='Enable early stopping based on evaluation loss.'
-    )
-    parser.add_argument(
-        '--early_stopping_patience',
-        type=int,
-        default=1,
-        help='Number of evaluation steps with no improvement after which training will be stopped.'
-    )
-    parser.add_argument(
-        '--evaluation_strategy',
-        type=str,
-        default='steps',  # or 'epoch'
-        help='Evaluation strategy to use.'
-    )
-    parser.add_argument(
-        '--eval_steps',
-        type=int,
-        default=500,
-        help='Number of steps between evaluations (if evaluation_strategy="steps").'
-    )
-    parser.add_argument(
-        '--save_strategy',
-        type=str,
-        default='steps',  # or 'epoch'
-        help='Checkpoint save strategy to use.'
-    )
-    parser.add_argument(
-        '--resume_from_checkpoint',
-        type=str,
-        default=None,
-        help='Path to a checkpoint from which training will be resumed.'
-    )
-    parser.add_argument(
-        '--subset_size',
-        type=int,
-        default=None,
-        help='Number of examples to use from the dataset. If None, use the full dataset.'
-    )
-    args = parser.parse_args()
-    return args
-
 def load_config(config_file):
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
     return config
+
+def validate_config(config):
+    required_fields = {
+        'api_config': ['host', 'port', 'debug'],
+        'logging_config': ['level'],
+        'llm_model_config': [
+            'model_path', 'data_file', 'tokenizer_name', 'model_name',
+            'num_train_epochs', 'learning_rate', 'per_device_train_batch_size',
+            'logging_steps', 'save_steps', 'save_total_limit',
+            'gradient_accumulation_steps', 'max_length',
+            'early_stopping', 'early_stopping_patience',
+            'eval_strategy', 'eval_steps', 'save_strategy',
+            'load_best_model_at_end', 'metric_for_best_model',
+            'greater_is_better', 'subset_size', 'preprocessor_path',
+            'resume_from_checkpoint', 'use_cpu'
+        ],
+        'slack_config': ['slack_channel', 'slack_bot_token', 'slack_signing_secret'],
+        'kafka_config': ['bootstrap', 'raw_topic', 'processed_topic'],
+        'embedding_model': ['name'],
+        'scanning_tool_config': ['publish_interval_seconds', 'subnets', 'protocols'],
+        'faiss_config': ['index_path', 'metadata_path']
+    }
+
+    for section, fields in required_fields.items():
+        if section not in config:
+            raise ValueError(f"Missing section '{section}' in configuration.")
+        for field in fields:
+            if field not in config[section]:
+                raise ValueError(f"Missing field '{field}' in section '{section}'.")
+
+    # Additional type checks
+    # Example:
+    # Check if 'num_train_epochs' is a float or int
+    if not isinstance(config['llm_model_config']['num_train_epochs'], (float, int)):
+        raise TypeError("num_train_epochs must be a float or int.")
+    # Check if 'learning_rate' is a float
+    if not isinstance(config['llm_model_config']['learning_rate'], float):
+        raise TypeError("learning_rate must be a float.")
+    # Check if 'early_stopping' is a bool
+    if not isinstance(config['llm_model_config']['early_stopping'], bool):
+        raise TypeError("early_stopping must be a boolean.")
+    # Check if 'use_cpu' is a bool
+    if not isinstance(config['llm_model_config']['use_cpu'], bool):
+        raise TypeError("use_cpu must be a boolean.")
+    # Add more type checks as needed
+
+def log_config_types(config, logger):
+    for section, params in config.items():
+        for key, value in params.items():
+            logger.debug(f"Config Param - {section}.{key}: {value} (type: {type(value).__name__})")
 
 def load_dataset_for_fine_tuning(data_file, subset_size=None):
     try:
@@ -191,52 +117,49 @@ def get_last_checkpoint(output_dir):
 
 def main():
     # Parse arguments
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="Fine-tune GPT-2 on custom QA pairs.")
+    parser.add_argument(
+        '--config_file',
+        type=str,
+        default='config.yaml',
+        help='Path to a YAML configuration file.'
+    )
+    args = parser.parse_args()
 
-    # Load configuration from file if provided
-    if args.config_file:
-        config = load_config(args.config_file)
-        # Update config with args to prioritize command-line arguments
-        for key, value in vars(args).items():
-            if value is not None:
-                config[key] = value
-        # Update args with config values
-        for key, value in config.items():
-            setattr(args, key, value)
-
-    # Ensure critical parameters are set correctly
-    if not hasattr(args, 'load_best_model_at_end') or args.load_best_model_at_end is not True:
-        args.load_best_model_at_end = True
-
-    if not hasattr(args, 'evaluation_strategy') or args.evaluation_strategy not in ['steps', 'epoch']:
-        args.evaluation_strategy = 'steps'
-
-    if not hasattr(args, 'save_strategy') or args.save_strategy not in ['steps', 'epoch']:
-        args.save_strategy = 'steps'
+    # Load configuration from file
+    config = load_config(args.config_file)
 
     # Setup logging
-    setup_logging(args.log_level.upper(), args.log_file)
+    setup_logging(config['logging_config']['level'], None)
     logger = logging.getLogger(__name__)
 
-    logger.info("Starting training script.")
-    logger.debug(f"Arguments: {args}")
+    logger.info("Starting LLM training script.")
+    logger.debug(f"Configuration: {config}")
+
+    # Validate configuration
+    try:
+        validate_config(config)
+    except (ValueError, TypeError) as e:
+        logger.error(f"Configuration validation error: {e}")
+        sys.exit(1)
+
+    # Log configuration parameter types
+    log_config_types(config, logger)
 
     # Check device
-    device = torch.device('cuda' if torch.cuda.is_available() and args.use_gpu else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() and config['llm_model_config']['use_cpu'] == False else 'cpu')
     logger.info(f"Using device: {device}")
 
     # Load dataset
-    dataset = load_dataset_for_fine_tuning(args.data_file, subset_size=args.subset_size)
+    dataset = load_dataset_for_fine_tuning(config['llm_model_config']['data_file'], subset_size=config['llm_model_config']['subset_size'])
 
     # Split the dataset into training and evaluation sets
     train_size = 0.9
     test_size = 1 - train_size
-    # Convert Dataset to pandas DataFrame for splitting
     dataset_df = dataset.to_pandas()
     train_df, eval_df = train_test_split(
         dataset_df, test_size=test_size, random_state=42
     )
-    # Convert back to Dataset objects
     train_dataset = Dataset.from_pandas(train_df)
     eval_dataset = Dataset.from_pandas(eval_df)
 
@@ -245,9 +168,9 @@ def main():
 
     # Load tokenizer and model
     try:
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        tokenizer = GPT2Tokenizer.from_pretrained(config['llm_model_config']['tokenizer_name'])
         tokenizer.pad_token = tokenizer.eos_token  # Set padding token
-        model = GPT2LMHeadModel.from_pretrained('gpt2')
+        model = GPT2LMHeadModel.from_pretrained(config['llm_model_config']['model_name'])
         model.to(device)
         logger.info("Model and tokenizer loaded successfully.")
     except Exception as e:
@@ -257,13 +180,13 @@ def main():
     # Tokenize the datasets
     try:
         tokenized_train_dataset = train_dataset.map(
-            lambda examples: tokenize_function(examples, tokenizer, args.max_length),
+            lambda examples: tokenize_function(examples, tokenizer, config['llm_model_config']['max_length']),
             batched=True,
             remove_columns=['question', 'answer']
         )
 
         tokenized_eval_dataset = eval_dataset.map(
-            lambda examples: tokenize_function(examples, tokenizer, args.max_length),
+            lambda examples: tokenize_function(examples, tokenizer, config['llm_model_config']['max_length']),
             batched=True,
             remove_columns=['question', 'answer']
         )
@@ -279,27 +202,26 @@ def main():
         mlm=False
     )
 
-    # Replace 'no_cuda' with 'use_cpu' (if using Transformers 4.44.2 or later)
+    # Define training arguments
     training_args = TrainingArguments(
-        output_dir=args.output_dir,
-        num_train_epochs=args.num_train_epochs,
-        per_device_train_batch_size=args.per_device_train_batch_size,
-        learning_rate=args.learning_rate,
-        logging_steps=args.logging_steps,
-        fp16=torch.cuda.is_available() and args.use_gpu,
-        use_cpu=not torch.cuda.is_available() or not args.use_gpu,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        logging_dir=os.path.join(args.output_dir, 'logs'),
+        output_dir=config['llm_model_config']['model_path'],
+        num_train_epochs=config['llm_model_config']['num_train_epochs'],
+        per_device_train_batch_size=config['llm_model_config']['per_device_train_batch_size'],
+        learning_rate=config['llm_model_config']['learning_rate'],
+        logging_steps=config['llm_model_config']['logging_steps'],
+        gradient_accumulation_steps=config['llm_model_config']['gradient_accumulation_steps'],
+        logging_dir=os.path.join(config['llm_model_config']['model_path'], 'logs'),
         report_to="none",
-        load_best_model_at_end=args.load_best_model_at_end,
-        evaluation_strategy=args.evaluation_strategy,
-        save_strategy=args.save_strategy,
-        metric_for_best_model=args.metric_for_best_model,
-        greater_is_better=args.greater_is_better,
-        save_total_limit=2,
-        # Include save_steps and eval_steps only if strategies are 'steps'
-        **({'save_steps': args.save_steps} if args.save_strategy == 'steps' else {}),
-        **({'eval_steps': args.eval_steps} if args.evaluation_strategy == 'steps' else {}),
+        load_best_model_at_end=config['llm_model_config']['load_best_model_at_end'],
+        eval_strategy=config['llm_model_config']['eval_strategy'],  # Updated
+        save_strategy=config['llm_model_config']['save_strategy'],
+        metric_for_best_model=config['llm_model_config']['metric_for_best_model'],
+        greater_is_better=config['llm_model_config']['greater_is_better'],
+        save_total_limit=config['llm_model_config']['save_total_limit'],
+        **({'save_steps': config['llm_model_config']['save_steps']} if config['llm_model_config']['save_strategy'] == 'steps' else {}),
+        **({'eval_steps': config['llm_model_config']['eval_steps']} if config['llm_model_config']['eval_strategy'] == 'steps' else {}),
+        fp16=torch.cuda.is_available() and config['llm_model_config']['use_cpu'] == False,
+        use_cpu=config['llm_model_config']['use_cpu'],  # Updated
     )
 
     # Log training arguments
@@ -307,20 +229,18 @@ def main():
 
     # Callbacks
     callbacks = []
-    if args.early_stopping:
+    if config['llm_model_config']['early_stopping']:
         early_stopping_callback = EarlyStoppingCallback(
-            early_stopping_patience=args.early_stopping_patience
+            early_stopping_patience=config['llm_model_config']['early_stopping_patience']
         )
         callbacks.append(early_stopping_callback)
         logger.info("Early stopping enabled.")
 
-    # Optional: Define compute_metrics function
+    # Define compute_metrics function
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
-        # Shift so that tokens < n predict n
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
-        # Flatten the tokens
         loss_fct = torch.nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
         loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
         perplexity = torch.exp(loss)
@@ -339,18 +259,17 @@ def main():
 
     # Fine-tune the model
     try:
-        if args.resume_from_checkpoint is None:
-            last_checkpoint = get_last_checkpoint(args.output_dir)
+        if config['llm_model_config']['resume_from_checkpoint']:
+            logger.info(f"Resuming training from checkpoint: {config['llm_model_config']['resume_from_checkpoint']}")
+            trainer.train(resume_from_checkpoint=config['llm_model_config']['resume_from_checkpoint'])
+        else:
+            last_checkpoint = get_last_checkpoint(config['llm_model_config']['model_path'])
             if last_checkpoint:
                 logger.info(f"No checkpoint specified. Resuming from last checkpoint: {last_checkpoint}")
-                args.resume_from_checkpoint = last_checkpoint
+                trainer.train(resume_from_checkpoint=last_checkpoint)
             else:
                 logger.info("No checkpoints found. Starting training from scratch.")
-
-        logger.info("Starting model training.")
-        if args.resume_from_checkpoint:
-            logger.info(f"Resuming training from checkpoint: {args.resume_from_checkpoint}")
-        trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
+                trainer.train()
         logger.info("Model training completed.")
     except Exception as e:
         logger.error(f"Error during training: {e}")
@@ -358,9 +277,9 @@ def main():
 
     # Save the model and tokenizer
     try:
-        trainer.save_model(args.output_dir)
-        tokenizer.save_pretrained(args.output_dir)
-        logger.info(f"Fine-tuned model and tokenizer saved to {args.output_dir}")
+        trainer.save_model(config['llm_model_config']['model_path'])
+        tokenizer.save_pretrained(config['llm_model_config']['model_path'])
+        logger.info(f"Fine-tuned model and tokenizer saved to {config['llm_model_config']['model_path']}")
     except Exception as e:
         logger.error(f"Error saving model: {e}")
         sys.exit(1)

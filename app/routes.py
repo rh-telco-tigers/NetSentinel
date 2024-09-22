@@ -128,9 +128,15 @@ def chat():
             logger.error("One or more RAG components are not loaded.")
             return jsonify({"error": "RAG components are not loaded."}), 500
 
+        # Retrieve RAG configuration
+        rag_config = current_app.config.get('RAG_CONFIG', {})
+        num_contexts = rag_config.get('num_contexts', 5)
+        max_context_length = rag_config.get('max_context_length', 512)
+        max_answer_length = rag_config.get('max_answer_length', 150)
+
         # Retrieve relevant data using the embedding model and FAISS index
         query_embedding = embedding_model.encode(question, convert_to_numpy=True)
-        distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k=5)
+        distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k=num_contexts)
 
         # Build context from metadata
         context = ""
@@ -147,8 +153,9 @@ def chat():
 
         # Generate response using the LLM model
         input_text = f"Question: {question}\nContext: {context}\nAnswer:"
-        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=512, truncation=True)
-        outputs = llm_model.generate(inputs, max_length=150, num_beams=5, early_stopping=True)
+        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=max_context_length, truncation=True)
+        inputs = inputs.to(llm_model.device)
+        outputs = llm_model.generate(inputs, max_length=max_answer_length, num_beams=5, early_stopping=True)
         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         return jsonify({"response": response_text.strip()}), 200
@@ -211,9 +218,15 @@ def slack_events():
             logger.error("One or more RAG components or Slack client are not loaded.")
             return jsonify({"error": "Server components are not loaded."}), 500
 
+        # Retrieve RAG configuration
+        rag_config = current_app.config.get('RAG_CONFIG', {})
+        num_contexts = rag_config.get('num_contexts', 5)
+        max_context_length = rag_config.get('max_context_length', 512)
+        max_answer_length = rag_config.get('max_answer_length', 150)
+
         # Retrieve relevant data using the embedding model and FAISS index
         query_embedding = embedding_model.encode(user_text, convert_to_numpy=True)
-        distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k=5)
+        distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k=num_contexts)
 
         # Build context from metadata
         context = ""
@@ -230,8 +243,9 @@ def slack_events():
 
         # Generate response using the LLM model
         input_text = f"Question: {user_text}\nContext: {context}\nAnswer:"
-        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=512, truncation=True)
-        outputs = llm_model.generate(inputs, max_length=150, num_beams=5, early_stopping=True)
+        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=max_context_length, truncation=True)
+        inputs = inputs.to(llm_model.device)
+        outputs = llm_model.generate(inputs, max_length=max_answer_length, num_beams=5, early_stopping=True)
         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         # Send response back to Slack channel

@@ -1,20 +1,117 @@
 # config.yaml
 
-num_train_epochs: 0.1
-learning_rate: 5e-5
-per_device_train_batch_size: 4
-logging_steps: 100
-save_strategy: steps
-save_steps: 100
-log_level: DEBUG
-use_gpu: true
-gradient_accumulation_steps: 1
-max_length: 512
-early_stopping: true
-early_stopping_patience: 2
-evaluation_strategy: steps
-eval_steps: 500
-load_best_model_at_end: true
-metric_for_best_model: eval_loss
-greater_is_better: false
-subset_size: 10000
+api_config:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true
+
+logging_config:
+  level: "INFO"
+
+predictive_model_config:
+  input_dir: "data/processed"
+  model_dir: "models/predictive_model"
+  model_filename: "model.joblib"
+  onnx_model_filename: "model.onnx"
+  n_estimators: 200
+  random_state: 42
+  n_jobs: -1
+  evaluation:
+    enable_classification_report: true
+    enable_confusion_matrix: true
+    enable_roc_auc: true
+
+# RAG Configuration
+rag_config:
+  embedding_model_name: "all-MiniLM-L6-v2"
+  llm_model_name: "google/flan-t5-base" 
+  faiss_index_path: "faiss_index/index.faiss"
+  metadata_store_path: "faiss_index/metadata.json"
+  max_context_length: 512
+  max_answer_length: 150
+  num_contexts: 5
+
+llm_model_config:
+  model_path: "models/llm_model"
+  data_file: "data/processed/qa_pairs.jsonl"
+  tokenizer_name: "gpt2"
+  model_name: "gpt2"
+  num_train_epochs: 1
+  learning_rate: 0.004
+  per_device_train_batch_size: 4
+  logging_steps: 100
+  save_steps: 500
+  save_total_limit: 2
+  gradient_accumulation_steps: 1
+  max_length: 512
+  early_stopping: true
+  early_stopping_patience: 1
+  eval_strategy: "steps"
+  eval_steps: 500
+  save_strategy: "steps"
+  load_best_model_at_end: true
+  use_cpu: false
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  subset_size: 100
+  preprocessor_path: "data/processed/preprocessor.pkl"
+  resume_from_checkpoint: null
+
+slack_config:
+  slack_channel: "#netsentenial"
+  slack_bot_token: "xoxb-3434547997201-7731336873907-qg969aOnRZouLnWVLkapdZ68"
+  slack_signing_secret: "75e74f33928dd9be008af160d610c778"
+
+kafka_config:
+  bootstrap: "netsentenial-kafka-kafka-bootstrap.openshift-operators:9092"
+  raw_topic: "raw-traffic-data"
+  processed_topic: "processed-traffic-data"
+
+embedding_model:
+  name: "all-MiniLM-L6-v2"
+
+scanning_tool_config:
+  publish_interval_seconds: 10
+  subnets:
+    src_subnets:
+      - "192.168.1.0/24"
+      - "10.0.0.0/24"
+    dst_subnets:
+      - "172.16.0.0/24"
+      - "10.1.1.0/24"
+  protocols:
+    TCP:
+      ports: [80, 443, 22, 21]
+    UDP:
+      ports: [53, 67, 68]
+    ICMP: []
+    HTTP:
+      methods: ["GET", "POST", "PUT", "DELETE"]
+      status_codes: [200, 201, 400, 401, 403, 404, 500]
+      urls:
+        - "/home"
+        - "/login"
+        - "/dashboard"
+        - "/api/data"
+        - "/logout"
+        - "/register"
+        - "/profile"
+        - "/settings"
+        - "/search"
+        - "/contact"
+        - "/products"
+        - "/cart"
+        - "/checkout"
+        - "/help"
+        - "/about"
+        - "/terms"
+        - "/privacy"
+        - "/blog"
+        - "/news"
+        - "/support"
+    DNS:
+      query_types: ["A", "AAAA", "MX", "CNAME", "TXT"]
+
+faiss_config:
+  index_path: "faiss_index/index.faiss"
+  metadata_path: "faiss_index/metadata.json"
