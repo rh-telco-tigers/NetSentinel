@@ -67,8 +67,8 @@ kafka_config:
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
 
-embedding_model:
-  name: "all-MiniLM-L6-v2"
+# embedding_model:
+#   name: "all-MiniLM-L6-v2"
 
 scanning_tool_config:
   publish_interval_seconds: 10

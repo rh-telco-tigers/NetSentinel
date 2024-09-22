@@ -1,5 +1,3 @@
-# scripts/process_mock_data.py
-
 import json
 import yaml
 from kafka import KafkaConsumer, KafkaProducer
@@ -12,6 +10,8 @@ import pandas as pd
 import numpy as np
 import os
 
+logger = logging.getLogger(__name__)
+
 def setup_logging(config):
     """
     Configure logging based on the configuration.
@@ -23,9 +23,6 @@ def setup_logging(config):
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
     logger.setLevel(numeric_level)
-
-# Initialize logger
-logger = logging.getLogger(__name__)
 
 def load_config(config_path='config.yaml'):
     """
@@ -76,7 +73,7 @@ def create_kafka_producer(kafka_bootstrap_servers):
         logger.error(f"Failed to connect to Kafka as producer: {e}")
         sys.exit(1)
 
-def load_preprocessor(preprocessor_path='data/processed/preprocessor.pkl'):
+def load_preprocessor(preprocessor_path):
     """
     Load the preprocessor used during model training.
     """
@@ -112,33 +109,31 @@ def process_data(raw_data, preprocessor):
         # Convert raw_data (dict) to DataFrame
         df = pd.DataFrame([raw_data])
 
-        # Select relevant features
+        # List of relevant columns for processing
         selected_columns = [
             'proto', 'service', 'state', 'sbytes', 'dbytes', 'sttl', 'dttl',
             'sloss', 'dloss', 'sload', 'dload', 'spkts', 'dpkts'
         ]
 
-        # Ensure all selected columns are present
-        for col in selected_columns:
-            if col not in df.columns:
-                df[col] = np.nan
+        # Ensure all selected columns are present in the data
+        df = df.reindex(columns=selected_columns, fill_value=np.nan)
 
         # Handle missing values
         df = handle_missing_values(df, selected_columns)
 
-        # Apply preprocessor
+        # Apply the preprocessor
         X_processed = preprocessor.transform(df[selected_columns])
 
-        # Get feature names
+        # Extract feature names
         feature_names = get_feature_names(preprocessor)
 
-        # Convert to dictionary
+        # Convert processed data to dictionary
         processed_features = dict(zip(feature_names, X_processed[0]))
 
-        # Prepare the processed data with features and original data
+        # Prepare the final processed data
         processed_data = {
             'features': processed_features,   # Processed features for prediction
-            'original_data': raw_data         # Original raw data for enrichment
+            'original_data': raw_data         # Original raw data for reference
         }
 
         return processed_data
@@ -150,14 +145,13 @@ def handle_missing_values(df, selected_columns):
     """
     Handles missing values in the DataFrame.
     """
-    # Identify categorical and numerical columns
-    categorical_cols = df[selected_columns].select_dtypes(include=['object']).columns.tolist()
-    numerical_cols = df[selected_columns].select_dtypes(include=['int64', 'float64']).columns.tolist()
+    categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+    numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
-    # Fill missing values for categorical features with 'Unknown'
+    # Fill missing values for categorical columns with 'Unknown'
     df[categorical_cols] = df[categorical_cols].fillna('Unknown')
 
-    # Fill missing values for numerical features with 0 (or median)
+    # Fill missing values for numerical columns with 0 (or other strategies)
     df[numerical_cols] = df[numerical_cols].fillna(0)
 
     return df
@@ -177,13 +171,18 @@ def main():
     """
     config = load_config()
     setup_logging(config)
-    kafka_bootstrap = config.get('kafka', {}).get('bootstrap', 'localhost:9092')
-    raw_topic = config.get('kafka', {}).get('raw_topic', 'raw-traffic-data')
-    processed_topic = config.get('kafka', {}).get('processed_topic', 'processed-traffic-data')
+
+    # Load Kafka and preprocessor configuration
+    kafka_bootstrap = config.get('kafka_config', {}).get('bootstrap', 'localhost:9092')
+    raw_topic = config.get('kafka_config', {}).get('raw_topic', 'raw-traffic-data')
+    processed_topic = config.get('kafka_config', {}).get('processed_topic', 'processed-traffic-data')
     preprocessor_path = config.get('preprocessor', {}).get('path', 'data/processed/preprocessor.pkl')
 
+    # Create Kafka consumer and producer
     consumer = create_kafka_consumer(kafka_bootstrap, raw_topic)
     producer = create_kafka_producer(kafka_bootstrap)
+
+    # Load the preprocessor
     preprocessor = load_preprocessor(preprocessor_path)
 
     # Register signal handlers for graceful shutdown
@@ -196,8 +195,11 @@ def main():
         for message in consumer:
             raw_data = message.value
             logger.debug(f"Consumed raw data: {raw_data}")
+
+            # Process the raw data
             processed_data = process_data(raw_data, preprocessor)
             if processed_data:
+                # Publish processed data to the Kafka topic
                 producer.send(processed_topic, processed_data)
                 producer.flush()
                 logger.info(f"Published processed data to '{processed_topic}': {processed_data}")

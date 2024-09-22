@@ -132,12 +132,12 @@ def generate_mock_data(config):
         state = random.choice(states)
 
         # Get source and destination IPs
-        src_ip = get_random_ip(config["scanning_tool"]["subnets"]["src_subnets"])
-        dst_ip = get_random_ip(config["scanning_tool"]["subnets"]["dst_subnets"])
+        src_ip = get_random_ip(config["scanning_tool_config"]["subnets"]["src_subnets"])
+        dst_ip = get_random_ip(config["scanning_tool_config"]["subnets"]["dst_subnets"])
 
         # Select ports based on protocol
         if proto in ["TCP", "UDP"]:
-            ports = config["scanning_tool"]["protocols"][proto]["ports"]
+            ports = config["scanning_tool_config"]["protocols"][proto]["ports"]
             src_port = random.choice(ports)
             dst_port = random.choice(ports)
         else:
@@ -147,14 +147,14 @@ def generate_mock_data(config):
         # Initialize protocol-specific details
         protocol_details = {}
         if proto == "HTTP":
-            methods = config["scanning_tool"]["protocols"]["HTTP"]["methods"]
-            status_codes = config["scanning_tool"]["protocols"]["HTTP"]["status_codes"]
-            urls = config["scanning_tool"]["protocols"]["HTTP"]["urls"]
+            methods = config["scanning_tool_config"]["protocols"]["HTTP"]["methods"]
+            status_codes = config["scanning_tool_config"]["protocols"]["HTTP"]["status_codes"]
+            urls = config["scanning_tool_config"]["protocols"]["HTTP"]["urls"]
             protocol_details["method"] = random.choice(methods)
             protocol_details["status_code"] = random.choice(status_codes)
             protocol_details["url"] = random.choice(urls)
         elif proto == "DNS":
-            query_types = config["scanning_tool"]["protocols"]["DNS"]["query_types"]
+            query_types = config["scanning_tool_config"]["protocols"]["DNS"]["query_types"]
             domains = [
                 "example.com",
                 "testsite.org",
@@ -433,12 +433,15 @@ def main():
     """
     config = load_config()
     setup_logging(config)
-    kafka_bootstrap = config.get("kafka", {}).get("bootstrap", "localhost:9092")
+
+    # Use the new kafka_config from config.yaml
+    kafka_bootstrap = config.get("kafka_config", {}).get("bootstrap", "localhost:9092")
+    raw_topic = config.get("kafka_config", {}).get("raw_topic", "raw-traffic-data")
+    
     producer = create_producer(kafka_bootstrap)
-    topic = "raw-traffic-data"  # Ensure this topic exists in Kafka
-    publish_interval = config.get("scanning_tool", {}).get(
-        "publish_interval_seconds", 10
-    )
+
+    # Publishing mock data to the raw_topic
+    publish_interval = config.get("scanning_tool_config", {}).get("publish_interval_seconds", 10)
 
     # Register signal handlers for graceful shutdown
     signal.signal(
@@ -450,7 +453,7 @@ def main():
 
     logger.info("Starting mock data publishing...")
     while True:
-        publish_mock_data(producer, topic, config)
+        publish_mock_data(producer, raw_topic, config)
         time.sleep(publish_interval)  # Publish based on configured interval
 
 

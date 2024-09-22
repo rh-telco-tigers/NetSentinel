@@ -3,7 +3,7 @@
 # Define directories and log files
 DATA_DIR = data
 MODEL_DIR = models
-LOG_DIR = log
+LOG_DIR = logs
 ENV_DIR = venv
 
 # Define commands
@@ -14,8 +14,13 @@ PIP = $(ENV_DIR)/bin/pip
 CONFIG_FILE = config.yaml
 REQUIREMENTS_FILE = requirements.txt
 
+# ngrok Variables
+NGROK_URL = https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+NGROK_TGZ = ngrok.tgz
+NGROK_BIN = ngrok
+
 # Phony targets to avoid conflicts with files named like these
-.PHONY: setup_dirs ensure_setuptools setup_env download_data preprocess_data train_predictive_model evaluate_predictive_model export_predictive_model train_llm export_llm run_app start run_tests clean
+.PHONY: setup_dirs ensure_setuptools setup_env download_data preprocess_data train_predictive_model evaluate_predictive_model export_predictive_model train_llm export_llm run_app start_services run_tests clean start-ngrok
 
 # Create log and model directories if they don't exist
 setup_dirs:
@@ -71,7 +76,7 @@ export_predictive_model: evaluate_predictive_model
 
 # Generate QA Pairs for LLM
 prepare_llm_data: download_data
-	@echo "🛠️ Create QA pairs for LLM..."
+	@echo "🛠️ Creating QA pairs for LLM..."
 	$(PYTHON) scripts/prepare_llm_data.py
 	@echo "✅ QA Pairs generated."
 
@@ -87,14 +92,25 @@ export_llm: train_llm
 	$(PYTHON) scripts/export_llm_model.py --config_file $(CONFIG_FILE)
 	@echo "✅ LLM model exported."
 
+# Start services
+start_services: setup_env
+	@echo "🚀 Starting services..."
+	@echo "Starting create_mock_data.py..."
+	nohup bash -c 'source $(ENV_DIR)/bin/activate && python scripts/create_mock_data.py' > $(LOG_DIR)/create_mock_data.log 2>&1 &
+	@echo "Starting process_mock_data.py..."
+	nohup bash -c 'source $(ENV_DIR)/bin/activate && python scripts/process_mock_data.py' > $(LOG_DIR)/process_mock_data.log 2>&1 &
+	@echo "Starting prediction_service.py..."
+	nohup bash -c 'source $(ENV_DIR)/bin/activate && python scripts/prediction_service.py' > $(LOG_DIR)/prediction_service.log 2>&1 &
+	@echo "✅ Services are running."
+
 # Run the application
-run_app: export_llm
+run_app: export_llm start_services
 	@echo "🚀 Starting the application..."
 	$(PYTHON) -m app.run
 	@echo "✅ Application is running."
 
 # Run all steps in order
-start: setup_env download_data preprocess_data train_predictive_model evaluate_predictive_model export_predictive_model train_llm export_llm run_app
+start: run_app
 	@echo "🎉 Project setup completed and application started."
 
 # Run tests
@@ -102,6 +118,21 @@ run_tests: setup_env
 	@echo "🧪 Running tests..."
 	$(PYTHON) -m pytest --cov=app app/tests/
 	@echo "✅ Tests completed."
+
+# Start ngrok
+start-ngrok:
+	@echo "🔍 Checking if ngrok exists..."
+	@if [ ! -f $(NGROK_BIN) ]; then \
+		echo "📥 Downloading ngrok..."; \
+		wget -O $(NGROK_TGZ) $(NGROK_URL); \
+		tar -xzf $(NGROK_TGZ); \
+		chmod +x $(NGROK_BIN); \
+		echo "✅ ngrok downloaded and ready."; \
+	else \
+		echo "✅ ngrok already exists."; \
+	fi
+	@echo "🚀 Starting ngrok..."
+	./$(NGROK_BIN) http --domain=newly-advanced-dane.ngrok-free.app 5000
 
 # Clean the log, model directories, and virtual environment
 clean:
