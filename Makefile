@@ -19,6 +19,10 @@ NGROK_URL = https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
 NGROK_TGZ = ngrok.tgz
 NGROK_BIN = ngrok
 
+# Define directories and model paths
+MISTRAL_MODEL_DIR = models/Mistral-7B-v0.1-demo
+MISTRAL_REPO = git@hf.co:mistralai/Mistral-7B-v0.1
+
 # Phony targets to avoid conflicts with files named like these
 .PHONY: setup_dirs ensure_setuptools setup_env download_data preprocess_data train_predictive_model evaluate_predictive_model export_predictive_model train_llm export_llm run_app start_services run_tests clean start-ngrok
 
@@ -45,7 +49,7 @@ setup_env: ensure_setuptools setup_dirs
 	@echo "✅ Python environment setup complete."
 
 # Download the data
-download_data: setup_env
+download_data:
 	@echo "📥 Downloading data..."
 	$(PYTHON) scripts/download_data.py
 	@echo "✅ Data downloaded."
@@ -55,6 +59,21 @@ preprocess_data: download_data
 	@echo "🛠️ Preprocessing data..."
 	$(PYTHON) scripts/preprocess_data.py
 	@echo "✅ Data preprocessed."
+
+
+# Task to download Mistral 7B model using git clone
+.PHONY: download_mistral
+download_mistral:
+	@echo "🔍 Checking if Mistral-7B model exists..."
+	@if [ ! -d $(MISTRAL_MODEL_DIR) ]; then \
+		echo "📥 Cloning Mistral-7B model from Hugging Face..."; \
+		brew install git-lfs; \
+		git lfs install; \
+		git clone $(MISTRAL_REPO) $(MISTRAL_MODEL_DIR); \
+		echo "✅ Mistral-7B model downloaded successfully."; \
+	else \
+		echo "✅ Mistral-7B model already exists."; \
+	fi
 
 # Train the predictive model
 train_predictive_model: preprocess_data
@@ -84,6 +103,12 @@ prepare_llm_data: download_data
 train_llm: prepare_llm_data
 	@echo "🧠 Training the LLM model..."
 	$(PYTHON) scripts/train_llm.py --config_file $(CONFIG_FILE) > $(LOG_DIR)/train_llm.log 2>&1
+	@echo "✅ LLM model training completed."
+
+# Train the LLM model
+train_llm_mistral:
+	@echo "🧠 Training the Mistral LLM model..."
+	$(PYTHON) scripts/train_llm_mistral.py --config_file $(CONFIG_FILE) --model_config_section llm_model_config_mistral > $(LOG_DIR)/train_llm_mistral.log 2>&1
 	@echo "✅ LLM model training completed."
 
 # Export the LLM model

@@ -18,3 +18,5 @@ roc_curve.png
 app/.env
 .$netsentenial.drawio.bkp
 faiss_index/
+models/Mistral-7B-v0.1/
+.DS_Store

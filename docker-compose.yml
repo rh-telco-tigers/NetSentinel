@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: netsentenial
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: netsentenialuser
+      MYSQL_PASSWORD: netsentenialpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - mysql
+
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+  #   depends_on:
+  #     - kafka
+  #     - mysql
+
+  # create_mock_data:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.create_mock_data
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+  # process_mock_data:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.process_mock_data
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+  # prediction_service:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.prediction_service
+  #   depends_on:
+  #     - kafka
+  #     - mysql
+  #   environment:
+  #     - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+volumes:
+  mysql_data:
