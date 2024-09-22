@@ -93,7 +93,7 @@ export_llm: train_llm
 	@echo "✅ LLM model exported."
 
 # Start services
-start_services: setup_env
+start_services:
 	@echo "🚀 Starting services..."
 	@echo "Starting create_mock_data.py..."
 	nohup bash -c 'source $(ENV_DIR)/bin/activate && python scripts/create_mock_data.py' > $(LOG_DIR)/create_mock_data.log 2>&1 &
@@ -141,3 +141,13 @@ clean:
 	rm -rf $(MODEL_DIR)/*
 	rm -rf $(ENV_DIR)
 	@echo "✅ Cleanup completed."
+
+# Stop services
+.PHONY: stop
+stop:
+	@echo "🛑 Stopping services..."
+	@pkill -f create_mock_data.py || true
+	@pkill -f process_mock_data.py || true
+	@pkill -f prediction_service.py || true
+	@pkill -f "python -m app.run" || true
+	@echo "✅ Services have been stopped."

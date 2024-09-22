@@ -80,7 +80,12 @@ def store_in_faiss_index(embedding, metadata, index, metadata_store, lock, faiss
         with lock:
             index.add(np.array([embedding]).astype('float32'))
             metadata_store.append(metadata)
+            # Ensure directories exist before saving
+            os.makedirs(os.path.dirname(faiss_index_path), exist_ok=True)
+            os.makedirs(os.path.dirname(metadata_store_path), exist_ok=True)
+            # Save the FAISS index
             faiss.write_index(index, faiss_index_path)
+            # Save the metadata store
             with open(metadata_store_path, 'w') as f:
                 json.dump(metadata_store, f)
             logger.info(f"Stored event ID {metadata['event_id']} in FAISS index")
@@ -95,11 +100,11 @@ def load_faiss_index(embedding_dimension, faiss_index_path, metadata_store_path)
                 metadata_store = json.load(f)
             logger.info("FAISS index and metadata loaded from disk")
         else:
+            # Ensure directories exist
             os.makedirs(os.path.dirname(faiss_index_path), exist_ok=True)
             index = faiss.IndexFlatL2(embedding_dimension)
             metadata_store = []
             logger.info("Initialized new FAISS index and metadata store")
-
         return index, metadata_store
     except Exception as e:
         logger.error(f"Error loading FAISS index: {e}")
@@ -111,46 +116,54 @@ def signal_handler(sig, frame, consumer):
     sys.exit(0)
 
 def main():
-    config = load_config()
-    setup_logging(config)
-    
+    try:
+        config = load_config()
+        setup_logging(config)
+    except Exception as e:
+        logger.error(f"Error loading configuration: {e}")
+        return
+
     kafka_bootstrap = config.get('kafka_config', {}).get('bootstrap', 'localhost:9092')
     processed_topic = config.get('kafka_config', {}).get('processed_topic', 'processed-traffic-data')
 
     # RAG configuration
     rag_config = config.get('rag_config', {})
     embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
-    faiss_index_path = rag_config.get('faiss_index_path', 'faiss_index/index.faiss')
-    metadata_store_path = rag_config.get('metadata_store_path', 'faiss_index/metadata.json')
-    
+    faiss_index_path = rag_config.get('faiss_index_path', os.path.join('data', 'faiss_index', 'index.faiss'))
+    metadata_store_path = rag_config.get('metadata_store_path', os.path.join('data', 'faiss_index', 'metadata.json'))
+
+    # Ensure directories exist
+    os.makedirs(os.path.dirname(faiss_index_path), exist_ok=True)
+    os.makedirs(os.path.dirname(metadata_store_path), exist_ok=True)
+
     # Load Kafka consumer and models
     consumer = create_kafka_consumer(kafka_bootstrap, processed_topic)
-    
-    model_dir = config.get('predictive_model_config', {}).get('model_dir', 'models/predictive_model')
+
+    model_dir = config.get('predictive_model_config', {}).get('model_dir', os.path.join('models', 'predictive_model'))
     model_filename = config.get('predictive_model_config', {}).get('model_filename', 'model.joblib')
     model = load_model(model_dir, model_filename)
-    
+
     embedding_model = SentenceTransformer(embedding_model_name)
     logger.info(f"Embedding model '{embedding_model_name}' loaded")
-    
+
     embedding_dimension = embedding_model.get_sentence_embedding_dimension()
     index, metadata_store = load_faiss_index(embedding_dimension, faiss_index_path, metadata_store_path)
-    
+
     index_lock = threading.Lock()
-    
+
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, consumer))
     signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame, consumer))
-    
+
     logger.info("Starting prediction service...")
 
     try:
         for message in consumer:
             data = message.value
             logger.debug(f"Consumed processed data: {data}")
-            
+
             features = data['features']
             original_data = data['original_data']
-            
+
             prediction, prediction_proba = predict(model, data)
             if prediction is not None:
                 enriched_data = {
@@ -176,7 +189,10 @@ def main():
 
                 embedding = generate_embedding(text_representation, embedding_model)
                 if embedding is not None:
-                    store_in_faiss_index(embedding, enriched_data, index, metadata_store, index_lock, faiss_index_path, metadata_store_path)
+                    store_in_faiss_index(
+                        embedding, enriched_data, index, metadata_store,
+                        index_lock, faiss_index_path, metadata_store_path
+                    )
                 else:
                     logger.warning("Embedding generation failed. Skipping storage.")
             else:

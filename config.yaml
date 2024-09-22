@@ -25,8 +25,8 @@ predictive_model_config:
 rag_config:
   embedding_model_name: "all-MiniLM-L6-v2"
   llm_model_name: "google/flan-t5-base" 
-  faiss_index_path: "faiss_index/index.faiss"
-  metadata_store_path: "faiss_index/metadata.json"
+  faiss_index_path: "data/faiss_index/index.faiss"
+  metadata_store_path: "data/faiss_index/metadata.json"
   max_context_length: 512
   max_answer_length: 150
   num_contexts: 5
@@ -111,7 +111,3 @@ scanning_tool_config:
         - "/support"
     DNS:
       query_types: ["A", "AAAA", "MX", "CNAME", "TXT"]
-
-faiss_config:
-  index_path: "faiss_index/index.faiss"
-  metadata_path: "faiss_index/metadata.json"
