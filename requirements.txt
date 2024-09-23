@@ -127,7 +127,6 @@ jupyterlab_pygments==0.3.0
 jupyterlab_server==2.27.3
 jupyterlab_widgets==3.0.13
 kafka-python==2.0.2
-kaggle==1.5.12
 keras==3.5.0
 kfp==2.8.0
 kfp-kubernetes==1.2.0
@@ -168,17 +167,17 @@ ngrok==1.4.0
 notebook==6.5.7
 notebook_shim==0.2.4
 numpy==1.24.2
-nvidia-cublas-cu11==11.10.3.66
-nvidia-cuda-cupti-cu11==11.7.101
-nvidia-cuda-nvrtc-cu11==11.7.99
-nvidia-cuda-runtime-cu11==11.7.99
-nvidia-cudnn-cu11==8.5.0.96
-nvidia-cufft-cu11==10.9.0.58
-nvidia-curand-cu11==10.2.10.91
-nvidia-cusolver-cu11==11.4.0.1
-nvidia-cusparse-cu11==11.7.4.91
-nvidia-nccl-cu11==2.14.3
-nvidia-nvtx-cu11==11.7.91
+# nvidia-cublas-cu11==11.10.3.66
+# nvidia-cuda-cupti-cu11==11.7.101
+# nvidia-cuda-nvrtc-cu11==11.7.99
+# nvidia-cuda-runtime-cu11==11.7.99
+# nvidia-cudnn-cu11==8.5.0.96
+# nvidia-cufft-cu11==10.9.0.58
+# nvidia-curand-cu11==10.2.10.91
+# nvidia-cusolver-cu11==11.4.0.1
+# nvidia-cusparse-cu11==11.7.4.91
+# nvidia-nccl-cu11==2.14.3
+# nvidia-nvtx-cu11==11.7.91
 oauthlib==3.2.2
 odh-elyra==3.16.7
 onnx==1.16.2
@@ -192,7 +191,6 @@ optree==0.12.1
 ordered-set==4.1.0
 overrides==7.7.0
 packaging==24.1
-pandas==1.5.3
 pandocfilters==1.5.1
 papermill==2.6.0
 paramiko==3.4.1
@@ -235,7 +233,7 @@ pytest==7.1.2
 pytest-cov==3.0.0
 pytest-mock==3.14.0
 python-dateutil==2.9.0.post0
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 python-json-logger==2.0.7
 python-lsp-jsonrpc==1.1.2
 python-lsp-server==1.12.0
@@ -294,12 +292,11 @@ tokenizers==0.19.1
 toml==0.10.2
 tomli==2.0.1
 tomlkit==0.13.2
-torch==2.0.1
 tornado==6.4.1
 tqdm==4.66.3
 traitlets==5.14.3
 transformers==4.44.2
-triton==2.0.0
+# triton==2.0.0
 types-python-dateutil==2.9.0.20240821
 typing_extensions==4.12.2
 tzdata==2024.1
@@ -334,3 +331,4 @@ sklearn==0.0
 SQLAlchemy==2.0.35 
 PyMySQL==1.1.1
 spacy==3.7.6
+Flask-Limiter==3.8.0

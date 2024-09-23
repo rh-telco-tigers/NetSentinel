@@ -2,7 +2,7 @@
 
 api_config:
   host: "0.0.0.0"
-  port: 5000
+  port: 5001
   debug: true
 
 logging_config:
@@ -24,7 +24,7 @@ predictive_model_config:
 # RAG Configuration
 rag_config:
   embedding_model_name: "all-MiniLM-L6-v2"
-  llm_model_name: "google/flan-t5-base" 
+  llm_model_name: "google/flan-t5-base"
   faiss_index_path: "data/faiss_index/index.faiss"
   metadata_store_path: "data/faiss_index/metadata.json"
   max_context_length: 512
@@ -63,7 +63,8 @@ slack_config:
   slack_signing_secret: "75e74f33928dd9be008af160d610c778"
 
 kafka_config:
-  bootstrap: "netsentenial-kafka-kafka-bootstrap.openshift-operators:9092"
+  # bootstrap: "netsentenial-kafka-kafka-bootstrap.openshift-operators:9092"
+  bootstrap: "127.0.0.1:9092"
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
 

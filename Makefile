@@ -174,5 +174,4 @@ stop:
 	@pkill -f create_mock_data.py || true
 	@pkill -f process_mock_data.py || true
 	@pkill -f prediction_service.py || true
-	@pkill -f "python -m app.run" || true
 	@echo "✅ Services have been stopped."
