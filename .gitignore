@@ -20,3 +20,6 @@ app/.env
 faiss_index/
 models/Mistral-7B-v0.1/
 .DS_Store
+.rasa
+rasa/models
+*.tar.gz

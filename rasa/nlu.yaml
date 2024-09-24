@@ -1,0 +1,47 @@
+version: "2.0"
+nlu:
+  - intent: greet
+    examples: |
+      - Hi
+      - Hello
+      - Hey there
+      - Hi bot
+      - Hey
+
+  - intent: goodbye
+    examples: |
+      - Bye
+      - Goodbye
+      - See you later
+      - Talk to you soon
+
+  - intent: get_event_info
+    examples: |
+      - Give me source IP for event [f62a6ed3-a535-4503-a500-a54a0b745a85](event_id)
+      - What's the destination IP for event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)?
+      - Is event [38c87864-069f-4c01-b1cf-b0fa1d5fe0a6](event_id) an attack?
+      - What kind of traffic is event [e8c8deb6-79f6-4d1a-b45d-da31188ce4a4](event_id)?
+      - Provide details about event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)
+      - What's the prediction probability for event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)?
+
+  - intent: list_attack_events
+    examples: |
+      - List all events identified as attack
+      - Show me attack events
+      - Find all attack events
+      - List down all event IDs which are identified as attack
+
+  - intent: get_events_by_ip
+    examples: |
+      - Find events with source IP [192.168.1.31](ip_address)
+      - Show events for destination IP [172.16.0.29](ip_address)
+      - Give me all event IDs associated with source IP [10.0.0.128](ip_address)
+      - Give me all event IDs associated with destination IP [172.16.0.232](ip_address)
+
+  - regex: event_id
+    examples: |
+      - [0-9a-fA-F\-]+
+
+  - regex: ip_address
+    examples: |
+      - \b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b

@@ -1,7 +1,7 @@
 # app/__init__.py
-
 import os
 import logging
+import asyncio
 from flask import Flask
 from dotenv import load_dotenv
 from flask_limiter import Limiter
@@ -11,6 +11,8 @@ from prometheus_flask_exporter import PrometheusMetrics
 import yaml
 import torch
 import requests
+from rasa.core.agent import Agent
+from rasa.shared.utils.io import json_to_string
 
 # Import your blueprints and utilities
 from .routes import api_bp
@@ -19,6 +21,24 @@ from .models import PredictiveModel
 from .slack_integration import SlackClient
 
 logger = logging.getLogger(__name__)
+
+class NLUModel:
+
+    def __init__(self, model_path: str) -> None:
+        if not os.path.exists(model_path):
+            logger.error(f"NLU model not found at {model_path}. Please train the model first.")
+            raise FileNotFoundError(f"NLU model not found at {model_path}")
+        
+        # Load the Rasa NLU model using Agent
+        self.agent = Agent.load(model_path)
+        logger.info("NLU model loaded.")
+
+    async def parse_message(self, message: str) -> dict:
+        message = message.strip()
+        # Use asyncio to parse the message asynchronously
+        result = await self.agent.parse_message(message)
+        return result  # Return the result as a dictionary
+
 
 def fetch_and_set_bot_user_id(app):
     slack_bot_token = app.config['SLACK_CONFIG'].get('slack_bot_token')
@@ -40,6 +60,7 @@ def fetch_and_set_bot_user_id(app):
             raise ValueError(f"Error fetching bot info: {error_msg}")
     else:
         raise ValueError(f"Failed to fetch bot user ID from Slack API. Status code: {response.status_code}")
+
 
 def create_app(config_path='../config.yaml', registry=None):
     # Load environment variables from .env
@@ -67,7 +88,7 @@ def create_app(config_path='../config.yaml', registry=None):
     app.config['TRAINING_CONFIG'] = config.get('training_config', {})
     app.config['RAG_CONFIG'] = config.get('rag_config', {})
 
-    # Setup logging with configured log level and file
+    # Setup logging
     log_level = app.config['TRAINING_CONFIG'].get('log_level', 'INFO').upper()
     log_file = os.path.join(os.path.dirname(__file__), '..', 'logs', 'app.log')
 
@@ -119,6 +140,7 @@ def create_app(config_path='../config.yaml', registry=None):
         rag_config = app.config['RAG_CONFIG']
         llm_model_name = rag_config['llm_model_name']
         llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
+        nlu_model_path = rag_config.get('nlu_model_path', 'rasa/models/nlu-model.tar.gz')  # Default value if not set
 
         embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
         from sentence_transformers import SentenceTransformer
@@ -167,6 +189,12 @@ def create_app(config_path='../config.yaml', registry=None):
         # Fetch and set the bot user ID
         fetch_and_set_bot_user_id(app)
 
+        # Load the NLU model using the new NLUModel class
+        nlu_model_full_path = os.path.join(os.path.dirname(__file__), '..', nlu_model_path)
+        nlu_interpreter = NLUModel(nlu_model_full_path)
+
+        logger.info("NLU interpreter loaded using Agent.")
+
         # Attach models and clients to app for access in routes
         app.persistent_state = {
             'predictive_model': predictive_model,
@@ -175,11 +203,12 @@ def create_app(config_path='../config.yaml', registry=None):
             'llm_model': llm_model,
             'faiss_index': faiss_index,
             'metadata_store': metadata_store,
-            'event_id_index': event_id_index,  # Added event_id_index here
-            'slack_client': slack_client
+            'event_id_index': event_id_index,
+            'slack_client': slack_client,
+            'nlu_interpreter': nlu_interpreter  # Updated model with async support
         }
 
-        logger.info("Models, FAISS index, and Slack client initialized.")
+        logger.info("Models, FAISS index, Slack client, and NLU model initialized.")
         logger.info("Persistent state set with components: %s", list(app.persistent_state.keys()))
 
     except Exception as e:
