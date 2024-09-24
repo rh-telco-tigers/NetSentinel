@@ -3,48 +3,14 @@
 from flask import Blueprint, request, jsonify, current_app
 import logging
 import numpy as np
-import re
+import asyncio
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
 
-# Regular expressions
-UUID_REGEX = re.compile(
-    r'\b[0-9a-fA-F]{8}-'
-    r'[0-9a-fA-F]{4}-'
-    r'[0-9a-fA-F]{4}-'
-    r'[0-9a-fA-F]{4}-'
-    r'[0-9a-fA-F]{12}\b'
-)
-
-IP_REGEX = re.compile(
-    r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
-)
-
-# Helper Functions
-def extract_event_id(text):
-    match = UUID_REGEX.search(text)
-    return match.group(0) if match else None
-
-def extract_ip_addresses(text):
-    return IP_REGEX.findall(text)
-
-def get_event_by_id(event_id, event_id_index):
-    return event_id_index.get(event_id)
-
-def get_events_by_src_ip(src_ip, metadata_store):
-    return [item for item in metadata_store if item.get('src_ip') == src_ip]
-
-def get_events_by_dst_ip(dst_ip, metadata_store):
-    return [item for item in metadata_store if item.get('dst_ip') == dst_ip]
-
-def get_recent_attack_events(metadata_store, num_events=5):
-    attack_events = [item for item in metadata_store if item.get('prediction') == 1]
-    # Assuming metadata_store is ordered by time, newest first
-    return attack_events[:num_events]
-
-def get_all_attack_event_ids(metadata_store):
-    return [item['event_id'] for item in metadata_store if item.get('prediction') == 1]
+# Import the intent handlers
+from .intent_handlers import INTENT_HANDLERS
+from .utils import generate_response
 
 def verify_slack_request(signing_secret, request):
     import hmac
@@ -262,8 +228,6 @@ def slack_events():
         logger.info("Message is from the bot itself. Ignoring.")
         return jsonify({"status": "Message from bot ignored"}), 200
 
-    import asyncio
-
     try:
         # Access models and data from app's persistent_state
         nlu_interpreter = current_app.persistent_state.get('nlu_interpreter')
@@ -312,16 +276,16 @@ def slack_events():
             return jsonify({"status": "Message sent to Slack"}), 500
 
         response_text = ""
-        if intent == 'greet':
-            response_text = "Hello! How can I assist you today?"
-        elif intent == 'goodbye':
-            response_text = "Goodbye! If you have any more questions, feel free to ask."
-        elif intent == 'get_event_info':
-            response_text = handle_get_event_info(entities, event_id_index)
-        elif intent == 'list_attack_events':
-            response_text = handle_list_attack_events(metadata_store)
-        elif intent == 'get_events_by_ip':
-            response_text = handle_get_events_by_ip(entities, metadata_store)
+
+        # Handle the intent using the intent handlers
+        handler = INTENT_HANDLERS.get(intent, None)
+        if handler:
+            # Pass necessary data to the handler
+            response_text = handler(
+                entities,
+                event_id_index=event_id_index,
+                metadata_store=metadata_store
+            )
         else:
             # Use LLM for response
             input_text = f"User asked: {question}\nPlease provide a helpful response."
