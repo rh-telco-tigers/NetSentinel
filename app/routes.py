@@ -3,14 +3,53 @@
 from flask import Blueprint, request, jsonify, current_app
 import logging
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
-import torch
+import re
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
 
+# Regular expressions
+UUID_REGEX = re.compile(
+    r'\b[0-9a-fA-F]{8}-'
+    r'[0-9a-fA-F]{4}-'
+    r'[0-9a-fA-F]{4}-'
+    r'[0-9a-fA-F]{4}-'
+    r'[0-9a-fA-F]{12}\b'
+)
+
+IP_REGEX = re.compile(
+    r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
+)
+
 
 # Helper Functions
+def extract_event_id(text):
+    match = UUID_REGEX.search(text)
+    return match.group(0) if match else None
+
+
+def extract_ip_addresses(text):
+    return IP_REGEX.findall(text)
+
+
+def get_event_by_id(event_id, event_id_index):
+    return event_id_index.get(event_id)
+
+
+def get_events_by_src_ip(src_ip, metadata_store):
+    return [item for item in metadata_store if item.get('src_ip') == src_ip]
+
+
+def get_events_by_dst_ip(dst_ip, metadata_store):
+    return [item for item in metadata_store if item.get('dst_ip') == dst_ip]
+
+
+def get_recent_attack_events(metadata_store, num_events=5):
+    attack_events = [item for item in metadata_store if item.get('prediction') == 1]
+    # Assuming metadata_store is ordered by time, newest first
+    return attack_events[:num_events]
+
+
 def verify_slack_request(signing_secret, request):
     import hmac
     import hashlib
@@ -69,6 +108,20 @@ def build_context_from_metadata(indices, metadata_store):
             context_lines.append(line)
     context = "\n".join(context_lines)
     return context
+
+
+def build_context_from_event_data(event_data):
+    fields = [
+        f"Event ID: {event_data.get('event_id', 'N/A')}",
+        f"Prediction: {'Attack' if event_data.get('prediction') == 1 else 'Normal'}",
+        f"Protocol: {event_data.get('protocol', 'N/A')}",
+        f"Service: {event_data.get('service', 'N/A')}",
+        f"State: {event_data.get('state', 'N/A')}",
+        f"Source IP: {event_data.get('src_ip', 'N/A')}",
+        f"Destination IP: {event_data.get('dst_ip', 'N/A')}",
+        f"Prediction Probability: {event_data.get('prediction_proba', 'N/A')}"
+    ]
+    return "\n".join(fields)
 
 
 def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_context_length, max_answer_length):
@@ -207,8 +260,9 @@ def chat():
         llm_model = current_app.persistent_state.get('llm_model')
         faiss_index = current_app.persistent_state.get('faiss_index')
         metadata_store = current_app.persistent_state.get('metadata_store')
+        event_id_index = current_app.persistent_state.get('event_id_index')
 
-        if not all([embedding_model, tokenizer, llm_model, faiss_index, metadata_store]):
+        if not all([embedding_model, tokenizer, llm_model, faiss_index, metadata_store, event_id_index]):
             logger.error("One or more RAG components are not loaded.")
             return jsonify({"error": "RAG components are not loaded."}), 500
 
@@ -219,18 +273,65 @@ def chat():
         max_answer_length = rag_config.get('max_answer_length', 150)
         llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
 
-        # Retrieve relevant data using the embedding model and FAISS index
-        query_embedding = embedding_model.encode(question, convert_to_numpy=True)
-        distances, indices = faiss_index.search(
-            np.array([query_embedding]).astype('float32'),
-            k=num_contexts
-        )
-
-        # Build context from metadata
-        context = build_context_from_metadata(indices, metadata_store)
+        context = ""
+        # Check if the user's message contains an event_id
+        event_id = extract_event_id(question)
+        if event_id:
+            # Retrieve the event data directly from event_id_index
+            event_data = get_event_by_id(event_id, event_id_index)
+            if event_data:
+                context = build_context_from_event_data(event_data)
+            else:
+                context = "No data found for the provided event ID."
+        else:
+            # Handle special queries
+            if "source ip" in question.lower():
+                ips = extract_ip_addresses(question)
+                if ips:
+                    events = []
+                    for ip in ips:
+                        events.extend(get_events_by_src_ip(ip, metadata_store))
+                    if events:
+                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
+                    else:
+                        context = "No events found for the specified source IP."
+                else:
+                    context = "Please provide a valid source IP."
+            elif "destination ip" in question.lower():
+                ips = extract_ip_addresses(question)
+                if ips:
+                    events = []
+                    for ip in ips:
+                        events.extend(get_events_by_dst_ip(ip, metadata_store))
+                    if events:
+                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
+                    else:
+                        context = "No events found for the specified destination IP."
+                else:
+                    context = "Please provide a valid destination IP."
+            elif "list down" in question.lower() and "recent events" in question.lower() and "attack" in question.lower():
+                events = get_recent_attack_events(metadata_store, num_events=5)
+                if events:
+                    context = "\n".join([f"Event ID: {e['event_id']}, Prediction: Attack, Protocol: {e['protocol']}" for e in events])
+                else:
+                    context = "No recent attack events found."
+            else:
+                # Retrieve relevant data using the embedding model and FAISS index
+                query_embedding = embedding_model.encode(question, convert_to_numpy=True)
+                distances, indices = faiss_index.search(
+                    np.array([query_embedding]).astype('float32'),
+                    k=num_contexts
+                )
+                # Build context from metadata
+                context = build_context_from_metadata(indices, metadata_store)
 
         # Generate response using the LLM model
-        input_text = f"Context:\n{context}\n\nQuestion:\n{question}\n\nAnswer:"
+        input_text = (
+            f"Here is the event data:\n{context}\n\n"
+            f"Based on the event data above, please answer the following question:\n{question}\n\n"
+            f"Answer:"
+        )
+
         response_text = generate_response(
             input_text,
             tokenizer,
@@ -295,8 +396,9 @@ def slack_events():
         llm_model = current_app.persistent_state.get('llm_model')
         faiss_index = current_app.persistent_state.get('faiss_index')
         metadata_store = current_app.persistent_state.get('metadata_store')
+        event_id_index = current_app.persistent_state.get('event_id_index')
 
-        if not all([embedding_model, tokenizer, llm_model, faiss_index, metadata_store]):
+        if not all([embedding_model, tokenizer, llm_model, faiss_index, metadata_store, event_id_index]):
             logger.error("One or more RAG components are not loaded.")
             return jsonify({"error": "Server components are not loaded."}), 500
 
@@ -307,18 +409,67 @@ def slack_events():
         max_answer_length = rag_config.get('max_answer_length', 150)
         llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
 
-        # Retrieve relevant data using the embedding model and FAISS index
-        query_embedding = embedding_model.encode(user_text, convert_to_numpy=True)
-        distances, indices = faiss_index.search(
-            np.array([query_embedding]).astype('float32'),
-            k=num_contexts
-        )
+        question = user_text  # Define 'question' variable
 
-        # Build context from metadata
-        context = build_context_from_metadata(indices, metadata_store)
+        context = ""
+        # Check if the user's message contains an event_id
+        event_id = extract_event_id(question)
+        if event_id:
+            # Retrieve the event data directly from event_id_index
+            event_data = get_event_by_id(event_id, event_id_index)
+            if event_data:
+                context = build_context_from_event_data(event_data)
+            else:
+                context = "No data found for the provided event ID."
+        else:
+            # Handle special queries
+            if "source ip" in question.lower():
+                ips = extract_ip_addresses(question)
+                if ips:
+                    events = []
+                    for ip in ips:
+                        events.extend(get_events_by_src_ip(ip, metadata_store))
+                    if events:
+                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
+                    else:
+                        context = "No events found for the specified source IP."
+                else:
+                    context = "Please provide a valid source IP."
+            elif "destination ip" in question.lower():
+                ips = extract_ip_addresses(question)
+                if ips:
+                    events = []
+                    for ip in ips:
+                        events.extend(get_events_by_dst_ip(ip, metadata_store))
+                    if events:
+                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
+                    else:
+                        context = "No events found for the specified destination IP."
+                else:
+                    context = "Please provide a valid destination IP."
+            elif "list down" in question.lower() and "recent events" in question.lower() and "attack" in question.lower():
+                events = get_recent_attack_events(metadata_store, num_events=5)
+                if events:
+                    context = "\n".join([f"Event ID: {e['event_id']}, Prediction: Attack, Protocol: {e['protocol']}" for e in events])
+                else:
+                    context = "No recent attack events found."
+            else:
+                # Retrieve relevant data using the embedding model and FAISS index
+                query_embedding = embedding_model.encode(question, convert_to_numpy=True)
+                distances, indices = faiss_index.search(
+                    np.array([query_embedding]).astype('float32'),
+                    k=num_contexts
+                )
+                # Build context from metadata
+                context = build_context_from_metadata(indices, metadata_store)
 
         # Generate response using the LLM model
-        input_text = f"Context:\n{context}\n\nQuestion:\n{user_text}\n\nAnswer:"
+        input_text = (
+            f"Here is the event data:\n{context}\n\n"
+            f"Based on the event data above, please answer the following question:\n{question}\n\n"
+            f"Answer:"
+        )
+
         response_text = generate_response(
             input_text,
             tokenizer,

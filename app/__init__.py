@@ -8,17 +8,15 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from prometheus_client import REGISTRY
 from prometheus_flask_exporter import PrometheusMetrics
-import requests
 import yaml
 import torch
+import requests
 
 # Import your blueprints and utilities
 from .routes import api_bp
 from .utils import setup_logging, load_faiss_index_and_metadata
 from .models import PredictiveModel
 from .slack_integration import SlackClient
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,21 +42,6 @@ def fetch_and_set_bot_user_id(app):
         raise ValueError(f"Failed to fetch bot user ID from Slack API. Status code: {response.status_code}")
 
 def create_app(config_path='../config.yaml', registry=None):
-    # Configure logging
-    setup_logging()
-    logger.info("Starting app creation.")
-
-    # Set up Prometheus CollectorRegistry
-    if registry is None:
-        registry = REGISTRY
-
-    # Unregister existing collectors to prevent duplicates
-    collectors_to_unregister = ['app_info']  # List of collectors to unregister
-    for collector in collectors_to_unregister:
-        if collector in registry._names_to_collectors:
-            registry.unregister(registry._names_to_collectors[collector])
-            logger.info(f"Unregistered collector: {collector}")
-
     # Load environment variables from .env
     load_dotenv()
 
@@ -98,6 +81,9 @@ def create_app(config_path='../config.yaml', registry=None):
     logger.info("Logging is set up.")
 
     # Initialize Prometheus Metrics
+    if registry is None:
+        registry = REGISTRY
+
     metrics = PrometheusMetrics(app, registry=registry)
     metrics.info('app_info', 'NetSentenial Backend API', version='1.0.0')
 
@@ -140,7 +126,6 @@ def create_app(config_path='../config.yaml', registry=None):
         logger.info(f"Embedding model '{embedding_model_name}' loaded.")
 
         # Load the LLM model for RAG
-        # llm_model_name = rag_config.get('llm_model_name', 'google/flan-t5-base')
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
 
         tokenizer = AutoTokenizer.from_pretrained(llm_model_name)
@@ -167,6 +152,10 @@ def create_app(config_path='../config.yaml', registry=None):
         faiss_index, metadata_store = load_faiss_index_and_metadata(faiss_index_path, metadata_store_path)
         logger.info("FAISS index and metadata store loaded.")
 
+        # Build event_id_index
+        event_id_index = {item['event_id']: item for item in metadata_store}
+        logger.info("Event ID index built.")
+
         # Initialize Slack Client
         slack_config = app.config['SLACK_CONFIG']
         slack_bot_token = slack_config.get('slack_bot_token')
@@ -186,6 +175,7 @@ def create_app(config_path='../config.yaml', registry=None):
             'llm_model': llm_model,
             'faiss_index': faiss_index,
             'metadata_store': metadata_store,
+            'event_id_index': event_id_index,  # Added event_id_index here
             'slack_client': slack_client
         }
 
