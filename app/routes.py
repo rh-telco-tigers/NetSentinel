@@ -8,9 +8,44 @@ import hashlib
 import time
 import numpy as np
 
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
+import torch
+
 api_bp = Blueprint('api', __name__)
 
 logger = logging.getLogger(__name__)
+
+
+def generate_response_seq2seq(input_text, tokenizer, llm_model, max_context_length, max_answer_length):
+    inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=max_context_length, truncation=True)
+    inputs = inputs.to(llm_model.device)
+    outputs = llm_model.generate(
+        inputs,
+        max_length=max_answer_length,
+        num_beams=5,
+        early_stopping=True
+    )
+    response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response_text.strip()
+
+def generate_response_causal(input_text, tokenizer, llm_model, max_context_length, max_answer_length):
+    inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=max_context_length, truncation=True)
+    inputs = inputs.to(llm_model.device)
+    total_max_length = inputs.shape[1] + max_answer_length
+    outputs = llm_model.generate(
+        inputs,
+        max_length=total_max_length,
+        do_sample=True,
+        temperature=0.7,
+        top_p=0.9,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.pad_token_id,
+    )
+    response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # Extract the generated answer
+    generated_answer = response_text[len(tokenizer.decode(inputs[0], skip_special_tokens=True)):]
+    return generated_answer.strip()
+
 
 def verify_slack_request(signing_secret, request):
     import hmac
@@ -153,12 +188,22 @@ def chat():
 
         # Generate response using the LLM model
         input_text = f"Question: {question}\nContext: {context}\nAnswer:"
-        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=max_context_length, truncation=True)
-        inputs = inputs.to(llm_model.device)
-        outputs = llm_model.generate(inputs, max_length=max_answer_length, num_beams=5, early_stopping=True)
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        llm_model_type = current_app.config['RAG_CONFIG'].get('llm_model_type', 'seq2seq')
 
-        return jsonify({"response": response_text.strip()}), 200
+        if llm_model_type == 'seq2seq':
+            response_text = generate_response_seq2seq(
+                input_text, tokenizer, llm_model, max_context_length, max_answer_length
+            )
+        elif llm_model_type == 'causal':
+            response_text = generate_response_causal(
+                input_text, tokenizer, llm_model, max_context_length, max_answer_length
+            )
+        else:
+            logger.error(f"Unsupported llm_model_type: {llm_model_type}")
+            return jsonify({"error": "Server configuration error."}), 500
+
+        return jsonify({"response": response_text}), 200
+
     except Exception as e:
         logger.error(f"LLM generation error: {e}")
         return jsonify({"error": "Failed to generate response."}), 500
@@ -243,15 +288,28 @@ def slack_events():
 
         # Generate response using the LLM model
         input_text = f"Question: {user_text}\nContext: {context}\nAnswer:"
-        inputs = tokenizer.encode(input_text, return_tensors='pt', max_length=max_context_length, truncation=True)
-        inputs = inputs.to(llm_model.device)
-        outputs = llm_model.generate(inputs, max_length=max_answer_length, num_beams=5, early_stopping=True)
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        llm_model_type = current_app.config['RAG_CONFIG'].get('llm_model_type', 'seq2seq')
+
+        if llm_model_type == 'seq2seq':
+            response_text = generate_response_seq2seq(
+                input_text, tokenizer, llm_model, max_context_length, max_answer_length
+            )
+        elif llm_model_type == 'causal':
+            response_text = generate_response_causal(
+                input_text, tokenizer, llm_model, max_context_length, max_answer_length
+            )
+        else:
+            logger.error(f"Unsupported llm_model_type: {llm_model_type}")
+            return jsonify({"error": "Server configuration error."}), 500
 
         # Send response back to Slack channel
-        slack_client.send_message(channel, response_text.strip())
+        slack_client.send_message(channel, response_text)
 
         return jsonify({"status": "Message sent to Slack"}), 200
+
+    except Exception as e:
+        logger.error(f"Error handling Slack event: {e}")
+        return jsonify({"error": "Failed to handle Slack event"}), 500
     except Exception as e:
         logger.error(f"Error handling Slack event: {e}")
         return jsonify({"error": "Failed to handle Slack event"}), 500

@@ -24,7 +24,10 @@ predictive_model_config:
 # RAG Configuration
 rag_config:
   embedding_model_name: "all-MiniLM-L6-v2"
+  # llm_model_name: "models/Mistral-7B-v0.1" # Or "google/flan-t5-base"
   llm_model_name: "google/flan-t5-base"
+  # llm_model_type: "causal" # causal for Mistral or seq2seq for google-flan-t5
+  llm_model_type: "seq2seq"
   faiss_index_path: "data/faiss_index/index.faiss"
   metadata_store_path: "data/faiss_index/metadata.json"
   max_context_length: 512

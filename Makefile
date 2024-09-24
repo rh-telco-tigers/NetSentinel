@@ -157,7 +157,7 @@ start-ngrok:
 		echo "✅ ngrok already exists."; \
 	fi
 	@echo "🚀 Starting ngrok..."
-	./$(NGROK_BIN) http --domain=newly-advanced-dane.ngrok-free.app 5000
+	$(NGROK_BIN) http --domain=newly-advanced-dane.ngrok-free.app 5001
 
 # Clean the log, model directories, and virtual environment
 clean:
