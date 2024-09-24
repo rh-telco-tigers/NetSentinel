@@ -21,34 +21,30 @@ IP_REGEX = re.compile(
     r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
 )
 
-
 # Helper Functions
 def extract_event_id(text):
     match = UUID_REGEX.search(text)
     return match.group(0) if match else None
 
-
 def extract_ip_addresses(text):
     return IP_REGEX.findall(text)
-
 
 def get_event_by_id(event_id, event_id_index):
     return event_id_index.get(event_id)
 
-
 def get_events_by_src_ip(src_ip, metadata_store):
     return [item for item in metadata_store if item.get('src_ip') == src_ip]
 
-
 def get_events_by_dst_ip(dst_ip, metadata_store):
     return [item for item in metadata_store if item.get('dst_ip') == dst_ip]
-
 
 def get_recent_attack_events(metadata_store, num_events=5):
     attack_events = [item for item in metadata_store if item.get('prediction') == 1]
     # Assuming metadata_store is ordered by time, newest first
     return attack_events[:num_events]
 
+def get_all_attack_event_ids(metadata_store):
+    return [item['event_id'] for item in metadata_store if item.get('prediction') == 1]
 
 def verify_slack_request(signing_secret, request):
     import hmac
@@ -89,7 +85,6 @@ def verify_slack_request(signing_secret, request):
 
     return True
 
-
 def build_context_from_metadata(indices, metadata_store):
     """
     Build context string from metadata based on indices retrieved from FAISS index.
@@ -109,7 +104,6 @@ def build_context_from_metadata(indices, metadata_store):
     context = "\n".join(context_lines)
     return context
 
-
 def build_context_from_event_data(event_data):
     fields = [
         f"Event ID: {event_data.get('event_id', 'N/A')}",
@@ -122,7 +116,6 @@ def build_context_from_event_data(event_data):
         f"Prediction Probability: {event_data.get('prediction_proba', 'N/A')}"
     ]
     return "\n".join(fields)
-
 
 def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_context_length, max_answer_length):
     """
@@ -163,7 +156,6 @@ def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_cont
 
     return response_text
 
-
 # Slack Integration Class
 class SlackHandler:
     def __init__(self, app):
@@ -190,12 +182,10 @@ class SlackHandler:
     def send_message(self, channel, text):
         self.slack_client.send_message(channel, text)
 
-
 # Route Handlers
 @api_bp.route('/')
 def health_check():
     return 'OK', 200
-
 
 @api_bp.route('/predict', methods=['POST'])
 def predict():
@@ -244,7 +234,6 @@ def predict():
         logger.error(f"Prediction error: {e}")
         return jsonify({"error": "Prediction failed."}), 500
 
-
 @api_bp.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
@@ -254,7 +243,7 @@ def chat():
 
     question = data['question']
     try:
-        # Access models and FAISS index from app's persistent_state
+        # Access models and data from app's persistent_state
         embedding_model = current_app.persistent_state.get('embedding_model')
         tokenizer = current_app.persistent_state.get('tokenizer')
         llm_model = current_app.persistent_state.get('llm_model')
@@ -280,43 +269,45 @@ def chat():
             # Retrieve the event data directly from event_id_index
             event_data = get_event_by_id(event_id, event_id_index)
             if event_data:
-                context = build_context_from_event_data(event_data)
+                # Handle specific questions about the event
+                if "is this event an attack" in question.lower():
+                    prediction = event_data.get('prediction')
+                    response_text = "Yes" if prediction == 1 else "No"
+                    return jsonify({"response": response_text}), 200
+                elif "give me source ip" in question.lower():
+                    src_ip = event_data.get('src_ip', 'N/A')
+                    return jsonify({"response": f"Source IP: {src_ip}"}), 200
+                elif "give me destination ip" in question.lower():
+                    dst_ip = event_data.get('dst_ip', 'N/A')
+                    return jsonify({"response": f"Destination IP: {dst_ip}"}), 200
+                elif "what kind of traffic" in question.lower():
+                    protocol = event_data.get('protocol', 'N/A')
+                    service = event_data.get('service', 'N/A')
+                    return jsonify({"response": f"Protocol: {protocol}, Service: {service}"}), 200
+                else:
+                    context = build_context_from_event_data(event_data)
             else:
-                context = "No data found for the provided event ID."
+                response_text = "No data found for the provided event ID."
+                return jsonify({"response": response_text}), 200
         else:
             # Handle special queries
-            if "source ip" in question.lower():
-                ips = extract_ip_addresses(question)
-                if ips:
-                    events = []
-                    for ip in ips:
-                        events.extend(get_events_by_src_ip(ip, metadata_store))
-                    if events:
-                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
-                    else:
-                        context = "No events found for the specified source IP."
+            if "list down all event id" in question.lower() and "attack" in question.lower():
+                event_ids = get_all_attack_event_ids(metadata_store)
+                if event_ids:
+                    response_text = "Attack Event IDs:\n" + "\n".join(event_ids)
                 else:
-                    context = "Please provide a valid source IP."
-            elif "destination ip" in question.lower():
-                ips = extract_ip_addresses(question)
-                if ips:
-                    events = []
-                    for ip in ips:
-                        events.extend(get_events_by_dst_ip(ip, metadata_store))
-                    if events:
-                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
-                    else:
-                        context = "No events found for the specified destination IP."
+                    response_text = "No attack events found."
+                return jsonify({"response": response_text}), 200
+            elif "find all events which is attack type" in question.lower():
+                event_ids = get_all_attack_event_ids(metadata_store)
+                if event_ids:
+                    response_text = "Attack Event IDs:\n" + "\n".join(event_ids)
                 else:
-                    context = "Please provide a valid destination IP."
-            elif "list down" in question.lower() and "recent events" in question.lower() and "attack" in question.lower():
-                events = get_recent_attack_events(metadata_store, num_events=5)
-                if events:
-                    context = "\n".join([f"Event ID: {e['event_id']}, Prediction: Attack, Protocol: {e['protocol']}" for e in events])
-                else:
-                    context = "No recent attack events found."
+                    response_text = "No attack events found."
+                return jsonify({"response": response_text}), 200
             else:
-                # Retrieve relevant data using the embedding model and FAISS index
+                # Use LLM to generate response
+                # Build context using FAISS index
                 query_embedding = embedding_model.encode(question, convert_to_numpy=True)
                 distances, indices = faiss_index.search(
                     np.array([query_embedding]).astype('float32'),
@@ -346,7 +337,6 @@ def chat():
     except Exception as e:
         logger.error(f"LLM generation error: {e}")
         return jsonify({"error": "Failed to generate response."}), 500
-
 
 @api_bp.route('/slack/events', methods=['POST'])
 def slack_events():
@@ -390,7 +380,7 @@ def slack_events():
         return jsonify({"status": "Message from bot ignored"}), 200
 
     try:
-        # Access models and FAISS index from app's persistent_state
+        # Access models and data from app's persistent_state
         embedding_model = current_app.persistent_state.get('embedding_model')
         tokenizer = current_app.persistent_state.get('tokenizer')
         llm_model = current_app.persistent_state.get('llm_model')
@@ -409,7 +399,7 @@ def slack_events():
         max_answer_length = rag_config.get('max_answer_length', 150)
         llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
 
-        question = user_text  # Define 'question' variable
+        question = user_text.strip()
 
         context = ""
         # Check if the user's message contains an event_id
@@ -418,43 +408,52 @@ def slack_events():
             # Retrieve the event data directly from event_id_index
             event_data = get_event_by_id(event_id, event_id_index)
             if event_data:
-                context = build_context_from_event_data(event_data)
+                # Handle specific questions about the event
+                if "is this event an attack" in question.lower():
+                    prediction = event_data.get('prediction')
+                    response_text = "Yes" if prediction == 1 else "No"
+                    slack_handler.send_message(channel, response_text)
+                    return jsonify({"status": "Message sent to Slack"}), 200
+                elif "give me source ip" in question.lower():
+                    src_ip = event_data.get('src_ip', 'N/A')
+                    slack_handler.send_message(channel, f"Source IP: {src_ip}")
+                    return jsonify({"status": "Message sent to Slack"}), 200
+                elif "give me destination ip" in question.lower():
+                    dst_ip = event_data.get('dst_ip', 'N/A')
+                    slack_handler.send_message(channel, f"Destination IP: {dst_ip}")
+                    return jsonify({"status": "Message sent to Slack"}), 200
+                elif "what kind of traffic" in question.lower():
+                    protocol = event_data.get('protocol', 'N/A')
+                    service = event_data.get('service', 'N/A')
+                    slack_handler.send_message(channel, f"Protocol: {protocol}, Service: {service}")
+                    return jsonify({"status": "Message sent to Slack"}), 200
+                else:
+                    context = build_context_from_event_data(event_data)
             else:
-                context = "No data found for the provided event ID."
+                response_text = "No data found for the provided event ID."
+                slack_handler.send_message(channel, response_text)
+                return jsonify({"status": "Message sent to Slack"}), 200
         else:
             # Handle special queries
-            if "source ip" in question.lower():
-                ips = extract_ip_addresses(question)
-                if ips:
-                    events = []
-                    for ip in ips:
-                        events.extend(get_events_by_src_ip(ip, metadata_store))
-                    if events:
-                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
-                    else:
-                        context = "No events found for the specified source IP."
+            if "list down all event id" in question.lower() and "attack" in question.lower():
+                event_ids = get_all_attack_event_ids(metadata_store)
+                if event_ids:
+                    response_text = "Attack Event IDs:\n" + "\n".join(event_ids)
                 else:
-                    context = "Please provide a valid source IP."
-            elif "destination ip" in question.lower():
-                ips = extract_ip_addresses(question)
-                if ips:
-                    events = []
-                    for ip in ips:
-                        events.extend(get_events_by_dst_ip(ip, metadata_store))
-                    if events:
-                        context = "\n".join([f"Event ID: {e['event_id']}, Source IP: {e['src_ip']}, Destination IP: {e['dst_ip']}" for e in events])
-                    else:
-                        context = "No events found for the specified destination IP."
+                    response_text = "No attack events found."
+                slack_handler.send_message(channel, response_text)
+                return jsonify({"status": "Message sent to Slack"}), 200
+            elif "find all events which is attack type" in question.lower():
+                event_ids = get_all_attack_event_ids(metadata_store)
+                if event_ids:
+                    response_text = "Attack Event IDs:\n" + "\n".join(event_ids)
                 else:
-                    context = "Please provide a valid destination IP."
-            elif "list down" in question.lower() and "recent events" in question.lower() and "attack" in question.lower():
-                events = get_recent_attack_events(metadata_store, num_events=5)
-                if events:
-                    context = "\n".join([f"Event ID: {e['event_id']}, Prediction: Attack, Protocol: {e['protocol']}" for e in events])
-                else:
-                    context = "No recent attack events found."
+                    response_text = "No attack events found."
+                slack_handler.send_message(channel, response_text)
+                return jsonify({"status": "Message sent to Slack"}), 200
             else:
-                # Retrieve relevant data using the embedding model and FAISS index
+                # Use LLM to generate response
+                # Build context using FAISS index
                 query_embedding = embedding_model.encode(question, convert_to_numpy=True)
                 distances, indices = faiss_index.search(
                     np.array([query_embedding]).astype('float32'),
