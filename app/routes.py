@@ -4,6 +4,9 @@ from flask import Blueprint, request, jsonify, current_app
 import logging
 import numpy as np
 import asyncio
+import hmac
+import hashlib
+import time
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
@@ -13,9 +16,6 @@ from .intent_handlers import INTENT_HANDLERS
 from .utils import generate_response
 
 def verify_slack_request(signing_secret, request):
-    import hmac
-    import hashlib
-    import time
 
     timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
     if not timestamp:
@@ -64,44 +64,44 @@ def build_context_from_event_data(event_data):
     ]
     return "\n".join(fields)
 
-def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_context_length, max_answer_length):
-    """
-    Generate a response using the appropriate LLM model type.
-    """
-    inputs = tokenizer.encode(
-        input_text,
-        return_tensors='pt',
-        max_length=max_context_length,
-        truncation=True
-    ).to(llm_model.device)
+# def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_context_length, max_answer_length):
+#     """
+#     Generate a response using the appropriate LLM model type.
+#     """
+#     inputs = tokenizer.encode(
+#         input_text,
+#         return_tensors='pt',
+#         max_length=max_context_length,
+#         truncation=True
+#     ).to(llm_model.device)
 
-    if llm_model_type == 'seq2seq':
-        outputs = llm_model.generate(
-            inputs,
-            max_length=max_answer_length,
-            num_beams=5,
-            early_stopping=True
-        )
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-    elif llm_model_type == 'causal':
-        total_max_length = inputs.shape[1] + max_answer_length
-        outputs = llm_model.generate(
-            inputs,
-            max_length=total_max_length,
-            do_sample=True,
-            temperature=0.7,
-            top_p=0.9,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.pad_token_id,
-        )
-        full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        # Extract the generated answer
-        response_text = full_response[len(tokenizer.decode(inputs[0], skip_special_tokens=True)):].strip()
-    else:
-        logger.error(f"Unsupported llm_model_type: {llm_model_type}")
-        raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
+#     if llm_model_type == 'seq2seq':
+#         outputs = llm_model.generate(
+#             inputs,
+#             max_length=max_answer_length,
+#             num_beams=5,
+#             early_stopping=True
+#         )
+#         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+#     elif llm_model_type == 'causal':
+#         total_max_length = inputs.shape[1] + max_answer_length
+#         outputs = llm_model.generate(
+#             inputs,
+#             max_length=total_max_length,
+#             do_sample=True,
+#             temperature=0.7,
+#             top_p=0.9,
+#             eos_token_id=tokenizer.eos_token_id,
+#             pad_token_id=tokenizer.pad_token_id,
+#         )
+#         full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+#         # Extract the generated answer
+#         response_text = full_response[len(tokenizer.decode(inputs[0], skip_special_tokens=True)):].strip()
+#     else:
+#         logger.error(f"Unsupported llm_model_type: {llm_model_type}")
+#         raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
 
-    return response_text
+#     return response_text
 
 # Slack Integration Class
 class SlackHandler:
@@ -268,6 +268,7 @@ def slack_events():
         # Extract the intent and entities from the response
         if nlu_result:
             intent = nlu_result['intent']['name']
+            confidence = nlu_result['intent']['confidence']
             entities = {entity['entity']: entity['value'] for entity in nlu_result['entities']}
             entities['text'] = question
         else:
@@ -277,18 +278,12 @@ def slack_events():
 
         response_text = ""
 
-        # Handle the intent using the intent handlers
-        handler = INTENT_HANDLERS.get(intent, None)
-        if handler:
-            # Pass necessary data to the handler
-            response_text = handler(
-                entities,
-                event_id_index=event_id_index,
-                metadata_store=metadata_store
-            )
-        else:
-            # Use LLM for response
-            input_text = f"User asked: {question}\nPlease provide a helpful response."
+        # Define a confidence threshold
+        CONFIDENCE_THRESHOLD = 0.6
+
+        if confidence < CONFIDENCE_THRESHOLD:
+            # Use LLM for low confidence intents
+            input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."
             response_text = generate_response(
                 input_text,
                 tokenizer,
@@ -297,6 +292,36 @@ def slack_events():
                 max_context_length=512,
                 max_answer_length=150
             )
+        else:
+            # Handle the intent using the intent handlers
+            handler = INTENT_HANDLERS.get(intent, None)
+            if handler:
+                if intent in ['fallback', 'general_question']:
+                    # Pass necessary components for LLM
+                    response_text = handler(
+                        entities,
+                        tokenizer=tokenizer,
+                        llm_model=llm_model,
+                        llm_model_type=llm_model_type
+                    )
+                else:
+                    # Pass necessary data to the handler
+                    response_text = handler(
+                        entities,
+                        event_id_index=event_id_index,
+                        metadata_store=metadata_store
+                    )
+            else:
+                # Use LLM for unknown intents
+                input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."
+                response_text = generate_response(
+                    input_text,
+                    tokenizer,
+                    llm_model,
+                    llm_model_type,
+                    max_context_length=512,
+                    max_answer_length=150
+                )
 
         # Send response back to Slack channel
         slack_handler.send_message(channel, response_text)

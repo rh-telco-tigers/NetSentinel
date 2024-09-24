@@ -90,6 +90,29 @@ nlu:
       - What kind of information can you provide?
       - What services do you offer?
 
+  - intent: general_question
+    examples: |
+      - What is TCP?
+      - Explain ICMP protocol.
+      - How does HTTPS work?
+      - What is the difference between UDP and TCP?
+      - Can you describe the OSI model?
+      - How does a firewall function?
+      - What is DNS?
+      - How does routing work?
+      - What is a VPN?
+      - Describe the HTTP protocol.
+
+  - intent: fallback
+    examples: |
+      - I don't know
+      - Can you repeat that?
+      - I'm not sure what you mean
+      - What?
+      - Help
+      - I'm confused
+      - Not sure
+
   # Regex patterns for entities like event_id and IP address
   - regex: event_id
     examples: |
