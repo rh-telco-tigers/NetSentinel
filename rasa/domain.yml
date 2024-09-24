@@ -1,0 +1,66 @@
+version: "2.0"
+
+intents:
+  - greet
+  - goodbye
+  - get_event_info
+  - list_attack_events
+  - get_events_by_ip
+  - ask_who_are_you
+  - ask_how_are_you
+  - ask_help
+  - thank_you
+  - ask_farewell
+  - ask_joke
+  - ask_capabilities
+  - fallback
+
+entities:
+  - event_id
+  - ip_address
+
+responses:
+  utter_greet:
+    - text: "Hello! How can I assist you today?"
+
+  utter_goodbye:
+    - text: "Goodbye! If you have more questions, feel free to ask."
+
+  utter_ask_who_are_you:
+    - text: "I am a network monitoring assistant designed to help you analyze events, attacks, and IP traffic."
+
+  utter_ask_how_are_you:
+    - text: "I'm just a program, but thank you for asking! How can I help you?"
+
+  utter_ask_help:
+    - text: "I can help you with queries regarding network events, attacks, and IP information."
+
+  utter_thank_you:
+    - text: "You're welcome! I'm here to help whenever you need me."
+
+  utter_ask_farewell:
+    - text: "Goodbye! Looking forward to helping you again."
+
+  utter_ask_joke:
+    - text: "Why don't computers get tired? Because they have chips to keep them going!"
+
+  utter_ask_capabilities:
+    - text: |
+        I can help you with the following:
+        - Look up network events by event ID
+        - List events by IP address (source/destination)
+        - Identify attack events
+        - Provide IP-related event details
+        How can I assist you today?
+
+  utter_fallback:
+    - text: "Sorry, I didn't understand that. Can you please rephrase?"
+
+actions:
+  - action_get_event_info
+  - action_list_attack_events
+  - action_get_events_by_ip
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

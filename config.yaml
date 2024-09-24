@@ -33,7 +33,7 @@ rag_config:
   max_context_length: 512
   max_answer_length: 150
   num_contexts: 3
-  nlu_model_path: "models/rasa/nlu-model.tar.gz"
+  nlu_model_path: "models/rasa/nlu-20240924-085617-active-grove.tar.gz"
 
 llm_model_config:
   model_path: "models/llm_model"

@@ -23,6 +23,13 @@ NGROK_BIN = ngrok
 MISTRAL_MODEL_DIR = models/Mistral-7B-v0.1-demo
 MISTRAL_REPO = git@hf.co:mistralai/Mistral-7B-v0.1
 
+rasa_folder := rasa
+rasa_output_model_dir := models/rasa
+rasa_config_file := $(rasa_folder)/config.yml
+rasa_nlu_file := $(rasa_folder)/nlu.yml
+rasa_domain_file := $(rasa_folder)/domain.yml
+rasa_data_dir := $(rasa_folder)/data
+
 # Phony targets to avoid conflicts with files named like these
 .PHONY: setup_dirs ensure_setuptools setup_env download_data preprocess_data train_predictive_model evaluate_predictive_model export_predictive_model train_llm export_llm run_app start_services run_tests clean start-ngrok
 
@@ -116,6 +123,12 @@ export_llm: train_llm
 	@echo "📤 Exporting the LLM model..."
 	$(PYTHON) scripts/export_llm_model.py --config_file $(CONFIG_FILE)
 	@echo "✅ LLM model exported."
+
+train_rasa:
+	@echo "Training Rasa model..."
+	@rasa train --config $(rasa_config_file) --domain $(rasa_domain_file) --data $(rasa_folder) --out $(rasa_output_model_dir)
+	@echo "Model training complete. The trained model is saved in $(rasa_output_model_dir)"
+
 
 # Start services
 start_services:

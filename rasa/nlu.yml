@@ -7,6 +7,8 @@ nlu:
       - Hey there
       - Hi bot
       - Hey
+      - Good morning
+      - Good evening
 
   - intent: goodbye
     examples: |
@@ -14,6 +16,8 @@ nlu:
       - Goodbye
       - See you later
       - Talk to you soon
+      - Catch you later
+      - Farewell
 
   - intent: get_event_info
     examples: |
@@ -38,6 +42,55 @@ nlu:
       - Give me all event IDs associated with source IP [10.0.0.128](ip_address)
       - Give me all event IDs associated with destination IP [172.16.0.232](ip_address)
 
+  - intent: ask_who_are_you
+    examples: |
+      - Who are you?
+      - What is your name?
+      - Tell me about yourself
+
+  - intent: ask_how_are_you
+    examples: |
+      - How are you?
+      - How's it going?
+      - How have you been?
+
+  - intent: ask_help
+    examples: |
+      - I need help
+      - Can you help me?
+      - Please assist me
+      - I need assistance
+
+  - intent: thank_you
+    examples: |
+      - Thank you
+      - Thanks
+      - I appreciate it
+      - Thank you very much
+
+  - intent: ask_farewell
+    examples: |
+      - Bye bye
+      - See you
+      - Farewell
+      - Have a nice day
+
+  - intent: ask_joke
+    examples: |
+      - Tell me a joke
+      - Can you make me laugh?
+      - I need a joke
+      - Make me laugh
+
+  - intent: ask_capabilities
+    examples: |
+      - What can you do?
+      - What questions can you answer?
+      - Tell me about your capabilities
+      - What kind of information can you provide?
+      - What services do you offer?
+
+  # Regex patterns for entities like event_id and IP address
   - regex: event_id
     examples: |
       - [0-9a-fA-F\-]+
