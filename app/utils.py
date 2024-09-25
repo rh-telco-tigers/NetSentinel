@@ -5,6 +5,8 @@ import os
 import json
 import faiss
 import numpy as np
+from datetime import datetime
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +58,41 @@ def get_events_by_dst_ip(dst_ip, metadata_store):
 
 def get_all_attack_event_ids(metadata_store):
     return [item['event_id'] for item in metadata_store if item.get('prediction') == 1]
+
+def get_recent_events(metadata_store: list, event_type: str, limit: int = 10) -> list:
+    """
+    Fetch recent events based on the event type and limit.
+    
+    Parameters:
+        metadata_store (list): The list containing all event data.
+        event_type (str): Type of events to fetch ('attack' or 'normal').
+        limit (int): Number of recent events to retrieve.
+    
+    Returns:
+        list: A list of recent events matching the specified type.
+    """
+    if event_type not in ['attack', 'normal']:
+        logger.error(f"Invalid event_type: {event_type}. Must be 'attack' or 'normal'.")
+        return []
+    
+    # Define the prediction value based on event type
+    prediction_value = 1 if event_type == 'attack' else 0
+    
+    # Filter events based on prediction
+    filtered_events = [event for event in metadata_store if event.get('prediction') == prediction_value]
+    
+    # Sort events by timestamp descending
+    try:
+        sorted_events = sorted(filtered_events, key=lambda x: datetime.strptime(x['timestamp'], "%Y-%m-%d %H:%M:%S"), reverse=True)
+    except KeyError:
+        logger.error("One or more events are missing the 'timestamp' field.")
+        sorted_events = []
+    except ValueError as ve:
+        logger.error(f"Timestamp format error: {ve}")
+        sorted_events = []
+    
+    # Return the top 'limit' events
+    return sorted_events[:limit]
 
 def build_context_from_event_data(event_data):
     fields = [

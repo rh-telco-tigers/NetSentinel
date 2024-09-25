@@ -9,7 +9,8 @@ from .utils import (
     get_all_attack_event_ids,
     get_events_by_src_ip,
     get_events_by_dst_ip,
-    build_context_from_event_data
+    build_context_from_event_data,
+    get_recent_events
 )
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,54 @@ def handle_list_attack_events(entities: Dict, metadata_store: list, **kwargs) ->
         return "Attack Event IDs:\n" + "\n".join(event_ids)
     else:
         return "No attack events found."
+
+def handle_list_recent_attack_events(entities: Dict, metadata_store: list, **kwargs) -> str:
+    """
+    Handle intent to list recent attack events.
+    Accepts an optional 'number' entity to specify how many events to list.
+    Defaults to 10 if not provided.
+    """
+    number = entities.get('number')
+    try:
+        limit = int(number) if number else 10
+    except ValueError:
+        logger.warning(f"Invalid number provided: {number}. Defaulting to 10.")
+        limit = 10
+
+    # Fetch recent attack events
+    recent_attack_events = get_recent_events(metadata_store, event_type='attack', limit=limit)
+    
+    if recent_attack_events:
+        event_list = "\n".join([f"- Event ID: {event['event_id']} at {event['timestamp']}" for event in recent_attack_events])
+        final_message = f"Here are the last {limit} attack events:\n{event_list}"
+    else:
+        final_message = "No recent attack events found."
+
+    return final_message
+
+def handle_list_recent_normal_events(entities: Dict, metadata_store: list, **kwargs) -> str:
+    """
+    Handle intent to list recent normal events.
+    Accepts an optional 'number' entity to specify how many events to list.
+    Defaults to 10 if not provided.
+    """
+    number = entities.get('number')
+    try:
+        limit = int(number) if number else 10
+    except ValueError:
+        logger.warning(f"Invalid number provided: {number}. Defaulting to 10.")
+        limit = 10
+
+    # Fetch recent normal events
+    recent_normal_events = get_recent_events(metadata_store, event_type='normal', limit=limit)
+    
+    if recent_normal_events:
+        event_list = "\n".join([f"- Event ID: {event['event_id']} at {event['timestamp']}" for event in recent_normal_events])
+        final_message = f"Here are the last {limit} normal events:\n{event_list}"
+    else:
+        final_message = "No recent normal events found."
+
+    return final_message
 
 def handle_get_events_by_ip(entities: Dict, metadata_store: list, **kwargs) -> str:
     ip_address = entities.get('ip_address')
@@ -591,6 +640,8 @@ INTENT_HANDLERS = {
     'goodbye': handle_goodbye,
     'get_event_info': handle_get_event_info,
     'list_attack_events': handle_list_attack_events,
+    'list_recent_attack_events': handle_list_recent_attack_events,
+    'list_recent_normal_events': handle_list_recent_normal_events,
     'get_events_by_ip': handle_get_events_by_ip,
     'ask_who_are_you': handle_ask_who_are_you,
     'ask_how_are_you': handle_ask_how_are_you,

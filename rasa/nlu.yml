@@ -35,6 +35,32 @@ nlu:
       - Find all attack events
       - List down all event IDs which are identified as attack
 
+  - intent: list_recent_attack_events
+    examples: |
+      - List the last 10 attack events
+      - Show me the most recent 5 attack events
+      - Give me the latest attack events
+      - List attack events
+      - Show recent attack events
+      - Provide the last 20 attack events
+      - I want to see the recent attack events
+      - Display the latest 15 attack events
+      - Can you list the attack events from the past hour?
+      - List [10](number) recent attack events
+
+  - intent: list_recent_normal_events
+    examples: |
+      - List the last 10 normal events
+      - Show me the most recent 5 normal events
+      - Give me the latest normal events
+      - List normal events
+      - Show recent normal events
+      - Provide the last 20 normal events
+      - I want to see the recent normal events
+      - Display the latest 15 normal events
+      - Can you list the normal events from the past hour?
+      - List [10](number) recent normal events
+
   - intent: get_events_by_ip
     examples: |
       - Find events with source IP [192.168.1.31](ip_address)
@@ -217,3 +243,16 @@ nlu:
       - \blast 24 hours\b
       - \blast week\b
       - \blast month\b
+
+  - regex: number
+    examples: |
+      - 5
+      - 10
+      - 15
+      - 20
+      - twenty
+      - ten
+      - five
+      - 25
+      - 30
+      - 50

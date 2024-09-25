@@ -10,6 +10,7 @@ import os
 import threading
 from sentence_transformers import SentenceTransformer
 import faiss
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +167,20 @@ def main():
 
             prediction, prediction_proba = predict(model, data)
             if prediction is not None:
+                # Extract or generate timestamp
+                incoming_timestamp = original_data.get('timestamp')  # Adjust based on your data structure
+                if incoming_timestamp:
+                    try:
+                        # Validate and parse incoming timestamp
+                        parsed_timestamp = datetime.strptime(incoming_timestamp, "%Y-%m-%d %H:%M:%S")
+                        timestamp_str = parsed_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        logger.warning(f"Invalid timestamp format: {incoming_timestamp}. Using current time.")
+                        timestamp_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    # Generate current timestamp
+                    timestamp_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
                 enriched_data = {
                     'event_id': original_data.get('event_id', None),
                     'src_ip': original_data.get('src_ip', None),
@@ -175,6 +190,7 @@ def main():
                     'state': original_data.get('state', None),
                     'prediction': int(prediction),
                     'prediction_proba': float(prediction_proba),
+                    'timestamp': timestamp_str
                 }
 
                 text_representation = (
@@ -184,7 +200,8 @@ def main():
                     f"Protocol: {enriched_data['protocol']}, "
                     f"Service: {enriched_data['service']}, "
                     f"State: {enriched_data['state']}, "
-                    f"Prediction: {'Attack' if enriched_data['prediction'] == 1 else 'Normal'}"
+                    f"Prediction: {'Attack' if enriched_data['prediction'] == 1 else 'Normal'}, "
+                    f"Timestamp: {enriched_data['timestamp']}"
                 )
 
                 embedding = generate_embedding(text_representation, embedding_model)
