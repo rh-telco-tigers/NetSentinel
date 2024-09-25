@@ -6,7 +6,7 @@ api_config:
   debug: true
 
 logging_config:
-  level: "INFO"
+  level: "DEBUG"
 
 predictive_model_config:
   input_dir: "data/processed"
@@ -33,7 +33,7 @@ rag_config:
   max_context_length: 512
   max_answer_length: 150
   num_contexts: 3
-  nlu_model_path: "models/rasa/nlu-20240924-151602-either-temple.tar.gz"
+  nlu_model_path: "models/rasa/nlu-20240924-222030-ternary-gulf.tar.gz"
 
 llm_model_config:
   model_path: "models/llm_model"
@@ -71,6 +71,11 @@ kafka_config:
   bootstrap: "127.0.0.1:9092"
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
+
+ocp_config:
+  kubeconfig_path: "/Users/bkpandey/.kube/config"
+  auth_method: "kubeconfig"
+  prometheus_url: "http://prometheus-server:9090" # Replace with your Prometheus server URL
 
 # embedding_model:
 #   name: "all-MiniLM-L6-v2"

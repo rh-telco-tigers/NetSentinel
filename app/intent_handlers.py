@@ -1,24 +1,30 @@
 # app/intent_handlers.py
 
 import logging
+from typing import Dict
+
 from .utils import (
+    generate_response,
     get_event_by_id,
     get_all_attack_event_ids,
     get_events_by_src_ip,
     get_events_by_dst_ip,
-    build_context_from_event_data,
-    generate_response
+    build_context_from_event_data
 )
 
 logger = logging.getLogger(__name__)
 
-def handle_greet(entities, **kwargs):
+# -------------------------------
+# General Intent Handlers
+# -------------------------------
+
+def handle_greet(entities: Dict, **kwargs) -> str:
     return "Hello! How can I assist you today?"
 
-def handle_goodbye(entities, **kwargs):
+def handle_goodbye(entities: Dict, **kwargs) -> str:
     return "Goodbye! If you have more questions, feel free to ask."
 
-def handle_get_event_info(entities, event_id_index, **kwargs):
+def handle_get_event_info(entities: Dict, event_id_index: Dict, **kwargs) -> str:
     event_id = entities.get('event_id')
     if not event_id:
         return "Please provide a valid event ID."
@@ -45,14 +51,14 @@ def handle_get_event_info(entities, event_id_index, **kwargs):
     else:
         return build_context_from_event_data(event_data)
 
-def handle_list_attack_events(entities, metadata_store, **kwargs):
+def handle_list_attack_events(entities: Dict, metadata_store: list, **kwargs) -> str:
     event_ids = get_all_attack_event_ids(metadata_store)
     if event_ids:
         return "Attack Event IDs:\n" + "\n".join(event_ids)
     else:
         return "No attack events found."
 
-def handle_get_events_by_ip(entities, metadata_store, **kwargs):
+def handle_get_events_by_ip(entities: Dict, metadata_store: list, **kwargs) -> str:
     ip_address = entities.get('ip_address')
     if not ip_address:
         return "Please provide a valid IP address."
@@ -70,38 +76,45 @@ def handle_get_events_by_ip(entities, metadata_store, **kwargs):
     else:
         return "No events found for the specified IP."
 
-def handle_ask_who_are_you(entities, **kwargs):
+def handle_ask_who_are_you(entities: Dict, **kwargs) -> str:
     return "I am a network monitoring assistant designed to help you analyze events, attacks, and IP traffic."
 
-def handle_ask_how_are_you(entities, **kwargs):
+def handle_ask_how_are_you(entities: Dict, **kwargs) -> str:
     return "I'm just a program, but thank you for asking! How can I help you?"
 
-def handle_ask_help(entities, **kwargs):
-    return ("I can help you with queries regarding network events, attacks, and IP information.\n"
+def handle_ask_help(entities: Dict, **kwargs) -> str:
+    return ("I can help you with queries regarding network events, attacks, IP information, "
+            "and interact with your OpenShift cluster for networking and security metrics.\n"
             "For example:\n"
             "- Get details about an event by its ID\n"
             "- List attack events\n"
             "- Find events related to a specific IP address\n"
+            "- List network policies in a namespace\n"
+            "- Check network traffic metrics\n"
+            "- Review user access levels\n"
+            "- And more!\n"
             "How can I assist you today?")
 
-def handle_thank_you(entities, **kwargs):
+def handle_thank_you(entities: Dict, **kwargs) -> str:
     return "You're welcome! I'm here to help whenever you need me."
 
-def handle_ask_farewell(entities, **kwargs):
+def handle_ask_farewell(entities: Dict, **kwargs) -> str:
     return "Goodbye! Looking forward to helping you again."
 
-def handle_ask_joke(entities, **kwargs):
+def handle_ask_joke(entities: Dict, **kwargs) -> str:
     return "Why don't computers get tired? Because they have chips to keep them going!"
 
-def handle_ask_capabilities(entities, **kwargs):
+def handle_ask_capabilities(entities: Dict, **kwargs) -> str:
     return ("I can help you with the following:\n"
             "- Look up network events by event ID\n"
             "- List events by IP address (source/destination)\n"
             "- Identify attack events\n"
             "- Provide IP-related event details\n"
+            "- Interact with your OpenShift cluster for networking metrics\n"
+            "- Monitor security policies and compliance\n"
             "How can I assist you today?")
 
-def handle_general_question(entities, **kwargs):
+def handle_general_question(entities: Dict, **kwargs) -> str:
     """
     Handle general technical questions by generating a response using the LLM.
     """
@@ -130,12 +143,450 @@ def handle_general_question(entities, **kwargs):
         logger.error(f"Error generating LLM response: {e}")
         return "Sorry, I couldn't generate a response at the moment."
 
-def handle_fallback(entities, **kwargs):
-    return "Sorry, I didn't understand that. Can you please rephrase?"
+def handle_fallback(entities: Dict, **kwargs) -> str:
+    """
+    Handle fallback by generating a response using the LLM.
+    """
+    user_text = entities.get('text', '')
+    tokenizer = kwargs.get('tokenizer')
+    llm_model = kwargs.get('llm_model')
+    llm_model_type = kwargs.get('llm_model_type', 'seq2seq')
 
+    if not all([user_text, tokenizer, llm_model]):
+        logger.error("Missing components for generating LLM response.")
+        return "Sorry, I couldn't process your request at the moment."
 
-# Mapping of intents to handler functions
+    # Generate a response using the LLM
+    input_text = f"User asked: {user_text}\nPlease provide a helpful and accurate response."
+    try:
+        response_text = generate_response(
+            input_text,
+            tokenizer,
+            llm_model,
+            llm_model_type,
+            max_context_length=512,
+            max_answer_length=150
+        )
+        return response_text
+    except Exception as e:
+        logger.error(f"Error generating LLM response: {e}")
+        return "Sorry, I couldn't generate a response at the moment."
+
+# -------------------------------
+# Networking Intent Handlers
+# -------------------------------
+
+def handle_list_network_policies(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to list network policies in a specific namespace or cluster-wide.
+    Returns a dictionary with 'query', 'output', and 'final_message'.
+    """
+    namespace = entities.get('namespace', 'all')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        policies = ocp_client.list_network_policies(namespace)
+        return policies
+    except Exception as e:
+        logger.error(f"Error fetching network policies: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't retrieve network policies at the moment."
+        }
+
+def handle_check_network_traffic(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to check current network traffic metrics.
+    """
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": {},
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        traffic_metrics = ocp_client.check_network_traffic()
+        query = "Check network traffic metrics."
+        output = traffic_metrics if traffic_metrics else {}
+        final_message = (
+            f"Network Traffic Metrics:\n"
+            f"Throughput: {traffic_metrics['throughput']} Mbps\n"
+            f"Latency: {traffic_metrics['latency']} ms\n"
+            f"Packet Loss: {traffic_metrics['packet_loss']}%\n"
+        ) if traffic_metrics else "No network traffic metrics available at the moment."
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error checking network traffic: {e}")
+        return {
+            "query": "",
+            "output": {},
+            "final_message": "Sorry, I couldn't retrieve network traffic metrics at the moment."
+        }
+
+def handle_list_services(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to list services in a specific namespace or cluster-wide.
+    """
+    namespace = entities.get('namespace', 'all')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        services = ocp_client.list_services(namespace)
+        query = services.get("query", "")
+        output = services.get("output", [])
+        final_message = services.get("final_message", "No services found.")
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error listing services: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't retrieve services at the moment."
+        }
+
+def handle_check_pod_connectivity(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to check connectivity between two pods.
+    """
+    pod_a = entities.get('pod_a')
+    pod_b = entities.get('pod_b')
+    namespace = entities.get('namespace', 'default')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not all([pod_a, pod_b]):
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Please provide both pod names to check connectivity."
+        }
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        connectivity = ocp_client.check_pod_connectivity(namespace, pod_a, pod_b)
+        query = f"Check connectivity between {pod_a} and {pod_b} in namespace '{namespace}'."
+        output = []
+        final_message = (
+            f"Pod '{pod_a}' can communicate with Pod '{pod_b}'."
+            if connectivity.get('final_message').startswith("Pod")
+            else f"Pod '{pod_a}' cannot communicate with Pod '{pod_b}'."
+        )
+        return {
+            "query": query,
+            "output": [pod_a, pod_b],
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error checking pod connectivity: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't verify pod connectivity at the moment."
+        }
+
+def handle_check_dns_health(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to check DNS health.
+    """
+    namespace = entities.get('namespace', 'kube-system')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": {},
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        dns_status = ocp_client.check_dns_health(namespace)
+        query = f"Check DNS health in namespace '{namespace}'."
+        output = dns_status
+        final_message = (
+            f"DNS Health: {dns_status['healthy']}. {dns_status['issues']}"
+            if dns_status['issues'] else "DNS is healthy."
+        )
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error checking DNS health: {e}")
+        return {
+            "query": "",
+            "output": {},
+            "final_message": "Sorry, I couldn't verify DNS health at the moment."
+        }
+
+# -------------------------------
+# List Pods Intent Handler
+# -------------------------------
+
+def handle_list_pods(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle the intent to list pods in a given namespace or across all namespaces.
+    """
+    namespace = entities.get('namespace', 'all')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        if namespace.lower() != 'all':
+            query = f"list_namespaced_pod(namespace={namespace})"
+            pods = ocp_client.core_api.list_namespaced_pod(namespace)
+        else:
+            query = "list_pod_for_all_namespaces()"
+            pods = ocp_client.core_api.list_pod_for_all_namespaces()
+
+        pod_names = [f"{pod.metadata.namespace}/{pod.metadata.name}" for pod in pods.items]
+        logger.debug(f"Pods: {pod_names}")
+
+        final_message = f"Pods: {', '.join(pod_names) if pod_names else 'No pods found'}"
+        output = pod_names
+
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except ApiException as e:
+        logger.error(f"API exception when listing pods: {e}")
+        return {
+            "query": query if 'query' in locals() else "",
+            "output": [],
+            "final_message": "Sorry, I couldn't retrieve the pod list at the moment."
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error when listing pods: {e}")
+        return {
+            "query": query if 'query' in locals() else "",
+            "output": [],
+            "final_message": "Sorry, an error occurred while listing the pods."
+        }
+
+# -------------------------------
+# Security Intent Handlers
+# -------------------------------
+
+def handle_list_security_policies(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to list security policies in a specific namespace or cluster-wide.
+    """
+    namespace = entities.get('namespace', 'all')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        policies = ocp_client.list_security_policies(namespace)
+        query = policies.get("query", "")
+        output = policies.get("output", [])
+        final_message = policies.get("final_message", "No security policies found.")
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error fetching security policies: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't retrieve security policies at the moment."
+        }
+
+def handle_check_pod_security_compliance(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to check pod security compliance.
+    """
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        non_compliant_pods = ocp_client.check_pod_security_compliance()
+        query = "Check pod security compliance."
+        output = non_compliant_pods
+        if non_compliant_pods:
+            final_message = f"Non-compliant pods: {', '.join(non_compliant_pods)}"
+        else:
+            final_message = "All pods comply with the security policies."
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error checking pod security compliance: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't verify pod security compliance at the moment."
+        }
+
+def handle_review_user_access(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to review user access levels.
+    """
+    namespace = entities.get('namespace', 'all')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        user_access = ocp_client.review_user_access(namespace)
+        query = f"Review user access in namespace '{namespace}'."
+        output = user_access
+        if user_access:
+            response = f"User Access Information: {', '.join(user_access)}"
+        else:
+            response = f"No user access information found in namespace '{namespace}'."
+        return {
+            "query": query,
+            "output": output,
+            "final_message": response
+        }
+    except Exception as e:
+        logger.error(f"Error reviewing user access: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't retrieve user access information at the moment."
+        }
+
+def handle_retrieve_audit_logs(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to retrieve audit logs.
+    """
+    time_range = entities.get('time_range', 'last 24 hours')
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        audit_logs = ocp_client.retrieve_audit_logs(time_range)
+        query = f"Retrieve audit logs for {time_range}."
+        output = audit_logs.get("output", []) if isinstance(audit_logs, dict) else []
+        final_message = audit_logs.get("final_message", f"No security audit logs found for {time_range}.")
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving audit logs: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't retrieve audit logs at the moment."
+        }
+
+def handle_run_vulnerability_scan(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to run a vulnerability scan.
+    """
+    ocp_client = kwargs.get('ocp_client')
+
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        vulnerabilities = ocp_client.run_vulnerability_scan()
+        query = "Run vulnerability scan in the cluster."
+        output = vulnerabilities.get("output", []) if isinstance(vulnerabilities, dict) else []
+        final_message = vulnerabilities.get("final_message", "No vulnerabilities detected in the cluster.")
+        return {
+            "query": query,
+            "output": output,
+            "final_message": final_message
+        }
+    except Exception as e:
+        logger.error(f"Error running vulnerability scan: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't perform a vulnerability scan at the moment."
+        }
+
+# -------------------------------
+# Mapping of Intents to Handlers
+# -------------------------------
+
 INTENT_HANDLERS = {
+    # General Intents
     'greet': handle_greet,
     'goodbye': handle_goodbye,
     'get_event_info': handle_get_event_info,
@@ -150,4 +601,21 @@ INTENT_HANDLERS = {
     'ask_capabilities': handle_ask_capabilities,
     'general_question': handle_general_question,
     'fallback': handle_fallback,
+
+    # Networking Intents
+    'list_network_policies': handle_list_network_policies,
+    'check_network_traffic': handle_check_network_traffic,
+    'list_services': handle_list_services,
+    'check_pod_connectivity': handle_check_pod_connectivity,
+    'check_dns_health': handle_check_dns_health,
+
+    # Security Intents
+    'list_security_policies': handle_list_security_policies,
+    'check_pod_security_compliance': handle_check_pod_security_compliance,
+    'review_user_access': handle_review_user_access,
+    'retrieve_audit_logs': handle_retrieve_audit_logs,
+    'run_vulnerability_scan': handle_run_vulnerability_scan,
+
+    # List pods
+    'list_pods': handle_list_pods,
 }

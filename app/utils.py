@@ -8,7 +8,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-def setup_logging(log_level='INFO', log_file=None):
+def setup_logging(log_level='DEBUG', log_file=None):
     logger = logging.getLogger()
     logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
 

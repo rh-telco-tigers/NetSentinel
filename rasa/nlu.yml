@@ -113,7 +113,93 @@ nlu:
       - I'm confused
       - Not sure
 
-  # Regex patterns for entities like event_id and IP address
+  # ---------------------------
+  # OpenShift-Related Intents
+  # ---------------------------
+
+  - intent: list_network_policies
+    examples: |
+      - List network policies
+      - Show network policies in the cluster
+      - What are the network policies in namespace [default](namespace)?
+      - Display all network policies in namespace [prod](namespace)
+
+  - intent: check_network_traffic
+    examples: |
+      - Check current network traffic
+      - Show me the network traffic metrics
+      - What is the current network throughput?
+      - How much traffic is going through the network?
+      - Display the network latency and throughput
+
+  - intent: list_services
+    examples: |
+      - List all services
+      - Show services in namespace [default](namespace)
+      - What services are running in the cluster?
+      - List services in the cluster
+      - Display the services in namespace [dev](namespace)
+
+  - intent: check_pod_connectivity
+    examples: |
+      - Check connectivity between pod [frontend](pod_a) and [backend](pod_b)
+      - Can pod [api](pod_a) talk to pod [database](pod_b)?
+      - Test if [service-a](pod_a) is reachable from [service-b](pod_b)
+      - Is there connectivity between pod [client](pod_a) and [server](pod_b)?
+
+  - intent: check_dns_health
+    examples: |
+      - Check DNS health
+      - Show me the DNS status
+      - Is DNS healthy in namespace [kube-system](namespace)?
+      - What is the status of DNS in the cluster?
+      - How is DNS performing in the cluster?
+
+  - intent: list_security_policies
+    examples: |
+      - List security policies
+      - Show me the security policies in namespace [production](namespace)
+      - What security policies are in the cluster?
+      - Display security policies in namespace [test](namespace)
+
+  - intent: check_pod_security_compliance
+    examples: |
+      - Check pod security compliance
+      - Which pods are non-compliant with security policies?
+      - List non-compliant pods
+      - Are all pods following security policies?
+
+  - intent: review_user_access
+    examples: |
+      - Review user access levels
+      - Show me user roles in namespace [dev](namespace)
+      - List user access roles in the cluster
+      - What are the user access permissions in namespace [prod](namespace)?
+
+  - intent: retrieve_audit_logs
+    examples: |
+      - Retrieve audit logs
+      - Show me the audit logs for the [last 24 hours](time_range)
+      - Get security logs for the past day
+      - What security incidents occurred in the [last week](time_range)?
+
+  - intent: run_vulnerability_scan
+    examples: |
+      - Run a vulnerability scan
+      - Scan the cluster for vulnerabilities
+      - Check for vulnerabilities in the cluster
+      - Perform a vulnerability check
+
+  - intent: list_pods
+    examples: |
+      - List all pods
+      - Show me the pods in namespace [default](namespace)
+      - List all pods in namespace [kube-system](namespace)
+      - Give me a list of pods in the [production](namespace) namespace
+      - What are the pods in [default](namespace)?
+      - List all pods in all namespaces
+
+  # Regex patterns for entities like event_id, IP address, and namespaces
   - regex: event_id
     examples: |
       - [0-9a-fA-F\-]+
@@ -121,3 +207,13 @@ nlu:
   - regex: ip_address
     examples: |
       - \b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b
+
+  - regex: namespace
+    examples: |
+      - \b[a-z0-9]([-a-z0-9]*[a-z0-9])?\b
+
+  - regex: time_range
+    examples: |
+      - \blast 24 hours\b
+      - \blast week\b
+      - \blast month\b

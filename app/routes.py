@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 from .intent_handlers import INTENT_HANDLERS
 from .utils import generate_response
 
+# processed_event_ids = set()
+
 def verify_slack_request(signing_secret, request):
 
     timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
@@ -63,45 +65,6 @@ def build_context_from_event_data(event_data):
         f"Prediction Probability: {event_data.get('prediction_proba', 'N/A')}"
     ]
     return "\n".join(fields)
-
-# def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_context_length, max_answer_length):
-#     """
-#     Generate a response using the appropriate LLM model type.
-#     """
-#     inputs = tokenizer.encode(
-#         input_text,
-#         return_tensors='pt',
-#         max_length=max_context_length,
-#         truncation=True
-#     ).to(llm_model.device)
-
-#     if llm_model_type == 'seq2seq':
-#         outputs = llm_model.generate(
-#             inputs,
-#             max_length=max_answer_length,
-#             num_beams=5,
-#             early_stopping=True
-#         )
-#         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-#     elif llm_model_type == 'causal':
-#         total_max_length = inputs.shape[1] + max_answer_length
-#         outputs = llm_model.generate(
-#             inputs,
-#             max_length=total_max_length,
-#             do_sample=True,
-#             temperature=0.7,
-#             top_p=0.9,
-#             eos_token_id=tokenizer.eos_token_id,
-#             pad_token_id=tokenizer.pad_token_id,
-#         )
-#         full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-#         # Extract the generated answer
-#         response_text = full_response[len(tokenizer.decode(inputs[0], skip_special_tokens=True)):].strip()
-#     else:
-#         logger.error(f"Unsupported llm_model_type: {llm_model_type}")
-#         raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
-
-#     return response_text
 
 # Slack Integration Class
 class SlackHandler:
@@ -209,9 +172,19 @@ def slack_events():
         return jsonify({"challenge": data['challenge']}), 200
 
     event = data.get('event', {})
+    logger.info(f"Event Data from slack: {event}")
+    # event_id = event.get('event_id')
     user_text = event.get('text')
     channel = event.get('channel')
     user = event.get('user')
+
+    # Check if the event has already been processed
+    # if event_id in processed_event_ids:
+    #     logger.info(f"Event ID {event_id} has already been processed. Skipping.")
+    #     return jsonify({"status": "Event already processed"}), 200
+
+    # Add the event_id to the processed set
+    # processed_event_ids.add(event_id)
 
     if not user_text:
         logger.warning("No text found in Slack event.")
@@ -236,6 +209,7 @@ def slack_events():
         embedding_model = current_app.persistent_state.get('embedding_model')
         tokenizer = current_app.persistent_state.get('tokenizer')
         llm_model = current_app.persistent_state.get('llm_model')
+        ocp_client = current_app.persistent_state.get('ocp_client')
         llm_model_type = current_app.config.get('RAG_CONFIG', {}).get('llm_model_type', 'seq2seq')
 
         missing_components = []
@@ -253,6 +227,8 @@ def slack_events():
             missing_components.append('Tokenizer')
         if not llm_model:
             missing_components.append('LLM Model')
+        if not ocp_client:
+            missing_components.append('OCP Client')
 
         # If any component is missing, log the details and notify via Slack
         if missing_components:
@@ -279,7 +255,7 @@ def slack_events():
         response_text = ""
 
         # Define a confidence threshold
-        CONFIDENCE_THRESHOLD = 0.6
+        CONFIDENCE_THRESHOLD = 0.4
 
         if confidence < CONFIDENCE_THRESHOLD:
             # Use LLM for low confidence intents
@@ -306,11 +282,36 @@ def slack_events():
                     )
                 else:
                     # Pass necessary data to the handler
-                    response_text = handler(
+                    result = handler(
                         entities,
                         event_id_index=event_id_index,
-                        metadata_store=metadata_store
+                        metadata_store=metadata_store,
+                        ocp_client=ocp_client
                     )
+
+                    # Extract query, output, and final message if returned in the result
+                    if isinstance(result, dict):
+                        query = result.get("query", "No query executed.")
+                        output = result.get("output", [])
+                        final_message = result.get("final_message", "No final message.")
+                        
+                        output_formatted = ""
+                        if output:
+                            if isinstance(output, list):
+                                output_formatted = "\n".join(f"- {item}" for item in output)
+                            elif isinstance(output, dict):
+                                # Handle dictionary outputs if any
+                                output_formatted = "\n".join(f"- {key}: {value}" for key, value in output.items())
+                        
+                        response_text = ""
+                        if query:
+                            response_text += f"*Query Executed:*\n{query}\n\n"
+                        if output_formatted:
+                            response_text += f"*Output:*\n{output_formatted}\n\n"
+                        if final_message:
+                            response_text += f"*Message:*\n{final_message}"
+                    else:
+                        response_text = result
             else:
                 # Use LLM for unknown intents
                 input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."

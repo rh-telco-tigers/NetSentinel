@@ -8,6 +8,9 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from prometheus_client import REGISTRY
 from prometheus_flask_exporter import PrometheusMetrics
+from .ocp_utils import OCPClient
+
+
 import yaml
 import torch
 import requests
@@ -87,6 +90,10 @@ def create_app(config_path='../config.yaml', registry=None):
     }
     app.config['TRAINING_CONFIG'] = config.get('training_config', {})
     app.config['RAG_CONFIG'] = config.get('rag_config', {})
+    app.config['OCP_CONFIG'] = {
+        'kubeconfig_path': config.get('ocp_config', {}).get('kubeconfig_path', '/path/to/kubeconfig'),
+        'auth_method': config.get('ocp_config', {}).get('auth_method', 'kubeconfig')  # 'kubeconfig' or 'token'
+    }
 
     # Setup logging
     log_level = app.config['TRAINING_CONFIG'].get('log_level', 'INFO').upper()
@@ -178,6 +185,15 @@ def create_app(config_path='../config.yaml', registry=None):
         event_id_index = {item['event_id']: item for item in metadata_store}
         logger.info("Event ID index built.")
 
+        # Initialize OCP Client
+        ocp_config = app.config['OCP_CONFIG']
+        kubeconfig_path = ocp_config.get('kubeconfig_path')
+        auth_method = ocp_config.get('auth_method')
+
+        ocp_client = OCPClient(kubeconfig_path=kubeconfig_path)
+
+        logger.info("OCP client initialized.")
+
         # Initialize Slack Client
         slack_config = app.config['SLACK_CONFIG']
         slack_bot_token = slack_config.get('slack_bot_token')
@@ -204,8 +220,9 @@ def create_app(config_path='../config.yaml', registry=None):
             'faiss_index': faiss_index,
             'metadata_store': metadata_store,
             'event_id_index': event_id_index,
+            'ocp_client': ocp_client,
             'slack_client': slack_client,
-            'nlu_interpreter': nlu_interpreter  # Updated model with async support
+            'nlu_interpreter': nlu_interpreter
         }
 
         logger.info("Models, FAISS index, Slack client, and NLU model initialized.")
