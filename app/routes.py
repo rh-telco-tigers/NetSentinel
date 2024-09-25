@@ -7,6 +7,8 @@ import asyncio
 import hmac
 import hashlib
 import time
+from datetime import datetime, timedelta
+from threading import Lock
 
 api_bp = Blueprint('api', __name__)
 logger = logging.getLogger(__name__)
@@ -14,6 +16,14 @@ logger = logging.getLogger(__name__)
 # Import the intent handlers
 from .intent_handlers import INTENT_HANDLERS
 from .utils import generate_response
+
+# Initialize a set to store processed 'ts' values and a dict to track their timestamps
+processed_ts = set()
+ts_timestamps = {}
+lock = Lock()  # To ensure thread-safe operations on the sets
+
+# Define the time window for keeping 'ts' values (e.g., 1 hour)
+TS_EXPIRATION_SECONDS = 3600
 
 # processed_event_ids = set()
 
@@ -145,6 +155,33 @@ def handle_get_events_by_ip(entities, metadata_store):
     else:
         return "No events found for the specified IP."
 
+# Function to clean up old 'ts' entries
+def cleanup_processed_ts():
+    with lock:
+        current_time = time.time()
+        expiration_time = current_time - TS_EXPIRATION_SECONDS
+        ts_to_remove = [ts for ts, timestamp in ts_timestamps.items() if timestamp < expiration_time]
+        for ts in ts_to_remove:
+            processed_ts.discard(ts)
+            del ts_timestamps[ts]
+        if ts_to_remove:
+            logger.debug(f"Cleaned up {len(ts_to_remove)} old ts entries.")
+
+# Background thread for periodic cleanup
+import threading
+
+def start_cleanup_thread():
+    def run_cleanup():
+        while True:
+            time.sleep(600)  # Cleanup every 10 minutes
+            cleanup_processed_ts()
+
+    thread = threading.Thread(target=run_cleanup, daemon=True)
+    thread.start()
+
+start_cleanup_thread()
+
+
 # Route Handlers
 @api_bp.route('/')
 def health_check():
@@ -173,6 +210,19 @@ def slack_events():
 
     event = data.get('event', {})
     logger.info(f"Event Data from slack: {event}")
+
+    event_type = event.get('type')
+
+    # Only process 'message' events
+    if event_type != 'message':
+        logger.info(f"Ignoring event type: {event_type}")
+        return jsonify({"status": f"Ignored event type: {event_type}"}), 200
+
+    ts = event.get('ts') or event.get('event_ts')
+    if not ts:
+        logger.warning("No timestamp found in Slack event.")
+        return jsonify({"error": "No timestamp found in event"}), 400
+
     # event_id = event.get('event_id')
     user_text = event.get('text')
     channel = event.get('channel')
@@ -200,6 +250,16 @@ def slack_events():
     if slack_handler.is_bot_message(user):
         logger.info("Message is from the bot itself. Ignoring.")
         return jsonify({"status": "Message from bot ignored"}), 200
+    
+    # Check if the event has already been processed
+    with lock:
+        if ts in processed_ts:
+            logger.info(f"Event with ts {ts} has already been processed. Skipping.")
+            return jsonify({"status": "Event already processed"}), 200
+        else:
+            # Add the ts to the processed set with current timestamp
+            processed_ts.add(ts)
+            ts_timestamps[ts] = time.time()
 
     try:
         # Access models and data from app's persistent_state
