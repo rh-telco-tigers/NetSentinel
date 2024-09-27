@@ -45,10 +45,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5001:5000"
-    environment:
-      - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      # Add other necessary environment variables here
     depends_on:
       kafka:
         condition: service_healthy
@@ -56,25 +52,32 @@ services:
       - netsentenial_network
     volumes:
       - /Users/bkpandey/.kube/config:/root/.kube/config
-      - ./config.yaml:/app/config.yaml
+      - ./config-for-compose.yaml:/app/config.yaml
       - ./models:/app/models
       - ./data:/app/data
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python app/run.py"]
+  
+  ngrok:
+    image: wernight/ngrok
+    environment:
+      - NGROK_AUTHTOKEN=2m7FVIePrGO5njNAXC5Wy4c40f2_5pv58J8wbsgjYV7WHZW6T
+    command: ngrok http --log=stdout --domain=newly-advanced-dane.ngrok-free.app app:5000
+    depends_on:
+      - app
+    networks:
+      - netsentenial_network
 
   create_mock_data:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      # Add other necessary environment variables here
     depends_on:
       kafka:
         condition: service_healthy
     networks:
       - netsentenial_network
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config-for-compose.yaml:/app/config.yaml
       - ./models:/app/models
       - ./data:/app/data
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/create_mock_data.py"]
@@ -83,16 +86,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      # Add other necessary environment variables here
     depends_on:
       kafka:
         condition: service_healthy
     networks:
       - netsentenial_network
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config-for-compose.yaml:/app/config.yaml
       - ./models:/app/models
       - ./data:/app/data
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/process_mock_data.py"]
@@ -101,17 +101,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      # Add other necessary environment variables here
     depends_on:
       kafka:
         condition: service_healthy
     networks:
       - netsentenial_network
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config-for-compose.yaml:/app/config.yaml
       - ./models:/app/models
       - ./data:/app/data
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/prediction_service.py"]

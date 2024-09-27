@@ -113,6 +113,7 @@ nlu:
   - intent: ask_capabilities
     examples: |
       - What can you do?
+      - What else you can do?
       - What questions can you answer?
       - Tell me about your capabilities
       - What kind of information can you provide?

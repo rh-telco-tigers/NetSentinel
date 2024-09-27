@@ -315,7 +315,7 @@ def slack_events():
         response_text = ""
 
         # Define a confidence threshold
-        CONFIDENCE_THRESHOLD = 0.4
+        CONFIDENCE_THRESHOLD = 0.1
 
         if confidence < CONFIDENCE_THRESHOLD:
             # Use LLM for low confidence intents
