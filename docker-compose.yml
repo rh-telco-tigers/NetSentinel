@@ -10,6 +10,11 @@ services:
       - "2181:2181"
     networks:
       - netsentenial_network
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181", "|", "grep", "imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
@@ -24,77 +29,93 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     networks:
       - netsentenial_network
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  mysql:
-    image: mysql:8.0
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
     environment:
-      MYSQL_DATABASE: netsentenial
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_USER: netsentenialuser
-      MYSQL_PASSWORD: netsentenialpassword
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
+      - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # Add other necessary environment variables here
+    depends_on:
+      kafka:
+        condition: service_healthy
     networks:
       - netsentenial_network
+    volumes:
+      - /Users/bkpandey/.kube/config:/root/.kube/config
+      - ./config.yaml:/app/config.yaml
+      - ./models:/app/models
+      - ./data:/app/data
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python app/run.py"]
 
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
+  create_mock_data:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # Add other necessary environment variables here
     depends_on:
-      - mysql
+      kafka:
+        condition: service_healthy
+    networks:
+      - netsentenial_network
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./models:/app/models
+      - ./data:/app/data
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/create_mock_data.py"]
+
+  process_mock_data:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # Add other necessary environment variables here
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - netsentenial_network
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./models:/app/models
+      - ./data:/app/data
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/process_mock_data.py"]
+
+  prediction_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # Add other necessary environment variables here
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - netsentenial_network
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./models:/app/models
+      - ./data:/app/data
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/prediction_service.py"]
 
 networks:
   netsentenial_network:
     driver: bridge
-
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "5000:5000"
-  #   environment:
-  #     - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
-  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-  #   depends_on:
-  #     - kafka
-  #     - mysql
-
-  # create_mock_data:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.create_mock_data
-  #   depends_on:
-  #     - kafka
-  #   environment:
-  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-
-  # process_mock_data:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.process_mock_data
-  #   depends_on:
-  #     - kafka
-  #   environment:
-  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-
-  # prediction_service:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.prediction_service
-  #   depends_on:
-  #     - kafka
-  #     - mysql
-  #   environment:
-  #     - DATABASE_URL=mysql://netsentenialuser:netsentenialpassword@mysql/netsentenial
-  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-
-volumes:
-  mysql_data:

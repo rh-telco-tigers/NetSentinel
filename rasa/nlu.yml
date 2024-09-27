@@ -27,6 +27,8 @@ nlu:
       - What kind of traffic is event [e8c8deb6-79f6-4d1a-b45d-da31188ce4a4](event_id)?
       - Provide details about event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)
       - What's the prediction probability for event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)?
+      - tell me more about this Event ID: [e6b4a1ca-e8fc-43ad-9eb3-8c0296bacdc7](event_id)
+      - Event ID: [e6b4a1ca-e8fc-43ad-9eb3-8c0296bacdc7](event_id) tell me more about this
 
   - intent: list_attack_events
     examples: |

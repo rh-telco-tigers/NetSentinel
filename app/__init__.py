@@ -150,9 +150,16 @@ def create_app(config_path='../config.yaml', registry=None):
         nlu_model_path = rag_config.get('nlu_model_path', 'rasa/models/nlu-model.tar.gz')  # Default value if not set
 
         embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
+        embedding_model_path = rag_config.get('embedding_model_path', 'models/embedding_models/all-MiniLM-L6-v2')  # Get the path from config
+
         from sentence_transformers import SentenceTransformer
-        embedding_model = SentenceTransformer(embedding_model_name)
-        logger.info(f"Embedding model '{embedding_model_name}' loaded.")
+        if not os.path.exists(embedding_model_path):
+            logger.error(f"Embedding model not found at {embedding_model_path}.")
+            raise FileNotFoundError(f"Embedding model not found at {embedding_model_path}.")
+
+        embedding_model = SentenceTransformer(embedding_model_path)
+        logger.info(f"Embedding model '{embedding_model_name}' loaded from {embedding_model_path}.")
+
 
         # Load the LLM model for RAG
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
@@ -190,7 +197,11 @@ def create_app(config_path='../config.yaml', registry=None):
         kubeconfig_path = ocp_config.get('kubeconfig_path')
         auth_method = ocp_config.get('auth_method')
 
-        ocp_client = OCPClient(kubeconfig_path=kubeconfig_path)
+        try:
+            ocp_client = OCPClient(kubeconfig_path=kubeconfig_path)
+        except Exception as ocp_exception:
+            logging.error(f"Failed to initialize OCP Client: {ocp_exception}")
+            ocp_client = None
 
         logger.info("OCP client initialized.")
 

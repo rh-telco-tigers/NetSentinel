@@ -2,7 +2,7 @@
 
 api_config:
   host: "0.0.0.0"
-  port: 5001
+  port: 5000
   debug: true
 
 logging_config:
@@ -24,8 +24,9 @@ predictive_model_config:
 # RAG Configuration
 rag_config:
   embedding_model_name: "all-MiniLM-L6-v2"
+  embedding_model_path: "models/embedding_models/all-MiniLM-L6-v2"
   # llm_model_name: "models/Mistral-7B-v0.1" # Or "google/flan-t5-base"
-  llm_model_name: "google/flan-t5-large"
+  llm_model_name: "models/flan-t5-large"
   # llm_model_type: "causal" # causal for Mistral or seq2seq for google-flan-t5
   llm_model_type: "seq2seq"
   faiss_index_path: "data/faiss_index/index.faiss"
@@ -33,7 +34,7 @@ rag_config:
   max_context_length: 512
   max_answer_length: 150
   num_contexts: 3
-  nlu_model_path: "models/rasa/nlu-20240925-153246-coral-yaw.tar.gz"
+  nlu_model_path: "models/rasa/nlu-model.gz"
 
 llm_model_config:
   model_path: "models/llm_model"
@@ -68,7 +69,8 @@ slack_config:
 
 kafka_config:
   # bootstrap: "netsentenial-kafka-kafka-bootstrap.openshift-operators:9092"
-  bootstrap: "127.0.0.1:9092"
+  bootstrap: "kafka:29092"
+  # bootstrap: "localhost:9092"
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
 

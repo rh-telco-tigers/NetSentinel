@@ -6,6 +6,8 @@ import json
 import faiss
 import numpy as np
 from datetime import datetime
+from json.decoder import JSONDecodeError
+
 
 
 logger = logging.getLogger(__name__)
@@ -31,18 +33,39 @@ def setup_logging(log_level='DEBUG', log_file=None):
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
+# def load_faiss_index_and_metadata(faiss_index_path, metadata_store_path):
+#     if not os.path.exists(faiss_index_path):
+#         raise FileNotFoundError(f"FAISS index not found at {faiss_index_path}")
+#     if not os.path.exists(metadata_store_path):
+#         raise FileNotFoundError(f"Metadata store not found at {metadata_store_path}")
+
+#     # Load FAISS index
+#     with open(faiss_index_path, 'rb') as faiss_file:
+#         faiss_index = faiss.deserialize_index(faiss_file.read())
+
+#     # Load metadata store
+#     with open(metadata_store_path, 'r') as f:
+#         metadata_store = json.load(f)
+
+#     return faiss_index, metadata_store
+
 def load_faiss_index_and_metadata(faiss_index_path, metadata_store_path):
-    if not os.path.exists(faiss_index_path):
-        raise FileNotFoundError(f"FAISS index not found at {faiss_index_path}")
-    if not os.path.exists(metadata_store_path):
-        raise FileNotFoundError(f"Metadata store not found at {metadata_store_path}")
+    try:
+        with open(faiss_index_path, 'rb') as faiss_file:
+            faiss_index = faiss.deserialize_index(faiss_file.read())
+    except Exception as e:
+        logging.error(f"Failed to load FAISS index from {faiss_index_path}: {e}")
+        faiss_index = None  # Decide on a default behavior or raise if critical
 
-    # Load FAISS index
-    faiss_index = faiss.read_index(faiss_index_path)
-
-    # Load metadata store
-    with open(metadata_store_path, 'r') as f:
-        metadata_store = json.load(f)
+    try:
+        with open(metadata_store_path, 'r') as f:
+            metadata_store = json.load(f)
+    except JSONDecodeError as jde:
+        logging.error(f"JSON decode error while loading metadata_store from {metadata_store_path}: {jde}")
+        metadata_store = {}  # Assign a default empty dict or handle as needed
+    except Exception as e:
+        logging.error(f"Failed to load metadata_store from {metadata_store_path}: {e}")
+        metadata_store = {}  # Assign a default empty dict or handle as needed
 
     return faiss_index, metadata_store
 

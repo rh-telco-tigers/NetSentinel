@@ -23,6 +23,9 @@ NGROK_BIN = ngrok
 MISTRAL_MODEL_DIR = models/Mistral-7B-v0.1-demo
 MISTRAL_REPO = git@hf.co:mistralai/Mistral-7B-v0.1
 
+FLAN_MODEL_DIR = models/flan-t5-large
+FLAN_REPO = git@hf.co:google/flan-t5-large
+
 rasa_folder := rasa
 rasa_output_model_dir := models/rasa
 rasa_config_file := $(rasa_folder)/config.yml
@@ -80,6 +83,36 @@ download_mistral:
 		echo "✅ Mistral-7B model downloaded successfully."; \
 	else \
 		echo "✅ Mistral-7B model already exists."; \
+	fi
+
+
+# Task to download Mistral 7B model using git clone
+.PHONY: download_flan
+download_flan:
+	@echo "🔍 Checking if flan-t5-large model exists..."
+	@if [ ! -d $(FLAN_MODEL_DIR) ]; then \
+		echo "📥 Cloning flan-t5-large model from Hugging Face..."; \
+		brew install git-lfs; \
+		git lfs install; \
+		git clone $(FLAN_REPO) $(FLAN_MODEL_DIR); \
+		echo "✅ flan-t5-large model downloaded successfully."; \
+	else \
+		echo "✅ flan-t5-large model already exists."; \
+	fi
+
+
+# Task to download all-MiniLM-L6-v2 model using git clone
+.PHONY: download_minilm
+download_minilm:
+	@echo "🔍 Checking if all-MiniLM-L6-v2 model exists..."
+	@if [ ! -d $(MINILM_MODEL_DIR) ]; then \
+		echo "📥 Cloning all-MiniLM-L6-v2 model from Hugging Face..."; \
+		brew install git-lfs || echo "git-lfs already installed"; \
+		git lfs install; \
+		git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2 $(MINILM_MODEL_DIR); \
+		echo "✅ all-MiniLM-L6-v2 model downloaded successfully."; \
+	else \
+		echo "✅ all-MiniLM-L6-v2 model already exists."; \
 	fi
 
 # Train the predictive model

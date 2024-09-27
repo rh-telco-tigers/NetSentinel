@@ -1,0 +1,47 @@
+# Ignore all files in the models directory
+models/
+data/
+
+# If you need to include specific models, use the '!' negation
+# For example, to include model1.pth:
+# !models/model1.pth
+
+# Ignore Python cache files and directories
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment directories
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Ignore Dockerfile and docker-compose files if not needed inside the image
+Dockerfile*
+docker-compose.yml
+
+# Ignore configuration files if being passed as volumes
+config.yaml
+
+# Ignore data directories if not required inside the image
+# data/
+
+# Ignore Git repository files
+.git
+.gitignore
+
+# Ignore other system files
+.DS_Store
+*.swp
+*.swo
+
+# Ignore log files
+*.log
+logs/
+
+# Ignore temporary files
+temp/
+tmp/
