@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/volumes
+
+patches:
+  - target:
+      kind: PersistentVolumeClaim
+      name: data-pvc
+    path: storageclass-patch.yaml
+
+  - target:
+      kind: PersistentVolumeClaim
+      name: models-pvc
+    path: storageclass-patch.yaml

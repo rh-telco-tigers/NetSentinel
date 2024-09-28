@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: app
+  name: netsentenial
   namespace: netsentenial
 spec:
   ports:
@@ -9,4 +9,4 @@ spec:
       port: 5000
       targetPort: 5000
   selector:
-    app: app
+    app: netsentenial

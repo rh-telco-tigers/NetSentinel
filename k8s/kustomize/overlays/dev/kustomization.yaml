@@ -6,13 +6,12 @@ resources:
 
 patches:
   - target:
-      kind: PersistentVolumeClaim
-      name: data-pvc
-    path: storageclass-patch.yaml
+      kind: Deployment
+      name: netsentenial
+    path: deployment-sleep-infinity.patch.yaml
 
-  - target:
-      kind: PersistentVolumeClaim
-      name: models-pvc
-    path: storageclass-patch.yaml
+images:
+  - name: quay.io/bpandey/netsentenial
+    newTag: 0.0.2
 
 namePrefix: dev-

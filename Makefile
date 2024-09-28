@@ -6,6 +6,11 @@ MODEL_DIR = models
 LOG_DIR = logs
 ENV_DIR = venv
 
+DOCKER_IMAGE = quay.io/bpandey/netsentenial:0.0.1
+# PLATFORMS = linux/amd64,linux/arm64
+PLATFORMS = linux/amd64
+
+
 # Define commands
 PYTHON = $(ENV_DIR)/bin/python
 PIP = $(ENV_DIR)/bin/pip
@@ -48,6 +53,14 @@ ensure_setuptools:
 	python3 -m ensurepip --upgrade
 	python3 -m pip install --upgrade setuptools
 	@echo "✅ setuptools is installed."
+
+# Docker Build Section
+build_docker:
+	@echo "🐳 Building Docker image $(DOCKER_IMAGE)..."
+	@docker buildx create --use || true
+	@docker buildx inspect --bootstrap
+	@docker buildx build --platform $(PLATFORMS) -t $(DOCKER_IMAGE) --push .
+	@echo "✅ Docker image $(DOCKER_IMAGE) built and pushed."
 
 # Set up the Python virtual environment
 setup_env: ensure_setuptools setup_dirs
