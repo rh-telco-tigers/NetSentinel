@@ -34,7 +34,7 @@ rag_config:
   max_context_length: 512
   max_answer_length: 150
   num_contexts: 3
-  nlu_model_path: "models/rasa/nlu-model.gz"
+  nlu_model_path: "models/rasa/nlu-20240928-232009-claret-vault.tar.gz"
 
 llm_model_config:
   model_path: "models/llm_model"

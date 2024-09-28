@@ -29,8 +29,14 @@ COPY requirements.txt ./
 RUN pip install packaging==20.9
 RUN pip install --no-cache-dir --no-deps -r requirements.txt
 RUN pip install tensorflow
-RUN pip install torch==2.4.1 torchvision==0.19.1+cpu torchaudio==2.4.1+cpu --index-url https://download.pytorch.org/whl/cpu
-
+# Conditional installation of torch based on the build argument (fallback if no arg is provided)
+RUN if [ "$TORCH_INSTALL_TYPE" = "cpu" ]; then \
+    echo "Installing CPU version of torch..."; \
+    pip install torch==2.4.1 torchvision==0.19.1+cpu torchaudio==2.4.1+cpu --index-url https://download.pytorch.org/whl/cpu; \
+    else \
+    echo "Installing default version of torch..."; \
+    pip install torch torchvision torchaudio; \
+    fi
 # Copy all the application files
 COPY . .
 

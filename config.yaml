@@ -2,7 +2,7 @@
 
 api_config:
   host: "0.0.0.0"
-  port: 5000
+  port: 5001
   debug: true
 
 logging_config:
@@ -75,7 +75,7 @@ kafka_config:
   processed_topic: "processed-traffic-data"
 
 ocp_config:
-  kubeconfig_path: "/root/.kube/config"
+  kubeconfig_path: "/Users/bkpandey/.kube/config"
   auth_method: "kubeconfig"
   prometheus_url: "http://prometheus-server:9090" # Replace with your Prometheus server URL
 

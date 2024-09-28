@@ -9,6 +9,9 @@ nlu:
       - Hey
       - Good morning
       - Good evening
+      - How’s it going?
+      - Hey, what's up?
+      - Hello, how are you?
 
   - intent: goodbye
     examples: |
@@ -18,76 +21,236 @@ nlu:
       - Talk to you soon
       - Catch you later
       - Farewell
+      - See you next time
+      - Take care
+      - Bye, have a great day
+
+  - intent: ask_capabilities
+    examples: |
+      - Capabilities: what can you do?
+      - Capabilities: tell me what else you can do
+      - What questions can you answer?
+      - Capabilities: what services do you offer?
+      - Tell me about your capabilities
+      - Capabilities: what kind of information can you provide?
+      - What are your skills?
+      - What can you help me with?
+      - Capabilities: how can you assist me?
+      - Capabilities: what type of questions can I ask?
+      - Capabilities: what topics can you discuss?
+      - Can you explain what tasks you can perform?
+      - Capabilities: what do you specialize in?
+      - Capabilities: list down the tasks you can help with
+      - What kinds of things can you assist me with?
 
   - intent: get_event_info
     examples: |
-      - Give me source IP for event [f62a6ed3-a535-4503-a500-a54a0b745a85](event_id)
-      - What's the destination IP for event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)?
-      - Is event [38c87864-069f-4c01-b1cf-b0fa1d5fe0a6](event_id) an attack?
-      - What kind of traffic is event [e8c8deb6-79f6-4d1a-b45d-da31188ce4a4](event_id)?
-      - Provide details about event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)
-      - What's the prediction probability for event [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)?
-      - tell me more about this Event ID: [e6b4a1ca-e8fc-43ad-9eb3-8c0296bacdc7](event_id)
-      - Event ID: [e6b4a1ca-e8fc-43ad-9eb3-8c0296bacdc7](event_id) tell me more about this
+      - Event ID: [f62a6ed3-a535-4503-a500-a54a0b745a85](event_id) show me info
+      - Show me details for Event ID: [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)
+      - What’s the prediction for Event ID: [38c87864-069f-4c01-b1cf-b0fa1d5fe0a6](event_id)?
+      - Event ID: [e8c8deb6-79f6-4d1a-b45d-da31188ce4a4](event_id), give me more details
+      - What kind of traffic is related to Event ID: [fee5009c-f904-4c94-8551-4b2de5162e9f](event_id)?
+      - Tell me about Event ID: [38c87864-069f-4c01-b1cf-b0fa1d5fe0a6](event_id)
+      - Provide details for Event ID: [f62a6ed3-a535-4503-a500-a54a0b745a85](event_id)
+      - Event ID: [e8c8deb6-79f6-4d1a-b45d-da31188ce4a4](event_id), what’s the source IP?
 
   - intent: list_attack_events
     examples: |
-      - List all events identified as attack
-      - Show me attack events
-      - Find all attack events
-      - List down all event IDs which are identified as attack
+      - Attack events: list all
+      - Show me the list of attack events
+      - Attack events: find all attacks
+      - Give me the IDs of all attack events
+      - List down all events identified as attacks
+      - Attack events: what’s currently active?
+      - Can you list all attack events?
+      - Show me all the recent attack events
 
   - intent: list_recent_attack_events
     examples: |
-      - List the last 10 attack events
+      - Recent attack events: list the last 10
       - Show me the most recent 5 attack events
-      - Give me the latest attack events
-      - List attack events
-      - Show recent attack events
-      - Provide the last 20 attack events
-      - I want to see the recent attack events
-      - Display the latest 15 attack events
-      - Can you list the attack events from the past hour?
-      - List [10](number) recent attack events
+      - Provide the latest attack events
+      - Recent attack events: show me what’s new
+      - Can you list attack events from the past hour?
+      - Give me the latest attack event details
+      - Recent attack events: what are the top 10?
+      - List the last 20 attack events for me
 
   - intent: list_recent_normal_events
     examples: |
-      - List the last 10 normal events
+      - Recent normal events: list the last 10
       - Show me the most recent 5 normal events
-      - Give me the latest normal events
-      - List normal events
-      - Show recent normal events
-      - Provide the last 20 normal events
-      - I want to see the recent normal events
+      - Provide the latest normal events
+      - Can you show me the recent normal events?
+      - What are the most recent normal events?
+      - Give me the list of normal events from the last 24 hours
+      - What normal events happened in the last hour?
       - Display the latest 15 normal events
-      - Can you list the normal events from the past hour?
-      - List [10](number) recent normal events
 
   - intent: get_events_by_ip
     examples: |
-      - Find events with source IP [192.168.1.31](ip_address)
-      - Show events for destination IP [172.16.0.29](ip_address)
-      - Give me all event IDs associated with source IP [10.0.0.128](ip_address)
-      - Give me all event IDs associated with destination IP [172.16.0.232](ip_address)
+      - Events by IP: [192.168.1.31](ip_address) list all
+      - Show events related to source IP [172.16.0.29](ip_address)
+      - Find all events with destination IP [10.0.0.128](ip_address)
+      - Give me all event IDs for source IP [172.16.0.232](ip_address)
+      - Events by IP: what’s related to [192.168.1.31](ip_address)?
+      - Events by IP: list down all events for [10.0.0.128](ip_address)
+      - Can you show me events for IP [172.16.0.29](ip_address)?
+      - Find events associated with destination IP [192.168.1.31](ip_address)
+
+  - intent: list_network_policies
+    examples: |
+      - Network policies: list
+      - Show me the network policies in the cluster
+      - Network policies: list in namespace [default](namespace)
+      - Network policies: what’s in namespace [prod](namespace)?
+      - Can you show me the network policies for namespace [test](namespace)?
+      - What are the network policies in [netsentenial](namespace)?
+      - Display the network policies in the cluster
+      - Network policies: what’s applied in namespace [dev](namespace)?
+
+  - intent: list_services
+    examples: |
+      - Services: list
+      - Show me the services in namespace [default](namespace)
+      - What services are running in the cluster?
+      - List all services in namespace [prod](namespace)
+      - Services: what’s running in [dev](namespace)?
+      - Display services in namespace [default](namespace)
+      - What are the services in [production](namespace)?
+      - List all services in the cluster
+
+  - intent: list_pods
+    examples: |
+      - Pods: list
+      - Show me the pods in namespace [default](namespace)
+      - What are the pods in [kube-system](namespace)?
+      - Pods: list down all in namespace [production](namespace)
+      - Give me a list of pods in namespace [default](namespace)
+      - What are the pods in namespace [test](namespace)?
+      - Pods: show me all in [dev](namespace)
+      - List all pods in the cluster
+
+  - intent: review_user_access
+    examples: |
+      - User access: review in namespace [dev](namespace)
+      - What are the user roles in namespace [prod](namespace)?
+      - User access: show me the access roles in [test](namespace)
+      - User access: list all roles in the cluster
+      - User access: what are the permissions in [netsentenial](namespace)?
+      - Can you list the user roles for namespace [prod](namespace)?
+      - User access: show who has access in [dev](namespace)
+      - What are the user access permissions across the cluster?
+
+  # Check network traffic
+  - intent: check_network_traffic
+    examples: |
+      - Network traffic: check current status
+      - Network traffic: show metrics
+      - What is the current network throughput?
+      - How much traffic is going through the network?
+      - Network traffic: display latency and throughput
+      - Can you show me the network traffic metrics?
+      - What’s the network latency?
+
+  # Check pod connectivity
+  - intent: check_pod_connectivity
+    examples: |
+      - Pod connectivity: check between [frontend](pod_a) and [backend](pod_b)
+      - Can pod [api](pod_a) talk to pod [database](pod_b)?
+      - Pod connectivity: test if [service-a](pod_a) can reach [service-b](pod_b)
+      - Is there connectivity between [client](pod_a) and [server](pod_b)?
+      - Pod connectivity: verify connection from [frontend](pod_a) to [backend](pod_b)
+      - Can you check if [api](pod_a) is reachable from [db](pod_b)?
+
+  # Check DNS health
+  - intent: check_dns_health
+    examples: |
+      - DNS health: check status
+      - Show me the DNS status
+      - DNS health: is it healthy in namespace [kube-system](namespace)?
+      - DNS health: what’s the status in the cluster?
+      - How is DNS performing in the cluster?
+      - Can you check DNS health across namespaces?
+      - DNS health: is it working fine in [test](namespace)?
+
+  # List security policies
+  - intent: list_security_policies
+    examples: |
+      - Security policies: list in namespace [production](namespace)
+      - Show me security policies for the cluster
+      - Security policies: what’s applied in namespace [test](namespace)?
+      - What security policies are active in [dev](namespace)?
+      - Can you list security policies for the cluster?
+      - Display the security policies in [prod](namespace)
+
+  # Check pod security compliance
+  - intent: check_pod_security_compliance
+    examples: |
+      - Pod security: check compliance
+      - Which pods are non-compliant with security policies?
+      - Pod security: list non-compliant pods
+      - Pod security: check if all pods follow security policies
+      - Show me non-compliant pods in [dev](namespace)
+      - Pod security: which pods failed the compliance check?
+      - Are all pods in [prod](namespace) following security policies?
+
+  # Retrieve audit logs
+  - intent: retrieve_audit_logs
+    examples: |
+      - Audit logs: retrieve
+      - Show me the audit logs for the [last 24 hours](time_range)
+      - Audit logs: get security logs for the past day
+      - What security incidents occurred in the [last week](time_range)?
+      - Can you show the audit logs for the past month?
+      - Audit logs: list down recent security incidents
+      - Show me the security logs for the past day
+
+  # Run vulnerability scan
+  - intent: run_vulnerability_scan
+    examples: |
+      - Vulnerability scan: run in the cluster
+      - Run a vulnerability scan
+      - Scan the cluster for vulnerabilities
+      - Perform a vulnerability check
+      - Vulnerability scan: check the system for issues
+      - Can you run a scan for vulnerabilities?
+      - Vulnerability scan: check for any threats in the cluster
+
+  # General question
+  - intent: general_question
+    examples: |
+      - General question: what is TCP?
+      - Can you explain the ICMP protocol?
+      - General question: how does HTTPS work?
+      - What’s the difference between UDP and TCP?
+      - General question: describe the OSI model
+      - General question: how does a firewall function?
+      - Can you explain DNS?
+      - How does routing work?
+      - What is a VPN?
+      - General question: describe the HTTP protocol
 
   - intent: ask_who_are_you
     examples: |
       - Who are you?
-      - What is your name?
+      - Capabilities: introduce yourself
       - Tell me about yourself
+      - Capabilities: who am I chatting with?
+      - What is your name?
+      - Tell me who you are
+      - Who am I speaking with?
+      - Capabilities: can you tell me what you do?
+      - What do you call yourself?
 
   - intent: ask_how_are_you
     examples: |
       - How are you?
-      - How's it going?
+      - How’s it going?
       - How have you been?
-
-  - intent: ask_help
-    examples: |
-      - I need help
-      - Can you help me?
-      - Please assist me
-      - I need assistance
+      - How do you feel today?
+      - How’s everything?
+      - How’s life?
 
   - intent: thank_you
     examples: |
@@ -95,138 +258,20 @@ nlu:
       - Thanks
       - I appreciate it
       - Thank you very much
-
-  - intent: ask_farewell
-    examples: |
-      - Bye bye
-      - See you
-      - Farewell
-      - Have a nice day
-
-  - intent: ask_joke
-    examples: |
-      - Tell me a joke
-      - Can you make me laugh?
-      - I need a joke
-      - Make me laugh
-
-  - intent: ask_capabilities
-    examples: |
-      - What can you do?
-      - What else you can do?
-      - What questions can you answer?
-      - Tell me about your capabilities
-      - What kind of information can you provide?
-      - What services do you offer?
-
-  - intent: general_question
-    examples: |
-      - What is TCP?
-      - Explain ICMP protocol.
-      - How does HTTPS work?
-      - What is the difference between UDP and TCP?
-      - Can you describe the OSI model?
-      - How does a firewall function?
-      - What is DNS?
-      - How does routing work?
-      - What is a VPN?
-      - Describe the HTTP protocol.
+      - Many thanks!
+      - Thanks a lot
+      - I’m grateful for your help
 
   - intent: fallback
     examples: |
-      - I don't know
+      - I don’t know
       - Can you repeat that?
-      - I'm not sure what you mean
+      - I’m not sure what you mean
       - What?
       - Help
-      - I'm confused
-      - Not sure
-
-  # ---------------------------
-  # OpenShift-Related Intents
-  # ---------------------------
-
-  - intent: list_network_policies
-    examples: |
-      - List network policies
-      - Show network policies in the cluster
-      - What are the network policies in namespace [default](namespace)?
-      - Display all network policies in namespace [prod](namespace)
-
-  - intent: check_network_traffic
-    examples: |
-      - Check current network traffic
-      - Show me the network traffic metrics
-      - What is the current network throughput?
-      - How much traffic is going through the network?
-      - Display the network latency and throughput
-
-  - intent: list_services
-    examples: |
-      - List all services
-      - Show services in namespace [default](namespace)
-      - What services are running in the cluster?
-      - List services in the cluster
-      - Display the services in namespace [dev](namespace)
-
-  - intent: check_pod_connectivity
-    examples: |
-      - Check connectivity between pod [frontend](pod_a) and [backend](pod_b)
-      - Can pod [api](pod_a) talk to pod [database](pod_b)?
-      - Test if [service-a](pod_a) is reachable from [service-b](pod_b)
-      - Is there connectivity between pod [client](pod_a) and [server](pod_b)?
-
-  - intent: check_dns_health
-    examples: |
-      - Check DNS health
-      - Show me the DNS status
-      - Is DNS healthy in namespace [kube-system](namespace)?
-      - What is the status of DNS in the cluster?
-      - How is DNS performing in the cluster?
-
-  - intent: list_security_policies
-    examples: |
-      - List security policies
-      - Show me the security policies in namespace [production](namespace)
-      - What security policies are in the cluster?
-      - Display security policies in namespace [test](namespace)
-
-  - intent: check_pod_security_compliance
-    examples: |
-      - Check pod security compliance
-      - Which pods are non-compliant with security policies?
-      - List non-compliant pods
-      - Are all pods following security policies?
-
-  - intent: review_user_access
-    examples: |
-      - Review user access levels
-      - Show me user roles in namespace [dev](namespace)
-      - List user access roles in the cluster
-      - What are the user access permissions in namespace [prod](namespace)?
-
-  - intent: retrieve_audit_logs
-    examples: |
-      - Retrieve audit logs
-      - Show me the audit logs for the [last 24 hours](time_range)
-      - Get security logs for the past day
-      - What security incidents occurred in the [last week](time_range)?
-
-  - intent: run_vulnerability_scan
-    examples: |
-      - Run a vulnerability scan
-      - Scan the cluster for vulnerabilities
-      - Check for vulnerabilities in the cluster
-      - Perform a vulnerability check
-
-  - intent: list_pods
-    examples: |
-      - List all pods
-      - Show me the pods in namespace [default](namespace)
-      - List all pods in namespace [kube-system](namespace)
-      - Give me a list of pods in the [production](namespace) namespace
-      - What are the pods in [default](namespace)?
-      - List all pods in all namespaces
+      - I’m confused
+      - Not sure what you’re asking
+      - Can you clarify that?
 
   # Regex patterns for entities like event_id, IP address, and namespaces
   - regex: event_id
