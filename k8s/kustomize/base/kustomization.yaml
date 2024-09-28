@@ -9,6 +9,8 @@ resources:
   - ./routes/app-route.yaml
   - ./secrets/ngrok-token-secret.yaml
   - ./configmaps/app-configmap.yaml
+  - ./rbac/clusterrole.yaml
+  - ./rbac/clusterrolebinding.yaml
 
 secretGenerator:
   - name: ngrok-token

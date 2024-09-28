@@ -12,5 +12,5 @@ spec:
               "http",
               "--log=stdout",
               "--domain=newly-advanced-dane.ngrok-free.app",
-              "dev-app-service:5000",
+              "dev-netsentenial:5000",
             ]

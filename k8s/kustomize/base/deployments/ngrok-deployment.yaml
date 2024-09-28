@@ -23,7 +23,7 @@ spec:
                   name: ngrok-token
                   key: NGROK_AUTHTOKEN
           command: ["ngrok"]
-          args: ["http", "--log=stdout", "app-service:5000"]
+          args: ["http", "--log=stdout", "netsentenial:5000"]
           ports:
             - name: http
               containerPort: 4040
