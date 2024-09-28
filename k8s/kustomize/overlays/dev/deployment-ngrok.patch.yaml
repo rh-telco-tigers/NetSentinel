@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngrok
+spec:
+  template:
+    spec:
+      containers:
+        - name: ngrok
+          args:
+            [
+              "http",
+              "--log=stdout",
+              "--domain=newly-advanced-dane.ngrok-free.app",
+              "dev-app-service:5000",
+            ]

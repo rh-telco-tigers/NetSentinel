@@ -13,12 +13,17 @@ spec:
       labels:
         app: netsentenial
     spec:
+      serviceAccountName: netsentenial-sa
       containers:
         - name: netsentenial
           image: quay.io/bpandey/netsentenial:0.0.1
           command: ["sh", "-c", "python app/run.py"]
           ports:
             - containerPort: 5000
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonGroup: 0
+            runAsUser: 0
           volumeMounts:
             - name: models-volume
               mountPath: /app/models
@@ -31,6 +36,10 @@ spec:
         - name: create-mock-data
           image: quay.io/bpandey/netsentenial:0.0.1
           command: ["sh", "-c", "python scripts/create_mock_data.py"]
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonGroup: 0
+            runAsUser: 0
           volumeMounts:
             - name: models-volume
               mountPath: /app/models
@@ -43,6 +52,10 @@ spec:
         - name: process-mock-data
           image: quay.io/bpandey/netsentenial:0.0.1
           command: ["sh", "-c", "python scripts/process_mock_data.py"]
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonGroup: 0
+            runAsUser: 0
           volumeMounts:
             - name: models-volume
               mountPath: /app/models
@@ -55,6 +68,10 @@ spec:
         - name: prediction-service
           image: quay.io/bpandey/netsentenial:0.0.1
           command: ["sh", "-c", "python scripts/prediction_service.py"]
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsNonGroup: 0
+            runAsUser: 0
           volumeMounts:
             - name: models-volume
               mountPath: /app/models

@@ -7,11 +7,16 @@ resources:
 patches:
   - target:
       kind: Deployment
-      name: netsentenial
-    path: deployment-sleep-infinity.patch.yaml
+      name: ngrok
+    path: deployment-ngrok.patch.yaml
+
+  # - target:
+  #     kind: Deployment
+  #     name: netsentenial
+  #   path: deployment-sleep-infinity.patch.yaml
 
 images:
   - name: quay.io/bpandey/netsentenial
-    newTag: 0.0.2
+    newTag: 0.0.3
 
 namePrefix: dev-

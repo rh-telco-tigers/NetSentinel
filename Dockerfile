@@ -29,8 +29,7 @@ COPY requirements.txt ./
 RUN pip install packaging==20.9
 RUN pip install --no-cache-dir --no-deps -r requirements.txt
 RUN pip install tensorflow
-# RUN pip install --no-cache-dir -r requirements.txt
-
+RUN pip install torch==2.4.1 torchvision==0.19.1+cpu torchaudio==2.4.1+cpu --index-url https://download.pytorch.org/whl/cpu
 
 # Copy all the application files
 COPY . .

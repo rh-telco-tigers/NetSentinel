@@ -4,4 +4,15 @@ kind: Kustomization
 resources:
   - ../../base
 
+patches:
+  - target:
+      kind: Deployment
+      name: ngrok
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ngrok
+      $patch: delete
+
 namePrefix: prod-
