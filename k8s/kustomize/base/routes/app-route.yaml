@@ -1,0 +1,11 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: app-route
+  namespace: netsentenial
+spec:
+  to:
+    kind: Service
+    name: app
+  port:
+    targetPort: 5000

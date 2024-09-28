@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./kafka/kafka-deployment.yaml
+  - ./kafka/kafka-topic-raw.yaml
+  - ./kafka/kafka-topic-processed.yaml
+  - ./deployments/app-deployment.yaml
+  - ./services/app-service.yaml
+  - ./services/ngrok-service.yaml
+  - ./routes/app-route.yaml
+  - ./routes/ngrok-route.yaml
+  - ./volumes/data-pvc.yaml
+  - ./volumes/models-pvc.yaml
+  - ./secrets/ngrok-token-secret.yaml
+  - ./configmaps/app-configmap.yaml
+
+secretGenerator:
+  - name: ngrok-token
+    literals:
+      - NGROK_AUTHTOKEN=<your-ngrok-authtoken>
+
+configMapGenerator:
+  - name: app-config
+    files:
+      - config.yaml=app-config.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true

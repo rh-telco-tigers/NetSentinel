@@ -1,5 +1,5 @@
-kind: Kafka
 apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
 metadata:
   name: netsentenial-kafka
   namespace: openshift-operators
@@ -22,7 +22,7 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: '3.7'
+      inter.broker.protocol.version: "3.7"
     storage:
       type: ephemeral
   zookeeper:
@@ -32,31 +32,3 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaTopic
-metadata:
-  name: raw-traffic-data
-  namespace: netsentenial
-  labels:
-    strimzi.io/cluster: netsentenial-kafka
-spec:
-  partitions: 3
-  replicas: 3
-  config:
-    retention.ms: 7200000
-    segment.bytes: 1073741824
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaTopic
-metadata:
-  name: processed-traffic-data
-  namespace: netsentenial
-  labels:
-    strimzi.io/cluster: netsentenial-kafka
-spec:
-  partitions: 3
-  replicas: 3
-  config:
-    retention.ms: 7200000
-    segment.bytes: 1073741824
