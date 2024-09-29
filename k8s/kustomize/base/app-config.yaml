@@ -75,7 +75,7 @@ kafka_config:
 ocp_config:
   kubeconfig_path: "/root/.kube/config"
   auth_method: "kubeconfig"
-  prometheus_url: "http://prometheus-server:9090" # Replace with your Prometheus server URL
+  prometheus_url: "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091"
 
 # embedding_model:
 #   name: "all-MiniLM-L6-v2"

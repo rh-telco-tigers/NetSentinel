@@ -268,17 +268,25 @@ def handle_check_network_traffic(entities: Dict, **kwargs) -> Dict[str, str]:
 
     try:
         traffic_metrics = ocp_client.check_network_traffic()
-        query = "Check network traffic metrics."
-        output = traffic_metrics if traffic_metrics else {}
-        final_message = (
-            f"Network Traffic Metrics:\n"
-            f"Throughput: {traffic_metrics['throughput']} Mbps\n"
-            f"Latency: {traffic_metrics['latency']} ms\n"
-            f"Packet Loss: {traffic_metrics['packet_loss']}%\n"
-        ) if traffic_metrics else "No network traffic metrics available at the moment."
+
+        # Check if 'throughput', 'latency', or 'packet_loss' are available
+        if traffic_metrics and 'throughput' in traffic_metrics and 'packet_loss' in traffic_metrics:
+            query = "Check network traffic metrics."
+            output = traffic_metrics  # This is the metrics dictionary
+            final_message = (
+                f"Network Traffic Metrics:\n"
+                f"Throughput: {traffic_metrics['throughput']}\n"
+                f"Packet Loss: {traffic_metrics['packet_loss']}\n"
+                f"TCP Retransmission: {traffic_metrics.get('tcp_retransmission', 'N/A')}"
+            )
+        else:
+            # If any required metric is missing, log an error and respond accordingly
+            logger.error("Missing required metrics from traffic metrics.")
+            final_message = "No network traffic metrics available at the moment."
+
         return {
-            "query": query,
-            "output": output,
+            "query": query if 'query' in locals() else "Check network traffic metrics.",
+            "output": output if 'output' in locals() else {},
             "final_message": final_message
         }
     except Exception as e:

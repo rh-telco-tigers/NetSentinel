@@ -5,6 +5,7 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from prometheus_api_client import PrometheusConnect
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class OCPClient:
@@ -28,10 +29,27 @@ class OCPClient:
             self.core_api = client.CoreV1Api()
             self.apps_api = client.AppsV1Api()
             
-            # Initialize Prometheus client
+            # Initialize Prometheus client with Bearer Token
             if prometheus_url:
-                self.prom = PrometheusConnect(url=prometheus_url, disable_ssl=True)
-                logger.info(f"Connected to Prometheus at {prometheus_url}")
+                token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                
+                if os.path.exists(token_path):
+                    with open(token_path, 'r') as token_file:
+                        bearer_token = token_file.read().strip()
+                    headers = {"Authorization": f"Bearer {bearer_token}"}
+                    
+                    self.prom = PrometheusConnect(url=prometheus_url, headers=headers, disable_ssl=True)
+                    logger.info(f"Connected to Prometheus at {prometheus_url}")
+                else:
+                    # Allow setting a manual token if running outside of the cluster
+                    bearer_token = os.getenv('PROMETHEUS_BEARER_TOKEN', None)
+                    if bearer_token:
+                        headers = {"Authorization": f"Bearer {bearer_token}"}
+                        self.prom = PrometheusConnect(url=prometheus_url, headers=headers, disable_ssl=True)
+                        logger.info(f"Connected to Prometheus at {prometheus_url} using a manually provided token.")
+                    else:
+                        logger.error("Bearer token not found. Unable to authenticate to Prometheus.")
+                        self.prom = None
             else:
                 logger.warning("Prometheus URL not provided. Network metrics will be unavailable.")
                 self.prom = None
@@ -39,6 +57,44 @@ class OCPClient:
         except Exception as e:
             logger.error(f"Failed to initialize OCP Client: {e}")
             raise e
+
+    def test_prometheus_connection(self):
+        """
+        Test if the connection to Prometheus is working by running a simple query.
+        """
+        if not self.prom:
+            logger.error("Prometheus client not initialized. Cannot perform test query.")
+            return {
+                "query": "Prometheus client not initialized",
+                "output": {},
+                "final_message": "Prometheus client not initialized. Cannot perform test query."
+            }
+
+        try:
+            test_query = 'up'
+            test_result = self.prom.custom_query(query=test_query)
+            
+            if test_result:
+                logger.info(f"Test query successful. Result: {test_result}")
+                return {
+                    "query": test_query,
+                    "output": test_result,
+                    "final_message": "Successfully connected to Prometheus and retrieved metrics."
+                }
+            else:
+                logger.warning("Test query returned no results.")
+                return {
+                    "query": test_query,
+                    "output": test_result,
+                    "final_message": "Test query returned no results."
+                }
+        except Exception as e:
+            logger.error(f"Error performing test query on Prometheus: {e}")
+            return {
+                "query": test_query,
+                "output": {},
+                "final_message": f"Error performing test query: {e}"
+            }
 
     # -------------------------
     # Networking-Related Functions
@@ -96,41 +152,66 @@ class OCPClient:
 
     def check_network_traffic(self) -> Dict[str, str]:
         """
-        Check current network traffic metrics like throughput and latency.
+        Check current network traffic metrics like throughput and packet loss.
         Returns the query executed, its output, and the final message.
         """
         if not self.prom:
+            logger.error("Prometheus client not initialized")
             return {
                 "query": "Prometheus client not initialized",
                 "output": {},
                 "final_message": "Prometheus client not initialized. Cannot fetch network traffic metrics."
             }
-        
+
         try:
-            # Example Prometheus queries
-            throughput_query = 'sum(rate(container_network_receive_bytes_total[1m])) + sum(rate(container_network_transmit_bytes_total[1m]))'
-            latency_query = 'avg_over_time(network_latency_seconds[5m])'
-            packet_loss_query = 'sum(rate(container_network_receive_errors_total[1m])) / sum(rate(container_network_receive_bytes_total[1m])) * 100'
+            # Prometheus queries
+            throughput_query = 'sum(rate(container_network_receive_bytes_total[5m])) + sum(rate(container_network_transmit_bytes_total[5m]))'
+            packet_loss_query = 'sum(rate(container_network_receive_errors_total[5m])) / sum(rate(container_network_receive_bytes_total[5m])) * 100'
+            tcp_retransmission_query = 'sum(rate(node_netstat_Tcp_RetransSegs[5m])) / sum(rate(node_netstat_Tcp_OutSegs[5m])) * 100'
 
+            # Execute queries
             throughput = self.prom.custom_query(query=throughput_query)
-            latency = self.prom.custom_query(query=latency_query)
             packet_loss = self.prom.custom_query(query=packet_loss_query)
+            tcp_retransmission = self.prom.custom_query(query=tcp_retransmission_query)
 
-            metrics = {
-                'throughput': f"{throughput[0]['value'][1]} Mbps" if throughput else "N/A",
-                'latency': f"{latency[0]['value'][1]} ms" if latency else "N/A",
-                'packet_loss': f"{packet_loss[0]['value'][1]}%" if packet_loss else "N/A"
-            }
-            final_message = f"Network Traffic Metrics: Throughput: {metrics['throughput']}, Latency: {metrics['latency']}, Packet Loss: {metrics['packet_loss']}"
+            # Log the raw results
+            logger.info(f"Throughput query raw result: {throughput}")
+            logger.info(f"Packet loss query raw result: {packet_loss}")
+            logger.info(f"TCP retransmission query raw result: {tcp_retransmission}")
 
-            return {
-                "query": f"Throughput query: {throughput_query}, Latency query: {latency_query}, Packet loss query: {packet_loss_query}",
-                "output": metrics,
-                "final_message": final_message
-            }
+            # Prepare metrics dictionary
+            metrics = {}
+
+            # Process throughput
+            if throughput and len(throughput) > 0 and 'value' in throughput[0]:
+                metrics['throughput'] = f"{float(throughput[0]['value'][1]) / 1_000_000:.2f} Mbps"  # Convert to Mbps
+            else:
+                logger.error("Throughput query returned no valid data.")
+                metrics['throughput'] = "N/A"
+
+            # Process packet loss
+            if packet_loss and len(packet_loss) > 0 and 'value' in packet_loss[0]:
+                metrics['packet_loss'] = f"{float(packet_loss[0]['value'][1]):.2f}%"
+            else:
+                logger.error("Packet loss query returned no valid data.")
+                metrics['packet_loss'] = "N/A"
+
+            # Process TCP retransmission
+            if tcp_retransmission and len(tcp_retransmission) > 0 and 'value' in tcp_retransmission[0]:
+                metrics['tcp_retransmission'] = f"{float(tcp_retransmission[0]['value'][1]):.2f}%"
+            else:
+                logger.error("TCP retransmission query returned no valid data.")
+                metrics['tcp_retransmission'] = "N/A"
+
+            # Log final metrics
+            logger.debug(f"Final network metrics: {metrics}")
+
+            return metrics
+
         except Exception as e:
             logger.error(f"Error fetching network traffic metrics: {e}")
             raise e
+
 
     def list_services(self, namespace: str = None) -> Dict[str, str]:
         """

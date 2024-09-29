@@ -83,6 +83,26 @@ preprocess_data: download_data
 	$(PYTHON) scripts/preprocess_data.py
 	@echo "✅ Data preprocessed."
 
+.PHONY: setup-monitoring-access
+setup-monitoring-access:
+	@echo "🔐 Assigning cluster-monitoring-view role and generating token for ServiceAccount..."
+	oc adm policy add-cluster-role-to-user cluster-monitoring-view -z dev-netsentenial-sa
+	@TOKEN=$$(oc create token dev-netsentenial-sa); \
+	echo "✅ Token generated."; \
+	echo ""; \
+	echo "Run the following command to export the token as an environment variable:"; \
+	echo ""; \
+	echo 'export PROMETHEUS_BEARER_TOKEN="'$$TOKEN'"'; \
+	echo ""; \
+	echo "To test Prometheus connection, use the following steps:"; \
+	echo "1. Port forward Prometheus service using:"; \
+	echo "   oc port-forward svc/thanos-querier 9091 -n openshift-monitoring"; \
+	echo "2. Run the following curl command to validate the connection:"; \
+	echo '   curl -k -H "Authorization: Bearer $$PROMETHEUS_BEARER_TOKEN" \'; \
+	echo '      "https://localhost:9091/api/v1/query?query=up" | jq .'; \
+	echo ""; \
+	echo "3. Make sure you have 'jq' installed to parse the response."
+
 
 # Task to download Mistral 7B model using git clone
 .PHONY: download_mistral

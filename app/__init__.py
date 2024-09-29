@@ -92,7 +92,8 @@ def create_app(config_path='../config.yaml', registry=None):
     app.config['RAG_CONFIG'] = config.get('rag_config', {})
     app.config['OCP_CONFIG'] = {
         'kubeconfig_path': config.get('ocp_config', {}).get('kubeconfig_path', '/path/to/kubeconfig'),
-        'auth_method': config.get('ocp_config', {}).get('auth_method', 'kubeconfig')  # 'kubeconfig' or 'token'
+        'auth_method': config.get('ocp_config', {}).get('auth_method', 'kubeconfig'),  # 'kubeconfig' or 'token'
+        'prometheus_url': os.getenv('PROMETHEUS_URL', config.get('ocp_config', {}).get('prometheus_url', ''))
     }
 
     # Setup logging
@@ -195,10 +196,10 @@ def create_app(config_path='../config.yaml', registry=None):
         # Initialize OCP Client
         ocp_config = app.config['OCP_CONFIG']
         kubeconfig_path = ocp_config.get('kubeconfig_path')
-        auth_method = ocp_config.get('auth_method')
+        prometheus_url = ocp_config.get('prometheus_url')
 
         try:
-            ocp_client = OCPClient(kubeconfig_path=kubeconfig_path)
+            ocp_client = OCPClient(kubeconfig_path=kubeconfig_path, prometheus_url=prometheus_url)
         except Exception as ocp_exception:
             logging.error(f"Failed to initialize OCP Client: {ocp_exception}")
             ocp_client = None
