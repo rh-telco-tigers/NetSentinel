@@ -1,0 +1,10 @@
+kfp==2.9.0
+kaggle
+pandas
+numpy
+scikit-learn
+joblib
+skl2onnx
+boto3
+kubernetes
+kfp-kubernetes
