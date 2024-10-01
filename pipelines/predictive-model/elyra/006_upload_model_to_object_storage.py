@@ -42,8 +42,8 @@ def upload_to_s3(file_path, bucket_name, s3_key):
 def main():
     parser = argparse.ArgumentParser(description="Upload file to S3")
     parser.add_argument('--file_path', type=str, default='./models/predictive_model/model.onnx', help='Path to the file to upload (default: "./models/predictive_model/model.onnx")')
-    parser.add_argument('--bucket_name', type=str, default='my-default-bucket', help='S3 bucket name (default: "my-default-bucket")')
-    parser.add_argument('--s3_key', type=str, default='model.onnx', help='S3 key for the uploaded file (default: "model.onnx")')
+    parser.add_argument('--bucket_name', type=str, default='predictive-model-training', help='S3 bucket name (default: "my-default-bucket")')
+    parser.add_argument('--s3_key', type=str, default='elyra/model.onnx', help='S3 key for the uploaded file (default: "model.onnx")')
     parser.add_argument('--log_level', type=str, default='INFO', help='Log level (default: INFO)')
     args = parser.parse_args()
 

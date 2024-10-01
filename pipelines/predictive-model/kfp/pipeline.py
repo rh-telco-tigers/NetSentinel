@@ -18,8 +18,11 @@ def predictive_model_pipeline(
     random_state: int = 42,
     n_jobs: int = -1,
     bucket_name: str = 'predictive-model-training',
-    s3_key: str = 'model.onnx',
+    s3_key: str = 'kfp/model.onnx',
     endpoint_url: str = 'http://minio-service.netsentenial:9000',
+    aws_access_key_id: str = 'minio',
+    aws_secret_access_key: str = 'minio123',
+    region_name: str = 'us-east-1',
 ):
     # Step 1: Download dataset
     download_task = download_dataset_component(
@@ -69,11 +72,9 @@ def predictive_model_pipeline(
         bucket_name=bucket_name,
         s3_key=s3_key,
         endpoint_url=endpoint_url,
-    )
-    kubernetes.use_secret_as_volume(
-        task=upload_task,
-        secret_name='aws-credentials',
-        mount_path='/root/.aws',
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=region_name,
     )
 
 if __name__ == '__main__':

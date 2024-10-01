@@ -2,13 +2,16 @@
 # Name: predictive-model-pipeline
 # Description: A pipeline that downloads data, preprocesses it, trains a model, evaluates it, exports it to ONNX format, and uploads it to S3.
 # Inputs:
+#    aws_access_key_id: str [Default: 'minio']
+#    aws_secret_access_key: str [Default: 'minio123']
 #    bucket_name: str [Default: 'predictive-model-training']
 #    dataset: str [Default: 'mrwellsdavid/unsw-nb15']
 #    endpoint_url: str [Default: 'http://minio-service.netsentenial:9000']
 #    n_estimators: int [Default: 100.0]
 #    n_jobs: int [Default: -1.0]
 #    random_state: int [Default: 42.0]
-#    s3_key: str [Default: 'model.onnx']
+#    region_name: str [Default: 'us-east-1']
+#    s3_key: str [Default: 'kfp/model.onnx']
 components:
   comp-download-dataset-component:
     executorLabel: exec-download-dataset-component
@@ -102,9 +105,23 @@ components:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
       parameters:
+        aws_access_key_id:
+          defaultValue: minio
+          isOptional: true
+          parameterType: STRING
+        aws_secret_access_key:
+          defaultValue: minio123
+          isOptional: true
+          parameterType: STRING
         bucket_name:
           parameterType: STRING
         endpoint_url:
+          defaultValue: http://minio:9000
+          isOptional: true
+          parameterType: STRING
+        region_name:
+          defaultValue: us-east-1
+          isOptional: true
           parameterType: STRING
         s3_key:
           parameterType: STRING
@@ -380,31 +397,33 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef upload_to_s3_component(\n    file_path: InputPath(),\n    bucket_name:\
-          \ str,\n    s3_key: str,\n    endpoint_url: str\n):\n    import boto3\n\
+          \ str,\n    s3_key: str,\n    endpoint_url: str = 'http://minio:9000',\n\
+          \    aws_access_key_id: str = 'minio',\n    aws_secret_access_key: str =\
+          \ 'minio123',\n    region_name: str = 'us-east-1',\n):\n    import boto3\n\
           \    import logging\n    import os\n    from botocore.exceptions import\
           \ NoCredentialsError, ClientError\n\n    # Setup logging\n    logging.basicConfig(\n\
           \        level=logging.INFO,\n        format='%(asctime)s - %(levelname)s\
           \ - %(message)s',\n        handlers=[logging.StreamHandler()]\n    )\n\n\
           \    def upload_to_s3(file_path, bucket_name, s3_key):\n        try:\n\n\
-          \            region_name = 'us-east-1'\n\n            s3 = boto3.client(\n\
-          \                's3',\n                endpoint_url=endpoint_url,\n   \
-          \             region_name=region_name,\n            )\n            s3.upload_file(file_path,\
-          \ bucket_name, s3_key)\n            s3_url = f\"s3://{bucket_name}/{s3_key}\"\
-          \n            logging.info(f\"File uploaded to MinIO: {s3_url}\")\n    \
-          \        return s3_url\n        except KeyError as e:\n            logging.error(f\"\
-          Environment variable {e} not set.\")\n            return None\n        except\
-          \ FileNotFoundError:\n            logging.error(f\"File {file_path} not\
-          \ found.\")\n            return None\n        except NoCredentialsError:\n\
-          \            logging.error(\"Credentials not available.\")\n           \
-          \ return None\n        except ClientError as e:\n            logging.error(f\"\
-          Client error: {e}\")\n            return None\n        except Exception\
-          \ as e:\n            logging.error(f\"Error uploading file to MinIO: {e}\"\
-          )\n            return None\n\n    # Assume that file_path is a directory\
-          \ containing 'model.onnx'\n    onnx_model_path = os.path.join(file_path,\
-          \ 'model.onnx')\n    s3_url = upload_to_s3(onnx_model_path, bucket_name,\
-          \ s3_key)\n\n    if s3_url:\n        logging.info(f\"Upload successful.\
-          \ File available at {s3_url}\")\n    else:\n        logging.error(\"Upload\
-          \ failed.\")\n\n"
+          \            s3 = boto3.client(\n                's3',\n               \
+          \ aws_access_key_id=aws_access_key_id,\n                aws_secret_access_key=aws_secret_access_key,\n\
+          \                endpoint_url=endpoint_url,\n                region_name=region_name,\n\
+          \n            )\n            s3.upload_file(file_path, bucket_name, s3_key)\n\
+          \            s3_url = f\"s3://{bucket_name}/{s3_key}\"\n            logging.info(f\"\
+          File uploaded to MinIO: {s3_url}\")\n            return s3_url\n       \
+          \ except KeyError as e:\n            logging.error(f\"Environment variable\
+          \ {e} not set.\")\n            return None\n        except FileNotFoundError:\n\
+          \            logging.error(f\"File {file_path} not found.\")\n         \
+          \   return None\n        except NoCredentialsError:\n            logging.error(\"\
+          Credentials not available.\")\n            return None\n        except ClientError\
+          \ as e:\n            logging.error(f\"Client error: {e}\")\n           \
+          \ return None\n        except Exception as e:\n            logging.error(f\"\
+          Error uploading file to MinIO: {e}\")\n            return None\n\n    #\
+          \ Assume that file_path is a directory containing 'model.onnx'\n    onnx_model_path\
+          \ = os.path.join(file_path, 'model.onnx')\n    s3_url = upload_to_s3(onnx_model_path,\
+          \ bucket_name, s3_key)\n\n    if s3_url:\n        logging.info(f\"Upload\
+          \ successful. File available at {s3_url}\")\n    else:\n        logging.error(\"\
+          Upload failed.\")\n\n"
         image: python:3.8
 pipelineInfo:
   description: A pipeline that downloads data, preprocesses it, trains a model, evaluates
@@ -515,16 +534,30 @@ root:
                 outputArtifactKey: onnx_model_output
                 producerTask: export-model-to-onnx-component
           parameters:
+            aws_access_key_id:
+              componentInputParameter: aws_access_key_id
+            aws_secret_access_key:
+              componentInputParameter: aws_secret_access_key
             bucket_name:
               componentInputParameter: bucket_name
             endpoint_url:
               componentInputParameter: endpoint_url
+            region_name:
+              componentInputParameter: region_name
             s3_key:
               componentInputParameter: s3_key
         taskInfo:
           name: upload-to-s3-component
   inputDefinitions:
     parameters:
+      aws_access_key_id:
+        defaultValue: minio
+        isOptional: true
+        parameterType: STRING
+      aws_secret_access_key:
+        defaultValue: minio123
+        isOptional: true
+        parameterType: STRING
       bucket_name:
         defaultValue: predictive-model-training
         isOptional: true
@@ -549,8 +582,12 @@ root:
         defaultValue: 42.0
         isOptional: true
         parameterType: NUMBER_INTEGER
+      region_name:
+        defaultValue: us-east-1
+        isOptional: true
+        parameterType: STRING
       s3_key:
-        defaultValue: model.onnx
+        defaultValue: kfp/model.onnx
         isOptional: true
         parameterType: STRING
 schemaVersion: 2.1.0
@@ -565,8 +602,3 @@ platforms:
           - mountPath: /.config/kaggle
             optional: false
             secretName: kaggle-secret
-        exec-upload-to-s3-component:
-          secretAsVolume:
-          - mountPath: /root/.aws
-            optional: false
-            secretName: aws-credentials

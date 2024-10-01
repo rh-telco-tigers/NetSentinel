@@ -9,7 +9,10 @@ def upload_to_s3_component(
     file_path: InputPath(),
     bucket_name: str,
     s3_key: str,
-    endpoint_url: str
+    endpoint_url: str = 'http://minio:9000',
+    aws_access_key_id: str = 'minio',
+    aws_secret_access_key: str = 'minio123',
+    region_name: str = 'us-east-1',
 ):
     import boto3
     import logging
@@ -26,12 +29,13 @@ def upload_to_s3_component(
     def upload_to_s3(file_path, bucket_name, s3_key):
         try:
 
-            region_name = 'us-east-1'
-
             s3 = boto3.client(
                 's3',
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
                 endpoint_url=endpoint_url,
                 region_name=region_name,
+                
             )
             s3.upload_file(file_path, bucket_name, s3_key)
             s3_url = f"s3://{bucket_name}/{s3_key}"
