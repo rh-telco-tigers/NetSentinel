@@ -157,40 +157,37 @@ class OCPClient:
         import yaml
 
         try:
-            # Construct the NetworkPolicy object
-            network_policy = V1NetworkPolicy(
-                api_version='networking.k8s.io/v1',
-                kind='NetworkPolicy',
-                metadata=V1ObjectMeta(
-                    name='block-traffic-policy',
-                    namespace=namespace
-                ),
-                spec=V1NetworkPolicySpec(
-                    pod_selector=V1LabelSelector(match_labels={}),  # Empty selector matches all pods
-                    policy_types=['Ingress'],
-                    ingress=[]
-                )
-            )
+            # Construct the NetworkPolicy as a dictionary
+            network_policy_dict = {
+                'apiVersion': 'networking.k8s.io/v1',
+                'kind': 'NetworkPolicy',
+                'metadata': {
+                    'name': 'block-traffic-policy',
+                    'namespace': namespace
+                },
+                'spec': {
+                    'podSelector': {},  # Empty selector matches all pods
+                    'policyTypes': ['Ingress'],
+                    'ingress': []
+                }
+            }
 
             if source_ips:
-                ip_block = V1IPBlock(
-                    cidr='0.0.0.0/0'
-                )
-                # Since 'except' is a reserved keyword, use setattr to set it
-                setattr(ip_block, 'except', [ip + '/32' for ip in source_ips])
-
-                ingress_rule = V1NetworkPolicyIngressRule(
-                    _from=[
-                        V1NetworkPolicyPeer(
-                            ip_block=ip_block
-                        )
+                ingress_rule = {
+                    'from': [
+                        {
+                            'ipBlock': {
+                                'cidr': '0.0.0.0/0',
+                                'except': [ip + '/32' for ip in source_ips]
+                            }
+                        }
                     ]
-                )
-                network_policy.spec.ingress.append(ingress_rule)
+                }
+                network_policy_dict['spec']['ingress'].append(ingress_rule)
             else:
                 # Deny all ingress traffic
-                network_policy.spec.ingress = []
-                network_policy.spec.policy_types = ['Ingress']
+                network_policy_dict['spec']['ingress'] = []
+                network_policy_dict['spec']['policyTypes'] = ['Ingress']
 
             if destination_ips:
                 # Since NetworkPolicy cannot specify destination IPs directly unless they are pod IPs,
@@ -198,30 +195,34 @@ class OCPClient:
                 raise ValueError("NetworkPolicy cannot specify destination IPs unless they correspond to pod IPs.")
 
             # Convert the policy to YAML
-            api_client = client.ApiClient()
-            policy_dict = api_client.sanitize_for_serialization(network_policy)
-            network_policy_yaml = yaml.dump(policy_dict, sort_keys=False)
+            network_policy_yaml = yaml.dump(network_policy_dict, sort_keys=False)
 
             # Attempt to apply the policy
             try:
+                # Create the NetworkPolicy using the dictionary
                 self.network_api.create_namespaced_network_policy(
                     namespace=namespace,
-                    body=network_policy
+                    body=network_policy_dict
                 )
-                message = f"NetworkPolicy 'block-traffic-policy' has been successfully applied to namespace '{namespace}'.\n\nHere is the YAML definition:\n```yaml\n{network_policy_yaml}\n```"
+                message = (
+                    f"NetworkPolicy 'block-traffic-policy' has been successfully applied to namespace '{namespace}'.\n\n"
+                    f"Here is the YAML definition:\n```yaml\n{network_policy_yaml}\n```"
+                )
                 applied = True
             except ApiException as e:
                 if e.status == 403:
-                    message = ("You do not have permission to apply this NetworkPolicy due to RBAC restrictions. "
-                            "You can however create the NetworkPolicy using the following YAML:\n"
-                            "```yaml\n{yaml}\n```")
+                    message = (
+                        "You do not have permission to apply this NetworkPolicy due to RBAC restrictions. "
+                        "You can however create the NetworkPolicy using the following YAML:\n"
+                        f"```yaml\n{network_policy_yaml}\n```"
+                    )
                     applied = False
                 else:
-                    message = f"An error occurred while applying the NetworkPolicy: {e}\n\nHere is the YAML definition:\n```yaml\n{network_policy_yaml}\n```"
+                    message = (
+                        f"An error occurred while applying the NetworkPolicy: {e}\n\n"
+                        f"Here is the YAML definition:\n```yaml\n{network_policy_yaml}\n```"
+                    )
                     applied = False
-
-            if not applied and '{yaml}' in message:
-                message = message.format(yaml=network_policy_yaml)
 
             return {
                 "applied": applied,
@@ -231,12 +232,18 @@ class OCPClient:
 
         except ValueError as ve:
             logger.error(f"Value error: {ve}")
-            raise ve
+            return {
+                "applied": False,
+                "message": str(ve),
+                "yaml": ""
+            }
         except Exception as e:
-            message = f"An unexpected error occurred: {e}"
-            logger.error(message)
-            raise e
-
+            logger.error(f"An unexpected error occurred: {e}")
+            return {
+                "applied": False,
+                "message": f"An unexpected error occurred: {e}",
+                "yaml": ""
+            }
 
     def check_network_traffic(self) -> Dict[str, str]:
         """
