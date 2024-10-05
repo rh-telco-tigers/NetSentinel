@@ -10,22 +10,32 @@ from .utils import (
     get_events_by_src_ip,
     get_events_by_dst_ip,
     build_context_from_event_data,
-    get_recent_events
+    get_recent_events,
+    extract_namespace
 )
 
 logger = logging.getLogger(__name__)
+
+def log_extracted_entities(entities: Dict):
+    """
+    Logs all the extracted entities for debugging purposes.
+    """
+    logger.info(f"Extracted entities: {entities}")
 
 # -------------------------------
 # General Intent Handlers
 # -------------------------------
 
 def handle_greet(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "Hello! How can I assist you today?"
 
 def handle_goodbye(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "Goodbye! If you have more questions, feel free to ask."
 
 def handle_get_event_info(entities: Dict, event_id_index: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     event_id = entities.get('event_id')
     if not event_id:
         return "Please provide a valid event ID."
@@ -53,6 +63,7 @@ def handle_get_event_info(entities: Dict, event_id_index: Dict, **kwargs) -> str
         return build_context_from_event_data(event_data)
 
 def handle_list_attack_events(entities: Dict, metadata_store: list, **kwargs) -> str:
+    log_extracted_entities(entities)
     event_ids = get_all_attack_event_ids(metadata_store)
     if event_ids:
         return "Attack Event IDs:\n" + "\n".join(event_ids)
@@ -65,13 +76,18 @@ def handle_list_recent_attack_events(entities: Dict, metadata_store: list, **kwa
     Accepts an optional 'number' entity to specify how many events to list.
     Defaults to 10 if not provided.
     """
+    log_extracted_entities(entities)
+
     number = entities.get('number')
+    if not number:
+        logger.warning(f"No 'number' entity found in: {entities}. Defaulting to 10.")
     try:
         limit = int(number) if number else 10
     except ValueError:
         logger.warning(f"Invalid number provided: {number}. Defaulting to 10.")
         limit = 10
 
+    logger.info(f"Listing {limit} recent attack events.")
     # Fetch recent attack events
     recent_attack_events = get_recent_events(metadata_store, event_type='attack', limit=limit)
     
@@ -84,6 +100,7 @@ def handle_list_recent_attack_events(entities: Dict, metadata_store: list, **kwa
     return final_message
 
 def handle_list_recent_normal_events(entities: Dict, metadata_store: list, **kwargs) -> str:
+    log_extracted_entities(entities)
     """
     Handle intent to list recent normal events.
     Accepts an optional 'number' entity to specify how many events to list.
@@ -108,6 +125,7 @@ def handle_list_recent_normal_events(entities: Dict, metadata_store: list, **kwa
     return final_message
 
 def handle_get_events_by_ip(entities: Dict, metadata_store: list, **kwargs) -> str:
+    log_extracted_entities(entities)
     ip_address = entities.get('ip_address')
     if not ip_address:
         return "Please provide a valid IP address."
@@ -126,12 +144,15 @@ def handle_get_events_by_ip(entities: Dict, metadata_store: list, **kwargs) -> s
         return "No events found for the specified IP."
 
 def handle_ask_who_are_you(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "I am a network monitoring assistant designed to help you analyze events, attacks, and IP traffic."
 
 def handle_ask_how_are_you(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "I'm just a program, but thank you for asking! How can I help you?"
 
 def handle_ask_help(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return ("I can help you with queries regarding network events, attacks, IP information, "
             "and interact with your OpenShift cluster for networking and security metrics.\n"
             "For example:\n"
@@ -145,15 +166,19 @@ def handle_ask_help(entities: Dict, **kwargs) -> str:
             "How can I assist you today?")
 
 def handle_thank_you(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "You're welcome! I'm here to help whenever you need me."
 
 def handle_ask_farewell(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "Goodbye! Looking forward to helping you again."
 
 def handle_ask_joke(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return "Why don't computers get tired? Because they have chips to keep them going!"
 
 def handle_ask_capabilities(entities: Dict, **kwargs) -> str:
+    log_extracted_entities(entities)
     return ("I can help you with the following:\n"
             "- Look up network events by event ID\n"
             "- List events by IP address (source/destination)\n"
@@ -167,6 +192,7 @@ def handle_general_question(entities: Dict, **kwargs) -> str:
     """
     Handle general technical questions by generating a response using the LLM.
     """
+    log_extracted_entities(entities)
     user_text = entities.get('text', '')
     tokenizer = kwargs.get('tokenizer')
     llm_model = kwargs.get('llm_model')
@@ -196,6 +222,7 @@ def handle_fallback(entities: Dict, **kwargs) -> str:
     """
     Handle fallback by generating a response using the LLM.
     """
+    log_extracted_entities(entities)
     user_text = entities.get('text', '')
     tokenizer = kwargs.get('tokenizer')
     llm_model = kwargs.get('llm_model')
@@ -224,13 +251,11 @@ def handle_fallback(entities: Dict, **kwargs) -> str:
 # -------------------------------
 # Networking Intent Handlers
 # -------------------------------
-
 def handle_list_network_policies(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to list network policies in a specific namespace or cluster-wide.
-    Returns a dictionary with 'query', 'output', and 'final_message'.
     """
-    namespace = entities.get('namespace', 'all')
+    namespace = extract_namespace(entities)
     ocp_client = kwargs.get('ocp_client')
 
     if not ocp_client:
@@ -242,20 +267,37 @@ def handle_list_network_policies(entities: Dict, **kwargs) -> Dict[str, str]:
         }
 
     try:
-        policies = ocp_client.list_network_policies(namespace)
-        return policies
+        # List policies in the specific namespace or across all namespaces if 'namespace' is not specified
+        if namespace and namespace.lower() != 'all':
+            query = f"list_network_policies(namespace='{namespace}')"
+            policies_result = ocp_client.list_network_policies(namespace)
+        else:
+            query = "list_network_policies(all namespaces)"
+            policies_result = ocp_client.list_network_policies()  # Fetch across all namespaces if 'namespace' is None or 'all'
+
+        policy_names = policies_result.get("output", [])
+        final_message = policies_result.get("final_message", "No network policies found.")
+
+        return {
+            "query": query,
+            "output": policy_names,
+            "final_message": final_message
+        }
+
     except Exception as e:
         logger.error(f"Error fetching network policies: {e}")
         return {
             "query": "",
             "output": [],
-            "final_message": "Sorry, I couldn't retrieve network policies at the moment."
+            "final_message": f"Error retrieving network policies for namespace '{namespace if namespace else 'all'}'"
         }
+
 
 def handle_check_network_traffic(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to check current network traffic metrics.
     """
+    log_extracted_entities(entities)
     ocp_client = kwargs.get('ocp_client')
 
     if not ocp_client:
@@ -299,9 +341,9 @@ def handle_check_network_traffic(entities: Dict, **kwargs) -> Dict[str, str]:
 
 def handle_list_services(entities: Dict, **kwargs) -> Dict[str, str]:
     """
-    Handle intent to list services in a specific namespace or cluster-wide.
+    Handle the intent to list services in a specific namespace or across all namespaces.
     """
-    namespace = entities.get('namespace', 'all')
+    namespace = extract_namespace(entities)
     ocp_client = kwargs.get('ocp_client')
 
     if not ocp_client:
@@ -313,27 +355,37 @@ def handle_list_services(entities: Dict, **kwargs) -> Dict[str, str]:
         }
 
     try:
-        services = ocp_client.list_services(namespace)
-        query = services.get("query", "")
-        output = services.get("output", [])
-        final_message = services.get("final_message", "No services found.")
+        # List services in the specific namespace or across all namespaces
+        if namespace and namespace.lower() != 'all':
+            query = f"list_services(namespace='{namespace}')"
+            services_result = ocp_client.list_services(namespace)
+        else:
+            query = "list_services(all namespaces)"
+            services_result = ocp_client.list_services()  # Fetch across all namespaces if 'namespace' is None or 'all'
+
+        service_names = services_result.get("output", [])
+        final_message = services_result.get("final_message", "No services found.")
+
         return {
             "query": query,
-            "output": output,
+            "output": service_names,
             "final_message": final_message
         }
+
     except Exception as e:
         logger.error(f"Error listing services: {e}")
         return {
             "query": "",
             "output": [],
-            "final_message": "Sorry, I couldn't retrieve services at the moment."
+            "final_message": f"Error retrieving services for namespace '{namespace if namespace else 'all'}'"
         }
+
 
 def handle_check_pod_connectivity(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to check connectivity between two pods.
     """
+    log_extracted_entities(entities)
     pod_a = entities.get('pod_a')
     pod_b = entities.get('pod_b')
     namespace = entities.get('namespace', 'default')
@@ -380,6 +432,7 @@ def handle_check_dns_health(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to check DNS health.
     """
+    log_extracted_entities(entities)
     namespace = entities.get('namespace', 'kube-system')
     ocp_client = kwargs.get('ocp_client')
 
@@ -420,7 +473,7 @@ def handle_list_pods(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle the intent to list pods in a given namespace or across all namespaces.
     """
-    namespace = entities.get('namespace', 'all')
+    namespace = extract_namespace(entities)
     ocp_client = kwargs.get('ocp_client')
 
     if not ocp_client:
@@ -432,38 +485,31 @@ def handle_list_pods(entities: Dict, **kwargs) -> Dict[str, str]:
         }
 
     try:
-        if namespace.lower() != 'all':
-            query = f"list_namespaced_pod(namespace={namespace})"
-            pods = ocp_client.core_api.list_namespaced_pod(namespace)
+        # List pods in the specific namespace or across all namespaces
+        if namespace and namespace.lower() != 'all':
+            query = f"list_pods(namespace='{namespace}')"
+            pods_result = ocp_client.list_pods(namespace)
         else:
-            query = "list_pod_for_all_namespaces()"
-            pods = ocp_client.core_api.list_pod_for_all_namespaces()
+            query = "list_pods(all namespaces)"
+            pods_result = ocp_client.list_pods()  # Fetch across all namespaces if 'namespace' is None or 'all'
 
-        pod_names = [f"{pod.metadata.namespace}/{pod.metadata.name}" for pod in pods.items]
-        logger.debug(f"Pods: {pod_names}")
-
-        final_message = f"Pods: {', '.join(pod_names) if pod_names else 'No pods found'}"
-        output = pod_names
+        pod_names = pods_result.get("output", [])
+        final_message = pods_result.get("final_message", "No pods found.")
 
         return {
             "query": query,
-            "output": output,
+            "output": pod_names,
             "final_message": final_message
         }
-    except ApiException as e:
-        logger.error(f"API exception when listing pods: {e}")
-        return {
-            "query": query if 'query' in locals() else "",
-            "output": [],
-            "final_message": "Sorry, I couldn't retrieve the pod list at the moment."
-        }
+
     except Exception as e:
-        logger.error(f"Unexpected error when listing pods: {e}")
+        logger.error(f"Error listing pods: {e}")
         return {
-            "query": query if 'query' in locals() else "",
+            "query": "",
             "output": [],
-            "final_message": "Sorry, an error occurred while listing the pods."
+            "final_message": f"Error retrieving pods for namespace '{namespace if namespace else 'all'}'"
         }
+
 
 # -------------------------------
 # Security Intent Handlers
@@ -473,6 +519,7 @@ def handle_list_security_policies(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to list security policies in a specific namespace or cluster-wide.
     """
+    log_extracted_entities(entities)
     namespace = entities.get('namespace', 'all')
     ocp_client = kwargs.get('ocp_client')
 
@@ -506,6 +553,7 @@ def handle_check_pod_security_compliance(entities: Dict, **kwargs) -> Dict[str, 
     """
     Handle intent to check pod security compliance.
     """
+    log_extracted_entities(entities)
     ocp_client = kwargs.get('ocp_client')
 
     if not ocp_client:
@@ -541,6 +589,7 @@ def handle_review_user_access(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to review user access levels.
     """
+    log_extracted_entities(entities)
     namespace = entities.get('namespace', 'all')
     ocp_client = kwargs.get('ocp_client')
 
@@ -577,6 +626,7 @@ def handle_retrieve_audit_logs(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to retrieve audit logs.
     """
+    log_extracted_entities(entities)
     time_range = entities.get('time_range', 'last 24 hours')
     ocp_client = kwargs.get('ocp_client')
 
@@ -610,6 +660,7 @@ def handle_run_vulnerability_scan(entities: Dict, **kwargs) -> Dict[str, str]:
     """
     Handle intent to run a vulnerability scan.
     """
+    log_extracted_entities(entities)
     ocp_client = kwargs.get('ocp_client')
 
     if not ocp_client:

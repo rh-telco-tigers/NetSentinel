@@ -110,10 +110,10 @@ class OCPClient:
                 query = f"list_namespaced_network_policy(namespace='{namespace}')"
                 policies = self.network_api.list_namespaced_network_policy(namespace)
             else:
-                query = "list_network_policy_for_all_namespaces()"
+                query = "list_network_policies_for_all_namespaces()"
                 policies = self.network_api.list_network_policy_for_all_namespaces()
 
-            # Prepare output (list of policy names)
+            # Access policies.items, which is an iterable
             policy_names = [f"{policy.metadata.namespace}/{policy.metadata.name}" for policy in policies.items]
             logger.debug(f"Network policies: {policy_names}")
 
@@ -149,6 +149,7 @@ class OCPClient:
                 "output": [],
                 "final_message": f"Unexpected error: {e}"
             }
+
 
     def check_network_traffic(self) -> Dict[str, str]:
         """
@@ -215,12 +216,11 @@ class OCPClient:
 
     def list_services(self, namespace: str = None) -> Dict[str, str]:
         """
-        List services in a given namespace or cluster-wide.
-        Returns the query executed, its output, and the final message.
+        List services in a given namespace or across all namespaces.
         """
         try:
             if namespace and namespace.lower() != 'all':
-                query = f"list_namespaced_service(namespace={namespace})"
+                query = f"list_namespaced_service(namespace='{namespace}')"
                 services = self.core_api.list_namespaced_service(namespace)
             else:
                 query = "list_service_for_all_namespaces()"
@@ -236,10 +236,55 @@ class OCPClient:
             }
         except ApiException as e:
             logger.error(f"API exception when listing services: {e}")
-            raise e
+            return {
+                "query": "",
+                "output": [],
+                "final_message": f"Error retrieving services: {e}"
+            }
         except Exception as e:
             logger.error(f"Unexpected error when listing services: {e}")
-            raise e
+            return {
+                "query": "",
+                "output": [],
+                "final_message": f"Unexpected error: {e}"
+            }
+
+
+    def list_pods(self, namespace: str = None) -> Dict[str, str]:
+        """
+        List pods in a given namespace or across all namespaces.
+        """
+        try:
+            if namespace and namespace.lower() != 'all':
+                query = f"list_namespaced_pod(namespace='{namespace}')"
+                pods = self.core_api.list_namespaced_pod(namespace)
+            else:
+                query = "list_pod_for_all_namespaces()"
+                pods = self.core_api.list_pod_for_all_namespaces()
+
+            pod_names = [f"{pod.metadata.namespace}/{pod.metadata.name}" for pod in pods.items]
+            logger.debug(f"Pods: {pod_names}")
+
+            return {
+                "query": query,
+                "output": pod_names,
+                "final_message": f"Pods: {', '.join(pod_names) if pod_names else 'No pods found'}"
+            }
+        except ApiException as e:
+            logger.error(f"API exception when listing pods: {e}")
+            return {
+                "query": "",
+                "output": [],
+                "final_message": f"Error retrieving pods: {e}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error when listing pods: {e}")
+            return {
+                "query": "",
+                "output": [],
+                "final_message": f"Unexpected error: {e}"
+            }
+
 
     def check_pod_connectivity(self, namespace: str, pod_a: str, pod_b: str) -> Dict[str, str]:
         """

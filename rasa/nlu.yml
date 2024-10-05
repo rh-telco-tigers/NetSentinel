@@ -67,14 +67,15 @@ nlu:
 
   - intent: list_recent_attack_events
     examples: |
-      - Recent attack events: list the last 10
-      - Show me the most recent 5 attack events
-      - Provide the latest attack events
+      - Recent attack events: list the last [10](number)
+      - Show me the most recent [5](number) attack events
+      - Provide the latest [10](number) attack events
       - Recent attack events: show me what’s new
       - Can you list attack events from the past hour?
       - Give me the latest attack event details
-      - Recent attack events: what are the top 10?
-      - List the last 20 attack events for me
+      - Recent attack events: what are the top [10](number)?
+      - List the last [20](number) attack events for me
+      - Show me the last [15](number) attack events
 
   - intent: list_recent_normal_events
     examples: |
@@ -103,11 +104,19 @@ nlu:
       - Network policies: list
       - Show me the network policies in the cluster
       - Network policies: list in namespace [default](namespace)
-      - Network policies: what’s in namespace [prod](namespace)?
-      - Can you show me the network policies for namespace [test](namespace)?
-      - What are the network policies in [netsentenial](namespace)?
-      - Display the network policies in the cluster
-      - Network policies: what’s applied in namespace [dev](namespace)?
+      - What network policies are applied in namespace [prod](namespace)?
+      - Can you show the network policies for namespace [test](namespace)?
+      - List network policies from namespace [netsentenial](namespace)
+      - Network policies: show what's in [dev](namespace)
+      - Display network policies in [production](namespace)
+      - Network policies: list all in the cluster
+      - What network policies are applied across all namespaces?
+      - List all network policies for the namespace [openshift-monitoring](namespace)
+      - Network policies: what’s in [openshift-ingress](namespace)?
+      - Show me the network policies in [development](namespace)
+      - Network policies: what’s applied in namespace [qa](namespace)?
+      - Display all network policies in [default](namespace)
+      - List the network policies applied in namespace [staging](namespace)
 
   - intent: list_services
     examples: |
@@ -116,20 +125,41 @@ nlu:
       - What services are running in the cluster?
       - List all services in namespace [prod](namespace)
       - Services: what’s running in [dev](namespace)?
-      - Display services in namespace [default](namespace)
-      - What are the services in [production](namespace)?
+      - Display services in [production](namespace)
+      - List all services in namespace [test](namespace)
+      - What are the services in namespace [netsentenial](namespace)?
+      - Show all services running in namespace [openshift](namespace)
+      - What services are active in [development](namespace)?
+      - Services: list in [staging](namespace)
+      - What are the running services in namespace [openshift-ingress](namespace)?
+      - List services from namespace [openshift-monitoring](namespace)
+      - Show me the services in [qa](namespace)
+      - What services are available in namespace [default](namespace)?
       - List all services in the cluster
 
   - intent: list_pods
     examples: |
+      - list pods
       - Pods: list
-      - Show me the pods in namespace [default](namespace)
-      - What are the pods in [kube-system](namespace)?
-      - Pods: list down all in namespace [production](namespace)
-      - Give me a list of pods in namespace [default](namespace)
-      - What are the pods in namespace [test](namespace)?
-      - Pods: show me all in [dev](namespace)
-      - List all pods in the cluster
+      - Pods: list in namespace [default](namespace)
+      - Pods: show all in [openshift-sdn](namespace)
+      - List all pods in [openshift-sdn](namespace)
+      - List pods in the namespace [kube-system](namespace)
+      - What pods are in [openshift-ingress](namespace)?
+      - Show me the pods from namespace [openshift-monitoring](namespace)
+      - Pods: show all in [openshift-logging](namespace)
+      - List all pods in the namespace [production](namespace)
+      - Show pods in namespace [default](namespace)
+      - List all pods from namespace [openshift-sdn](namespace)
+      - Show me pods from the namespace [kube-system](namespace)
+      - List all pods from namespace [test](namespace)
+      - Show all pods in [development](namespace)
+      - Pods: what are in namespace [openshift](namespace)?
+      - Pods: show all in the namespace [kube-system](namespace)
+      - List pods from 'namespace: [openshift-logging](namespace)'
+      - List pods from namespace [redhat-ods-applications](namespace)
+      - Show pods from [openshift-ingress](namespace)
+      - Pods: list everything in [openshift-monitoring](namespace)
 
   - intent: review_user_access
     examples: |
@@ -229,6 +259,9 @@ nlu:
       - Can you explain DNS?
       - How does routing work?
       - What is a VPN?
+      - What is TELENT?
+      - What is Openshift?
+      - What is Kubernetes?
       - General question: describe the HTTP protocol
 
   - intent: ask_who_are_you
@@ -285,6 +318,8 @@ nlu:
   - regex: namespace
     examples: |
       - \b[a-z0-9]([-a-z0-9]*[a-z0-9])?\b
+      - namespace: \b[a-z0-9]([-a-z0-9]*[a-z0-9])?\b
+      - [a-z0-9]([-a-z0-9]*[a-z0-9])?\b
 
   - regex: time_range
     examples: |
@@ -294,13 +329,14 @@ nlu:
 
   - regex: number
     examples: |
+      - \b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fifteen|twenty)\b
+
+  - lookup: number
+    examples: |
+      - 1
+      - 2
       - 5
       - 10
       - 15
-      - 20
       - twenty
-      - ten
       - five
-      - 25
-      - 30
-      - 50

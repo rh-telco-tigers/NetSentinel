@@ -7,7 +7,7 @@ import faiss
 import numpy as np
 from datetime import datetime
 from json.decoder import JSONDecodeError
-
+from typing import Dict
 
 
 logger = logging.getLogger(__name__)
@@ -168,3 +168,19 @@ def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_cont
         raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
 
     return response_text
+
+
+def extract_namespace(entities: Dict) -> str:
+    """
+    Extract the namespace from entities, handling both 'namespace:' and regular namespace references.
+    """
+    namespace = entities.get('namespace')
+    
+    if namespace:
+        if 'namespace:' in namespace:
+            namespace = namespace.replace('namespace:', '').strip()
+
+        return namespace.strip()
+
+    return None
+
