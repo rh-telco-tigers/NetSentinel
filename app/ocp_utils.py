@@ -197,13 +197,18 @@ class OCPClient:
                 # we need to inform the user that this is not possible
                 raise ValueError("NetworkPolicy cannot specify destination IPs unless they correspond to pod IPs.")
 
+            # Convert the policy to YAML
+            api_client = client.ApiClient()
+            policy_dict = api_client.sanitize_for_serialization(network_policy)
+            network_policy_yaml = yaml.dump(policy_dict, sort_keys=False)
+
             # Attempt to apply the policy
             try:
                 self.network_api.create_namespaced_network_policy(
                     namespace=namespace,
                     body=network_policy
                 )
-                message = f"NetworkPolicy 'block-traffic-policy' has been successfully applied to namespace '{namespace}'."
+                message = f"NetworkPolicy 'block-traffic-policy' has been successfully applied to namespace '{namespace}'.\n\nHere is the YAML definition:\n```yaml\n{network_policy_yaml}\n```"
                 applied = True
             except ApiException as e:
                 if e.status == 403:
@@ -212,13 +217,8 @@ class OCPClient:
                             "```yaml\n{yaml}\n```")
                     applied = False
                 else:
-                    message = f"An error occurred while applying the NetworkPolicy: {e}"
+                    message = f"An error occurred while applying the NetworkPolicy: {e}\n\nHere is the YAML definition:\n```yaml\n{network_policy_yaml}\n```"
                     applied = False
-
-            # Convert the policy to YAML
-            api_client = client.ApiClient()
-            policy_dict = api_client.sanitize_for_serialization(network_policy)
-            network_policy_yaml = yaml.dump(policy_dict, sort_keys=False)
 
             if not applied and '{yaml}' in message:
                 message = message.format(yaml=network_policy_yaml)

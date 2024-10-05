@@ -344,10 +344,7 @@ def handle_create_network_policy(entities: Dict, **kwargs) -> Dict[str, str]:
             destination_ips=destination_ips
         )
         # Build the final message based on whether the policy was applied
-        if result['applied']:
-            final_message = result['message']
-        else:
-            final_message = result['message']
+        final_message = result['message']
 
         return {
             "query": "Generate and apply NetworkPolicy",
@@ -368,6 +365,7 @@ def handle_create_network_policy(entities: Dict, **kwargs) -> Dict[str, str]:
             "output": [],
             "final_message": "Sorry, I couldn't generate the NetworkPolicy YAML at the moment."
         }
+
 
 def handle_check_network_traffic(entities: Dict, **kwargs) -> Dict[str, str]:
     """

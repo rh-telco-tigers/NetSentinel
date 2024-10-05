@@ -45,16 +45,16 @@ nlu:
 
   - intent: create_network_policy
     examples: |
-      - Can you help me create a network policy to block traffic from source IP [192.168.1.1](ip_address)?
-      - Block all traffic going to destination IP [10.0.0.1](ip_address) from source IP [192.168.1.2](ip_address)
-      - Create a network policy to deny traffic from source IP [192.168.1.3](ip_address)
-      - I need a network policy to block traffic to destination IP [10.0.0.2](ip_address)
-      - Network policy: block traffic from [192.168.1.4](ip_address) to [10.0.0.3](ip_address)
-      - Generate a network policy to deny ingress from [192.168.1.5](ip_address)
-      - Deny all ingress traffic from source IPs [192.168.1.6](ip_address), [192.168.1.7](ip_address)
-      - Block traffic going to [10.0.0.4](ip_address) from these source IPs [192.168.1.8](ip_address), [192.168.1.9](ip_address)
-      - Need a policy to prevent access from [192.168.1.10](ip_address) to [10.0.0.5](ip_address)
-      - Can you create a network policy to block traffic from [192.168.1.11](ip_address) to any destination?
+      - Can you help me create a network policy to block traffic from Source IP [192.168.1.1](ip_address) in namespace [default](namespace)?
+      - Block all traffic going to destination IP [10.0.0.1](ip_address) from source IP [192.168.1.2](ip_address) in namespace [production](namespace)
+      - Create a network policy in namespace [staging](namespace) to deny traffic from source IP [192.168.1.3](ip_address)
+      - I need a network policy to block traffic to destination IP [10.0.0.2](ip_address) in the [dev](namespace) namespace
+      - Network policy: block traffic from [192.168.1.4](ip_address) to [10.0.0.3](ip_address) in namespace [qa](namespace)
+      - Generate a network policy to deny ingress from [192.168.1.5](ip_address) in namespace [test](namespace)
+      - Deny all ingress traffic from source IPs [192.168.1.6](ip_address), [192.168.1.7](ip_address) in [my-namespace](namespace)
+      - Block traffic going to [10.0.0.4](ip_address) from these source IPs [192.168.1.8](ip_address), [192.168.1.9](ip_address) in namespace [kube-system](namespace)
+      - Need a policy to prevent access from [192.168.1.10](ip_address) to [10.0.0.5](ip_address) in namespace [default](namespace)
+      - Can you create a network policy to block traffic from [192.168.1.11](ip_address) to any destination in namespace [custom-namespace](namespace)
 
   - intent: get_event_info
     examples: |
