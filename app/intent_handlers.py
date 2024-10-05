@@ -292,6 +292,82 @@ def handle_list_network_policies(entities: Dict, **kwargs) -> Dict[str, str]:
             "final_message": f"Error retrieving network policies for namespace '{namespace if namespace else 'all'}'"
         }
 
+def handle_create_network_policy(entities: Dict, **kwargs) -> Dict[str, str]:
+    """
+    Handle intent to create a network policy to block traffic from source IP(s) to destination IP(s).
+    Accepts source and destination IPs, handles conflicts, and generates valid NetworkPolicy YAML.
+    """
+    log_extracted_entities(entities)
+    source_ips = []
+    destination_ips = []
+    namespace = extract_namespace(entities) or 'default'  # Default namespace if not specified
+
+    # Collect IP addresses from entities
+    if 'ip_address' in entities:
+        ip_entities = entities['ip_address']
+        if isinstance(ip_entities, list):
+            ips = ip_entities
+        else:
+            ips = [ip_entities]
+
+        # Determine if the IPs are source or destination based on the text
+        text = entities.get('text', '').lower()
+        for ip in ips:
+            if f"source ip {ip}" in text or f"from {ip}" in text:
+                source_ips.append(ip)
+            elif f"destination ip {ip}" in text or f"to {ip}" in text or f"going to {ip}" in text:
+                destination_ips.append(ip)
+            else:
+                # If we cannot determine, assume it's a source IP
+                source_ips.append(ip)
+    else:
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Please provide at least one IP address."
+        }
+
+    # Now generate the NetworkPolicy YAML
+    ocp_client = kwargs.get('ocp_client')
+    if not ocp_client:
+        logger.error("OCP client not provided.")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Internal error: Unable to access OpenShift cluster."
+        }
+
+    try:
+        result = ocp_client.generate_network_policy_yaml(
+            namespace=namespace,
+            source_ips=source_ips,
+            destination_ips=destination_ips
+        )
+        # Build the final message based on whether the policy was applied
+        if result['applied']:
+            final_message = result['message']
+        else:
+            final_message = result['message']
+
+        return {
+            "query": "Generate and apply NetworkPolicy",
+            "output": result['yaml'],
+            "final_message": final_message
+        }
+    except ValueError as ve:
+        logger.error(f"Value error: {ve}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": str(ve)
+        }
+    except Exception as e:
+        logger.error(f"Error generating NetworkPolicy YAML: {e}")
+        return {
+            "query": "",
+            "output": [],
+            "final_message": "Sorry, I couldn't generate the NetworkPolicy YAML at the moment."
+        }
 
 def handle_check_network_traffic(entities: Dict, **kwargs) -> Dict[str, str]:
     """
@@ -718,6 +794,7 @@ INTENT_HANDLERS = {
     'list_services': handle_list_services,
     'check_pod_connectivity': handle_check_pod_connectivity,
     'check_dns_health': handle_check_dns_health,
+    'create_network_policy': handle_create_network_policy,
 
     # Security Intents
     'list_security_policies': handle_list_security_policies,

@@ -17,6 +17,6 @@ patches:
 
 images:
   - name: quay.io/bpandey/netsentenial
-    newTag: 0.0.3-torch-cpu
+    newTag: 0.0.4-torch-cpu
 
 namePrefix: dev-

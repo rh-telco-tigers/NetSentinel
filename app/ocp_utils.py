@@ -4,6 +4,8 @@ from typing import List, Dict
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from prometheus_api_client import PrometheusConnect
+from kubernetes.client import V1NetworkPolicy, V1ObjectMeta, V1NetworkPolicySpec, V1LabelSelector, V1NetworkPolicyIngressRule, V1NetworkPolicyPeer, V1IPBlock
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -149,6 +151,91 @@ class OCPClient:
                 "output": [],
                 "final_message": f"Unexpected error: {e}"
             }
+
+
+    def generate_network_policy_yaml(self, namespace: str, source_ips: List[str], destination_ips: List[str]) -> Dict[str, str]:
+        import yaml
+
+        try:
+            # Construct the NetworkPolicy object
+            network_policy = V1NetworkPolicy(
+                api_version='networking.k8s.io/v1',
+                kind='NetworkPolicy',
+                metadata=V1ObjectMeta(
+                    name='block-traffic-policy',
+                    namespace=namespace
+                ),
+                spec=V1NetworkPolicySpec(
+                    pod_selector=V1LabelSelector(match_labels={}),  # Empty selector matches all pods
+                    policy_types=['Ingress'],
+                    ingress=[]
+                )
+            )
+
+            if source_ips:
+                ip_block = V1IPBlock(
+                    cidr='0.0.0.0/0'
+                )
+                # Since 'except' is a reserved keyword, use setattr to set it
+                setattr(ip_block, 'except', [ip + '/32' for ip in source_ips])
+
+                ingress_rule = V1NetworkPolicyIngressRule(
+                    _from=[
+                        V1NetworkPolicyPeer(
+                            ip_block=ip_block
+                        )
+                    ]
+                )
+                network_policy.spec.ingress.append(ingress_rule)
+            else:
+                # Deny all ingress traffic
+                network_policy.spec.ingress = []
+                network_policy.spec.policy_types = ['Ingress']
+
+            if destination_ips:
+                # Since NetworkPolicy cannot specify destination IPs directly unless they are pod IPs,
+                # we need to inform the user that this is not possible
+                raise ValueError("NetworkPolicy cannot specify destination IPs unless they correspond to pod IPs.")
+
+            # Attempt to apply the policy
+            try:
+                self.network_api.create_namespaced_network_policy(
+                    namespace=namespace,
+                    body=network_policy
+                )
+                message = f"NetworkPolicy 'block-traffic-policy' has been successfully applied to namespace '{namespace}'."
+                applied = True
+            except ApiException as e:
+                if e.status == 403:
+                    message = ("You do not have permission to apply this NetworkPolicy due to RBAC restrictions. "
+                            "You can however create the NetworkPolicy using the following YAML:\n"
+                            "```yaml\n{yaml}\n```")
+                    applied = False
+                else:
+                    message = f"An error occurred while applying the NetworkPolicy: {e}"
+                    applied = False
+
+            # Convert the policy to YAML
+            api_client = client.ApiClient()
+            policy_dict = api_client.sanitize_for_serialization(network_policy)
+            network_policy_yaml = yaml.dump(policy_dict, sort_keys=False)
+
+            if not applied and '{yaml}' in message:
+                message = message.format(yaml=network_policy_yaml)
+
+            return {
+                "applied": applied,
+                "message": message,
+                "yaml": network_policy_yaml
+            }
+
+        except ValueError as ve:
+            logger.error(f"Value error: {ve}")
+            raise ve
+        except Exception as e:
+            message = f"An unexpected error occurred: {e}"
+            logger.error(message)
+            raise e
 
 
     def check_network_traffic(self) -> Dict[str, str]:
