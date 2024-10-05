@@ -63,9 +63,9 @@ llm_model_config:
   resume_from_checkpoint: null
 
 slack_config:
-  slack_channel: "#netsentenial"
-  slack_bot_token: "xoxb-3434547997201-7731336873907-qg969aOnRZouLnWVLkapdZ68"
-  slack_signing_secret: "75e74f33928dd9be008af160d610c778"
+  slack_channel: "#netsentinel"
+  slack_bot_token: "xoxb-7834804921362-7828268418118-L0aRQ3CVXKHsjh09De3Oq7nY"
+  slack_signing_secret: "8cceb8f82a6a595ce6dca0e689f05e2d"
 
 kafka_config:
   bootstrap: "netsentenial-kafka-kafka-bootstrap:9092"
