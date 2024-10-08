@@ -1,10 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: netsentenial
+
 resources:
   - ./serviceaccounts/app-serviceaccount.yaml
   - ./deployments/app-deployment.yaml
-  - deployments/ngrok-deployment.yaml
+  - ./deployments/ngrok-deployment.yaml
   - ./services/app-service.yaml
   - ./routes/app-route.yaml
   - ./secrets/ngrok-token-secret.yaml
@@ -17,11 +19,13 @@ secretGenerator:
     literals:
       - NGROK_AUTHTOKEN=2m7FVIePrGO5njNAXC5Wy4c40f2_5pv58J8wbsgjYV7WHZW6T
     type: Opaque
+    behavior: replace
 
 configMapGenerator:
   - name: app-config
     files:
       - config.yaml=app-config.yaml
+    behavior: replace
 
 patches: []
 

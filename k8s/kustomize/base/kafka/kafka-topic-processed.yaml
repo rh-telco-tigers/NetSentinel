@@ -2,7 +2,6 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
   name: processed-traffic-data
-  namespace: netsentenial
   labels:
     strimzi.io/cluster: netsentenial-kafka
 spec:

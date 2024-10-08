@@ -2,7 +2,6 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: netsentenial-route
-  namespace: netsentenial
 spec:
   to:
     kind: Service

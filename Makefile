@@ -86,6 +86,7 @@ preprocess_data: download_data
 .PHONY: setup-monitoring-access
 setup-monitoring-access:
 	@echo "🔐 Assigning cluster-monitoring-view role and generating token for ServiceAccount..."
+	oc adm policy add-scc-to-user privileged -z dev-netsentenial-sa
 	oc adm policy add-cluster-role-to-user cluster-monitoring-view -z dev-netsentenial-sa
 	@TOKEN=$$(oc create token dev-netsentenial-sa); \
 	echo "✅ Token generated."; \

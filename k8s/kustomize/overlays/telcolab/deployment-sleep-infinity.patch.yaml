@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netsentenial
+  namespace: netsentenial
+spec:
+  template:
+    spec:
+      containers:
+        - name: netsentenial
+          command: ["sleep", "infinity"]
+        - name: create-mock-data
+          command: ["sleep", "infinity"]
+        - name: process-mock-data
+          command: ["sleep", "infinity"]
+        - name: prediction-service
+          command: ["sleep", "infinity"]
