@@ -11,6 +11,10 @@ patches:
       kind: Deployment
       name: ngrok
     path: deployment-ngrok.patch.yaml
+  - target:
+      kind: ClusterRoleBinding
+      name: ocpclient-clusterrolebinding
+    path: clusterrolebinding.patch.yaml
 
   # - target:
   #     kind: Deployment
