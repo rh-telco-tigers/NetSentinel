@@ -11,6 +11,6 @@ spec:
             [
               "http",
               "--log=stdout",
-              "--domain=newly-advanced-dane.ngrok-free.app",
-              "dev-netsentenial:5000",
+              "--domain=turkey-tops-prawn.ngrok-free.app",
+              "telcolab-netsentenial:5000",
             ]
