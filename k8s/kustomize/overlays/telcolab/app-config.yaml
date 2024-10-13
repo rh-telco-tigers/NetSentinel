@@ -68,7 +68,7 @@ slack_config:
   slack_signing_secret: "fde84d1823293b0e40fcb806cc353bec"
 
 kafka_config:
-  bootstrap: "netsentenial-kafka-kafka-bootstrap:9092"
+  bootstrap: "console-kafka-kafka-bootstrap:9092"
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
 

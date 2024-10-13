@@ -3,7 +3,7 @@ kind: KafkaTopic
 metadata:
   name: processed-traffic-data
   labels:
-    strimzi.io/cluster: netsentenial-kafka
+    strimzi.io/cluster: console-kafka
 spec:
   partitions: 3
   replicas: 3
