@@ -6,7 +6,7 @@
 #    aws_secret_access_key: str [Default: 'minio123']
 #    bucket_name: str [Default: 'predictive-model-training']
 #    dataset: str [Default: 'mrwellsdavid/unsw-nb15']
-#    endpoint_url: str [Default: 'http://minio-service.netsentenial:9000']
+#    endpoint_url: str [Default: 'http://minio-service.netsentinel:9000']
 #    n_estimators: int [Default: 100.0]
 #    n_jobs: int [Default: -1.0]
 #    random_state: int [Default: 42.0]
@@ -567,7 +567,7 @@ root:
         isOptional: true
         parameterType: STRING
       endpoint_url:
-        defaultValue: http://minio-service.netsentenial:9000
+        defaultValue: http://minio-service.netsentinel:9000
         isOptional: true
         parameterType: STRING
       n_estimators:

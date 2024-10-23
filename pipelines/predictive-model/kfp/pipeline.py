@@ -19,7 +19,7 @@ def predictive_model_pipeline(
     n_jobs: int = -1,
     bucket_name: str = 'predictive-model-training',
     s3_key: str = 'kfp/model.onnx',
-    endpoint_url: str = 'http://minio-service.netsentenial:9000',
+    endpoint_url: str = 'http://minio-service.netsentinel:9000',
     aws_access_key_id: str = 'minio',
     aws_secret_access_key: str = 'minio123',
     region_name: str = 'us-east-1',
