@@ -33,17 +33,26 @@ spec:
   objectStorage:
     disableHealthCheck: false
     enableExternalRoute: false
+    # minio:
+    #   image: quay.io/minio/minio:RELEASE.2023-06-19T19-52-50Z
+    #   deploy: true
+    #   pvcSize: 200Gi
+    #   bucket: rhoaipipelines
+    #   s3CredentialsSecret: 
+    #     accessKey: minio_root_user
+    #     secretKey: minio_root_password
+    #     secretName: minio-secret
     externalStorage:
       basePath: ""
       bucket: pipelines
-      host: minio-ui-netsentinel.apps.cloud.xtoph152.dfw.ocp.run  # Automatically reference minio route
-      port: ""
+      host: minio-service.netsentinel
+      port: "9000"
       region: us-east-1
       s3CredentialsSecret: 
         accessKey: AWS_ACCESS_KEY_ID
         secretKey: AWS_SECRET_ACCESS_KEY
         secretName: minio-secret
-      scheme: https
+      scheme: http
   persistenceAgent:
     deploy: true
     numWorkers: 2

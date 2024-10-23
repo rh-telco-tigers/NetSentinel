@@ -13,6 +13,12 @@ secretGenerator:
       - certs/tls.key
     behavior: create
 
+  - name: kaggle-secret
+    files:
+      - kaggle.json=kaggle/kaggle.json
+    type: Opaque
+    behavior: create
+
 configMapGenerator:
   - name: custom-ca-bundle
     files:
