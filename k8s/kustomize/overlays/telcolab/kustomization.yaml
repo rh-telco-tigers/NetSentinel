@@ -6,6 +6,10 @@ namespace: netsentinel
 resources:
   - ../../base
 
+images:
+  - name: quay.io/bpandey/netsentenial
+    newTag: 0.0.5-torch-cpu
+
 patches:
   - target:
       kind: Deployment
@@ -15,11 +19,19 @@ patches:
       kind: ClusterRoleBinding
       name: ocpclient-clusterrolebinding
     path: clusterrolebinding.patch.yaml
+  - target:
+      kind: ClusterRoleBinding
+      name: cluster-monitoring-view-binding
+    path: cluster-monitoring-view-binding.patch.yaml
+  - target:
+      kind: SecurityContextConstraints
+      name: netsentinel-privileged-scc
+    path: custom-scc.patch.yaml
 
-  # - target:
-  #     kind: Deployment
-  #     name: netsentenial
-  #   path: deployment-sleep-infinity.patch.yaml
+  - target:
+      kind: Deployment
+      name: netsentinel
+    path: deployment-sleep-infinity.patch.yaml
 
 secretGenerator:
   - name: ngrok-token
@@ -34,8 +46,6 @@ configMapGenerator:
       - config.yaml=app-config.yaml
     behavior: replace
 
-images:
-  - name: quay.io/bpandey/netsentenial
-    newTag: 0.0.5-torch-cpu
+
 
 namePrefix: telcolab-

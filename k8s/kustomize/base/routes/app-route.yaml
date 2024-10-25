@@ -1,10 +1,10 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: netsentenial-route
+  name: netsentinel-route
 spec:
   to:
     kind: Service
-    name: netsentenial
+    name: netsentinel
   port:
     targetPort: 5000

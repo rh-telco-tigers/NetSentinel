@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: netsentenial
-  namespace: netsentenial
+  name: netsentinel
+  namespace: netsentinel
 spec:
   template:
     spec:
       containers:
-        - name: netsentenial
+        - name: netsentinel
           command: ["sleep", "infinity"]
         - name: create-mock-data
           command: ["sleep", "infinity"]

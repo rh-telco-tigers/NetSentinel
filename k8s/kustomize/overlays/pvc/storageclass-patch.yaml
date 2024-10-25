@@ -3,4 +3,4 @@ kind: PersistentVolumeClaim
 metadata:
   name: storageclass
 spec:
-  storageClassName: lvms-vg1
+  storageClassName: ocs-storagecluster-ceph-rbd

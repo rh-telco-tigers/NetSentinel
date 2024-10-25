@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: netsentenial
+  name: netsentinel
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: netsentenial
+      app: netsentinel
   template:
     metadata:
       labels:
-        app: netsentenial
+        app: netsentinel
     spec:
-      serviceAccountName: netsentenial-sa
+      serviceAccountName: netsentinel-sa
       containers:
-        - name: netsentenial
-          image: quay.io/bpandey/netsentenial:0.0.1
+        - name: netsentinel
+          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu
           command: ["sh", "-c", "python app/run.py"]
           ports:
             - containerPort: 5000
@@ -33,7 +33,7 @@ spec:
               subPath: config.yaml
 
         - name: create-mock-data
-          image: quay.io/bpandey/netsentenial:0.0.1
+          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu
           command: ["sh", "-c", "python scripts/create_mock_data.py"]
           securityContext:
             allowPrivilegeEscalation: true
@@ -49,7 +49,7 @@ spec:
               subPath: config.yaml
 
         - name: process-mock-data
-          image: quay.io/bpandey/netsentenial:0.0.1
+          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu
           command: ["sh", "-c", "python scripts/process_mock_data.py"]
           securityContext:
             allowPrivilegeEscalation: true
@@ -65,7 +65,7 @@ spec:
               subPath: config.yaml
 
         - name: prediction-service
-          image: quay.io/bpandey/netsentenial:0.0.1
+          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu
           command: ["sh", "-c", "python scripts/prediction_service.py"]
           securityContext:
             allowPrivilegeEscalation: true

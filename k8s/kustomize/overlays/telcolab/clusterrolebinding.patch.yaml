@@ -4,7 +4,7 @@ metadata:
   name: ocpclient-clusterrolebinding
 subjects:
   - kind: ServiceAccount
-    name: telcolab-netsentenial-sa
+    name: telcolab-netsentinel-sa
     namespace: netsentinel
 roleRef:
   kind: ClusterRole
