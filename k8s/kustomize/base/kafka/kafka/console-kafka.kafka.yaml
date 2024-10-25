@@ -7,8 +7,8 @@ spec:
     topicOperator: {}
     userOperator: {}
   kafka:
-    # authorization:
-    #   type: simple
+    authorization:
+      type: simple
     config:
       allow.everyone.if.no.acl.found: 'true'
       default.replication.factor: 3
