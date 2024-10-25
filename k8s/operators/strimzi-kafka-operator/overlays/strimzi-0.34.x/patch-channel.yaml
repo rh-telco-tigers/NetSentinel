@@ -1,3 +1,0 @@
-- op: replace
-  path: /spec/channel
-  value: strimzi-0.34.x
