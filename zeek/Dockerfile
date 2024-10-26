@@ -32,17 +32,31 @@ RUN git clone https://github.com/SeisoLLC/zeek-kafka.git /opt/zeek-kafka && \
     make install && \
     ldconfig
 
+# Install the Zeek-Kafka plugin using zkg
+RUN zkg install --force seisollc/zeek-kafka --version v1.2.0
+
 # Verify the plugin is installed
 RUN zeek -N Seiso::Kafka
 
-# Copy Zeek scripts
-COPY zeek_scripts/ /usr/local/zeek/share/zeek/site/
-
-# Expose Zeek log directory
-VOLUME /usr/local/zeek/logs
+# Install network tools
+RUN apt-get update && \
+    apt-get install -y net-tools iproute2 iputils-ping dnsutils vim && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /usr/local/zeek
 
+# Copy Zeek scripts
+COPY zeek-scripts/*  /usr/local/zeek/share/zeek/site/
+COPY zeek-config/ /usr/local/zeek/etc/
+
+# Copy the startup script
+COPY start-zeek.sh /usr/local/zeek/start-zeek.sh
+RUN chmod +x /usr/local/zeek/start-zeek.sh
+
+# Expose Zeek log directory
+VOLUME /usr/local/zeek/logs
+
 # Default command (can be overridden)
-CMD ["/bin/bash"]
+CMD ["/usr/local/zeek/start-zeek.sh"]
+

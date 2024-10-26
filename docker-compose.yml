@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   zookeeper:
@@ -38,6 +38,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  zeek:
+    build:
+      context: ./zeek
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./zeek/zeek-scripts:/usr/local/zeek/share/zeek/site/custom-scripts
+      - ./zeek/zeek-config/node.cfg:/usr/local/zeek/etc/node.cfg
+      - ./zeek/zeek-config/zeekctl.cfg:/usr/local/zeek/etc/zeekctl.cfg
+      - ./zeek/zeek-config/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek
+    command: ["zeekctl", "deploy"]
+    environment:
+      LD_LIBRARY_PATH: "/usr/local/lib"
+    networks:
+      - netsentenial_network
 
   app:
     build:
