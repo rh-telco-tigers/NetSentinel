@@ -28,7 +28,7 @@ data:
 
     redef ignore_checksums = T;
 
-    redef Kafka::logs_to_send = set(Conn::LOG, HTTP::LOG, DNS::LOG);
+    redef Kafka::logs_to_send = set(HTTP::LOG, DNS::LOG, Conn::LOG, DPD::LOG, FTP::LOG, Files::LOG, SMTP::LOG, SSL::LOG, Weird::LOG, Notice::LOG, DHCP::LOG, SSH::LOG, Software::LOG, RADIUS::LOG, X509::LOG, RFB::LOG, SIP::LOG);
     redef Kafka::topic_name = "netsentinel-zeek-logs";
     redef Kafka::tag_json = T;
     redef Kafka::kafka_conf = table(
