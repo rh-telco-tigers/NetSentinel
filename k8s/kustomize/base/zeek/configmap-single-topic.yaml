@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: zeek-config
+  name: netsentinel-zeek-config
 data:
   node.cfg: |
     [zeek]
@@ -36,7 +36,7 @@ data:
         ["metadata.broker.list"] = "console-kafka-kafka-secure-bootstrap:9093",
         ["security.protocol"] = "SASL_SSL",
         ["sasl.mechanisms"] = "SCRAM-SHA-512",
-        ["sasl.username"] = "zeek-client",
+        ["sasl.username"] = "netsentinel-zeek-client",
         ["sasl.password"] = getenv("KAFKA_PASSWORD"),
         ["ssl.ca.location"] = "/usr/local/share/ca-certificates/ca.crt",
     );

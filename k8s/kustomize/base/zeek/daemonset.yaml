@@ -29,10 +29,10 @@ spec:
           volumeMounts:
             - name: dev
               mountPath: /dev
-            - name: zeek-config
+            - name: netsentinel-zeek-config
               mountPath: /usr/local/zeek/share/zeek/site/local.zeek
               subPath: local.zeek
-            - name: zeek-config
+            - name: netsentinel-zeek-config
               mountPath: /usr/local/zeek/etc/node.cfg
               subPath: node.cfg
             - name: console-kafka-cluster-ca-cert
@@ -42,7 +42,7 @@ spec:
             - name: KAFKA_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: zeek-client
+                  name: netsentinel-zeek-client
                   key: password
             - name: LD_LIBRARY_PATH
               value: "/usr/local/lib"
@@ -74,9 +74,9 @@ spec:
         - name: dev
           hostPath:
             path: /dev
-        - name: zeek-config
+        - name: netsentinel-zeek-config
           configMap:
-            name: zeek-config
+            name: netsentinel-zeek-config
         - name: zeek-scripts
           emptyDir: {}
         - name: zeek-logs
