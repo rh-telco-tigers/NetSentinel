@@ -1,0 +1,45 @@
+# kubernetes/brute-force-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brute-force-attack
+  labels:
+    app: brute-force-attack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: brute-force-attack
+  template:
+    metadata:
+      labels:
+        app: brute-force-attack
+    spec:
+      containers:
+      - name: brute-force
+        image: your-repo/attack-simulation:latest
+        command: ["/opt/attack-scripts/run_attack.sh"]
+        args: ["brute_force"]
+        env:
+          - name: ATTACK_TYPE
+            value: "brute_force"
+        volumeMounts:
+          - name: wordlist
+            mountPath: /usr/share/wordlists/rockyou.txt
+            subPath: rockyou.txt
+      volumes:
+      - name: wordlist
+        configMap:
+          name: rockyou-wordlist
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rockyou-wordlist
+data:
+  rockyou.txt: |
+    password1
+    password2
+    password3
+    # Add more passwords as needed
