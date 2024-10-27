@@ -20,28 +20,25 @@ data:
     ScriptsDir = /usr/local/zeek/scripts
 
   local.zeek: |
+    @load base/frameworks/cluster
+    @load base/frameworks/logging
+
+    # Load any required packages
     @load packages/zeek-kafka
 
-    redef Kafka::tag_json = T;
-    redef Kafka::send_all_active_logs = F;
-    redef Kafka::topic_name = "";  # Use log path as topic name
+    redef ignore_checksums = T;
 
+    redef Kafka::logs_to_send = set(Conn::LOG, HTTP::LOG, DNS::LOG);
+    redef Kafka::topic_name = "netsentinel-zeek-logs";
+    redef Kafka::tag_json = T;
     redef Kafka::kafka_conf = table(
-        ["metadata.broker.list"] = "console-kafka-kafka-bootstrap:9092",
-        ["client.id"] = "zeek-client"
+        ["debug"] = "all",
+        ["metadata.broker.list"] = "console-kafka-kafka-secure-bootstrap:9093",
+        ["security.protocol"] = "SASL_SSL",
+        ["sasl.mechanisms"] = "SCRAM-SHA-512",
+        ["sasl.username"] = "zeek-client",
+        ["sasl.password"] = getenv("KAFKA_PASSWORD"),
+        ["ssl.ca.location"] = "/usr/local/share/ca-certificates/ca.crt",
     );
 
-    event zeek_init() &priority=-10
-        {
-        # Send Conn logs to 'conn' topic
-        Log::add_filter(Conn::LOG, [$name="kafka-conn", $writer=Log::WRITER_KAFKAWRITER,
-            $path="conn", $config=table(["topic_name"] = "conn")]);
-
-        # Send HTTP logs to 'http' topic
-        Log::add_filter(HTTP::LOG, [$name="kafka-http", $writer=Log::WRITER_KAFKAWRITER,
-            $path="http", $config=table(["topic_name"] = "http")]);
-
-        # Send DNS logs to 'dns' topic
-        Log::add_filter(DNS::LOG, [$name="kafka-dns", $writer=Log::WRITER_KAFKAWRITER,
-            $path="dns", $config=table(["topic_name"] = "dns")]);
-        }
+    redef Telemetry::metrics_port = 9999/tcp;

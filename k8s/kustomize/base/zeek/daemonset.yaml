@@ -35,7 +35,15 @@ spec:
             - name: zeek-config
               mountPath: /usr/local/zeek/etc/node.cfg
               subPath: node.cfg
+            - name: console-kafka-cluster-ca-cert
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
           env:
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zeek-client
+                  key: password
             - name: LD_LIBRARY_PATH
               value: "/usr/local/lib"
           command: ["/usr/local/zeek/start-zeek.sh"]
@@ -73,3 +81,9 @@ spec:
           emptyDir: {}
         - name: zeek-logs
           emptyDir: {}
+        - name: console-kafka-cluster-ca-cert
+          secret:
+            secretName: console-kafka-cluster-ca-cert
+
+# cat /usr/local/share/ca-certificates/ca.crt
+# openssl s_client -connect console-kafka-kafka-secure-bootstrap:9093 -CAfile /usr/local/share/ca-certificates/ca.crt
