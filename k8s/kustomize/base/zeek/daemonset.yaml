@@ -16,58 +16,56 @@ spec:
       serviceAccountName: zeek-privileged
       hostNetwork: true
       containers:
-      - name: zeek
-        image: quay.io/bpandey/netsentinel-zeek:base
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-              - NET_ADMIN
-              - NET_RAW
-        volumeMounts:
-        - name: dev
-          mountPath: /dev
-        - name: zeek-config
-          mountPath: /opt/zeek/etc
-        - name: zeek-scripts
-          mountPath: /usr/local/zeek_scripts
-        - name: zeek-logs
-          mountPath: /usr/local/zeek/logs
-        env:
-        - name: LD_LIBRARY_PATH
-          value: "/opt/zeek/lib"
-        command: ["/opt/zeek/bin/zeekctl", "deploy"]
-        resources:
-          requests:
-            cpu: "500m"
-            memory: "1Gi"
-          limits:
-            cpu: "1"
-            memory: "2Gi"
-        livenessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - pgrep zeek || exit 1
-          initialDelaySeconds: 30
-          periodSeconds: 60
-        readinessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - pgrep zeek
-          initialDelaySeconds: 30
-          periodSeconds: 60
+        - name: zeek
+          image: quay.io/bpandey/netsentinel-zeek:base
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+            - name: zeek-config
+              mountPath: /usr/local/zeek/share/zeek/site/local.zeek
+              subPath: local.zeek
+          env:
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/lib"
+          command: ["/usr/local/zeek/start-zeek.sh"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pgrep zeek || exit 1
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pgrep zeek
+            initialDelaySeconds: 30
+            periodSeconds: 60
       volumes:
-      - name: dev
-        hostPath:
-          path: /dev
-      - name: zeek-config
-        configMap:
-          name: zeek-config
-      - name: zeek-scripts
-        emptyDir: {}
-      - name: zeek-logs
-        emptyDir: {}
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: zeek-config
+          configMap:
+            name: zeek-config
+        - name: zeek-scripts
+          emptyDir: {}
+        - name: zeek-logs
+          emptyDir: {}
