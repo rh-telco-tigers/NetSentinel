@@ -15,6 +15,7 @@ spec:
     spec:
       serviceAccountName: zeek-privileged
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: zeek
           image: quay.io/bpandey/netsentinel-zeek:base
@@ -31,6 +32,9 @@ spec:
             - name: zeek-config
               mountPath: /usr/local/zeek/share/zeek/site/local.zeek
               subPath: local.zeek
+            - name: zeek-config
+              mountPath: /usr/local/zeek/etc/node.cfg
+              subPath: node.cfg
           env:
             - name: LD_LIBRARY_PATH
               value: "/usr/local/lib"

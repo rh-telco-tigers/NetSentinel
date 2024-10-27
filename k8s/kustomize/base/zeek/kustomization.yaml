@@ -5,3 +5,4 @@ resources:
   - ./rbac.yaml
   - ./configmap.yaml
   - ./daemonset.yaml
+  - ./custom-scc.yaml

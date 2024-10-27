@@ -7,7 +7,7 @@ data:
     [zeek]
     type=standalone
     host=localhost
-    interface=eth0  # Adjust interface as needed
+    interface=br-ex
 
   zeekctl.cfg: |
     # ZeekControl configuration
@@ -21,14 +21,13 @@ data:
 
   local.zeek: |
     @load packages/zeek-kafka
-    @load /usr/local/zeek_scripts/feature_extraction.zeek
 
     redef Kafka::tag_json = T;
     redef Kafka::send_all_active_logs = F;
     redef Kafka::topic_name = "";  # Use log path as topic name
 
     redef Kafka::kafka_conf = table(
-        ["metadata.broker.list"] = "kafka:29092",
+        ["metadata.broker.list"] = "console-kafka-kafka-bootstrap:9092",
         ["client.id"] = "zeek-client"
     );
 
