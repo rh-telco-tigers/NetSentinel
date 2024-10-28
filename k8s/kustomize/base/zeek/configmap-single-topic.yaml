@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netsentinel-zeek-config
+data:
+  node.cfg: |
+    [zeek]
+    type=standalone
+    host=localhost
+    interface=br-ex
+
+  zeekctl.cfg: |
+    # ZeekControl configuration
+
+    # Global Zeek configuration
+    MailTo = root@localhost
+    LogDir = /usr/local/zeek/logs
+    SpoolDir = /usr/local/zeek/spool
+    PidFile = /usr/local/zeek/spool/zeekctl.pid
+    ScriptsDir = /usr/local/zeek/scripts
+
+  local.zeek: |
+    @load base/frameworks/cluster
+    @load base/frameworks/logging
+
+    # Load any required packages
+    @load packages/zeek-kafka
+
+    redef ignore_checksums = T;
+
+    redef Kafka::logs_to_send = set(HTTP::LOG, DNS::LOG, Conn::LOG, DPD::LOG, FTP::LOG, Files::LOG, SMTP::LOG, SSL::LOG, Weird::LOG, Notice::LOG, DHCP::LOG, SSH::LOG, Software::LOG, RADIUS::LOG, X509::LOG, RFB::LOG, SIP::LOG);
+    redef Kafka::topic_name = "netsentinel-zeek-logs";
+    redef Kafka::tag_json = T;
+    redef Kafka::kafka_conf = table(
+        ["debug"] = "all",
+        ["metadata.broker.list"] = "console-kafka-kafka-secure-bootstrap:9093",
+        ["security.protocol"] = "SASL_SSL",
+        ["sasl.mechanisms"] = "SCRAM-SHA-512",
+        ["sasl.username"] = "netsentinel-zeek-client",
+        ["sasl.password"] = getenv("KAFKA_PASSWORD"),
+        ["ssl.ca.location"] = "/usr/local/share/ca-certificates/ca.crt",
+    );
+
+    redef Telemetry::metrics_port = 9999/tcp;
