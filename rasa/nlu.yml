@@ -407,13 +407,3 @@ nlu:
   - regex: number
     examples: |
       - \b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|fifteen|twenty)\b
-
-  - lookup: number
-    examples: |
-      - 1
-      - 2
-      - 5
-      - 10
-      - 15
-      - twenty
-      - five
