@@ -1,70 +1,57 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: container-build-and-push
 spec:
   params:
-    - name: IMAGE_NAME
+    - default: "quay.io/bpandey/netsentenial:latest"
+      name: IMAGE_NAME
       type: string
-      description: "The Docker image to build and push"
-      default: "quay.io/bpandey/netsentinel:latest"
-    - name: GIT_REPO
+    - default: "git@github.com:pandeybk/NetSentenial.git"
+      name: GIT_REPO
       type: string
-      description: "The Git repository to clone"
-      default: "git@github.com:pandeybk/NetSentenial.git"
-    - name: GIT_REVISION
+    - default: main
+      name: GIT_REVISION
       type: string
-      description: "The Git branch or commit SHA to checkout"
-      default: "main"
   workspaces:
     - name: workspace
   tasks:
     - name: fetch-repository
-      taskSpec:
-        steps:
-          - name: clone
-            image: alpine/git
-            script: |
-              git clone $(params.GIT_REPO) /workspace/source
-              cd /workspace/source
-              git checkout $(params.GIT_REVISION)
-      workspaces:
-        - name: output
-          workspace: workspace
       params:
         - name: url
           value: $(params.GIT_REPO)
         - name: revision
           value: $(params.GIT_REVISION)
+        - name: subdirectory
+          value: ""
+        - name: deleteExisting
+          value: "true"
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: workspace
 
     - name: kaniko
-      taskRef:
-        kind: Task
-        name: kaniko
       params:
         - name: IMAGE
           value: $(params.IMAGE_NAME)
         - name: DOCKERFILE
-          value: /workspace/source/Dockerfile
+          value: ./Dockerfile.multistage
         - name: CONTEXT
-          value: /workspace/source
+          value: /workspace/workspace # Root of the cloned repo
         - name: EXTRA_ARGS
           value: []
         - name: BUILDER_IMAGE
-          value: gcr.io/kaniko-project/executor:v1.5.1
+          value: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
       runAfter:
         - fetch-repository
+      taskRef:
+        kind: Task
+        name: kaniko
       workspaces:
         - name: source
           workspace: workspace
         - name: dockerconfig
           workspace: workspace
-      volumeMounts:
-        - name: kaggle-secret-volume
-          mountPath: /root/.kaggle
-          readOnly: true
-
-  volumes:
-    - name: kaggle-secret-volume
-      secret:
-        secretName: kaggle-secret
