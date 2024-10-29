@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: netsentinel
 
 resources:
-  - ../../base
+  - ../../../base
 
 images:
 - name: netsentinel
@@ -16,6 +16,10 @@ patches:
       kind: Deployment
       name: ngrok
     path: deployment-ngrok.patch.yaml
+  - target:
+      kind: Route
+      name: netsentinel-route
+    path: app-route.patch.yaml
   - target:
       kind: ClusterRoleBinding
       name: ocpclient-clusterrolebinding

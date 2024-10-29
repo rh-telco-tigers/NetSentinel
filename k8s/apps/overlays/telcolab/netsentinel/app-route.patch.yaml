@@ -5,6 +5,5 @@ metadata:
 spec:
   to:
     kind: Service
-    name: netsentinel
-  port:
-    targetPort: 5000
+    name: telcolab-netsentinel-service
+    weight: 100

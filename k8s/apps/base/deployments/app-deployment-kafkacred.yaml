@@ -2,15 +2,27 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: netsentinel
+  labels:
+    app.kubernetes.io/name: netsentinel
+    app.kubernetes.io/instance: netsentinel-001
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: netsentinel-system
+    app.kubernetes.io/managed-by: OpenShift
+    app.kubernetes.io/version: "v1.0"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: netsentinel
+      app.kubernetes.io/name: netsentinel
   template:
     metadata:
       labels:
-        app: netsentinel
+        app.kubernetes.io/name: netsentinel
+        app.kubernetes.io/instance: netsentinel-001
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: netsentinel-system
+        app.kubernetes.io/managed-by: OpenShift
+        app.kubernetes.io/version: "v1.0"
     spec:
       serviceAccountName: netsentinel-sa
       containers:
@@ -32,7 +44,7 @@ spec:
                   name: netsentinel-kafka-user
                   key: password
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "console-kafka-kafka-secure-bootstrap:9093" # This override not working yet, use app config for now
+              value: "console-kafka-kafka-secure-bootstrap:9093"
           volumeMounts:
             - name: data-volume
               mountPath: /app/vectordata
@@ -59,7 +71,7 @@ spec:
                   name: netsentinel-kafka-user
                   key: password
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "console-kafka-kafka-secure-bootstrap:9093" # This override not working yet, use app config for now
+              value: "console-kafka-kafka-secure-bootstrap:9093"
           volumeMounts:
             - name: data-volume
               mountPath: /app/vectordata
@@ -86,7 +98,7 @@ spec:
                   name: netsentinel-kafka-user
                   key: password
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "console-kafka-kafka-secure-bootstrap:9093" # This override not working yet, use app config for now
+              value: "console-kafka-kafka-secure-bootstrap:9093"
           volumeMounts:
             - name: data-volume
               mountPath: /app/vectordata
@@ -113,7 +125,7 @@ spec:
                   name: netsentinel-kafka-user
                   key: password
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "console-kafka-kafka-secure-bootstrap:9093" # This override not working yet, use app config for now
+              value: "console-kafka-kafka-secure-bootstrap:9093"
           volumeMounts:
             - name: data-volume
               mountPath: /app/vectordata

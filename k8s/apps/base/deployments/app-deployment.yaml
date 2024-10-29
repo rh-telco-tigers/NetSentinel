@@ -2,15 +2,27 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: netsentinel
+  labels:
+    app.kubernetes.io/name: netsentinel
+    app.kubernetes.io/instance: netsentinel-001
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: netsentinel-system
+    app.kubernetes.io/managed-by: OpenShift
+    app.kubernetes.io/version: "v1.0"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: netsentinel
+      app.kubernetes.io/name: netsentinel
   template:
     metadata:
       labels:
-        app: netsentinel
+        app.kubernetes.io/name: netsentinel
+        app.kubernetes.io/instance: netsentinel-001
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: netsentinel-system
+        app.kubernetes.io/managed-by: OpenShift
+        app.kubernetes.io/version: "v1.0"
     spec:
       serviceAccountName: netsentinel-sa
       containers:
