@@ -12,6 +12,24 @@ pipeline:
     min_ngram: 1
     max_ngram: 4
   - name: CRFEntityExtractor
+    features:
+      [
+        ["low", "title", "upper", "digit", "pattern"],
+        [
+          "bias",
+          "low",
+          "prefix5",
+          "prefix2",
+          "suffix5",
+          "suffix3",
+          "suffix2",
+          "upper",
+          "title",
+          "digit",
+          "pattern",
+        ],
+        ["low", "title", "upper", "digit", "pattern"],
+      ]
   - name: DIETClassifier
     epochs: 100
     entity_recognition: False
