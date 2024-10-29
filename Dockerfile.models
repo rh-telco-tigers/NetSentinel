@@ -1,0 +1,12 @@
+FROM quay.io/bpandey/netsentenial:0.0.5-torch-cpu
+
+# Copy only the necessary subdirectories from the models directory
+COPY models/embedding_models /app/models/embedding_models
+COPY models/flan-t5-large /app/models/flan-t5-large
+COPY models/predictive_model /app/models/predictive_model
+COPY models/rasa /app/models/rasa
+COPY data/processed /app/data/processed
+
+COPY scripts/create_mock_data.py /app/scripts/create_mock_data.py 
+COPY scripts/prediction_service.py /app/scripts/prediction_service.py 
+COPY scripts/process_mock_data.py /app/scripts/process_mock_data.py 

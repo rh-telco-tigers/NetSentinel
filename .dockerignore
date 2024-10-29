@@ -1,6 +1,7 @@
 # Ignore all files in the models directory
-models/
-data/
+models/Mistral-7B-v0.1
+data/faiss_index
+data/raw
 
 # If you need to include specific models, use the '!' negation
 # For example, to include model1.pth:
