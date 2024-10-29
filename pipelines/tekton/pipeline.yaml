@@ -1,0 +1,70 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: container-build-and-push
+spec:
+  params:
+    - name: IMAGE_NAME
+      type: string
+      description: "The Docker image to build and push"
+      default: "quay.io/bpandey/netsentinel:latest"
+    - name: GIT_REPO
+      type: string
+      description: "The Git repository to clone"
+      default: "git@github.com:pandeybk/NetSentenial.git"
+    - name: GIT_REVISION
+      type: string
+      description: "The Git branch or commit SHA to checkout"
+      default: "main"
+  workspaces:
+    - name: workspace
+  tasks:
+    - name: fetch-repository
+      taskSpec:
+        steps:
+          - name: clone
+            image: alpine/git
+            script: |
+              git clone $(params.GIT_REPO) /workspace/source
+              cd /workspace/source
+              git checkout $(params.GIT_REVISION)
+      workspaces:
+        - name: output
+          workspace: workspace
+      params:
+        - name: url
+          value: $(params.GIT_REPO)
+        - name: revision
+          value: $(params.GIT_REVISION)
+
+    - name: kaniko
+      taskRef:
+        kind: Task
+        name: kaniko
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE_NAME)
+        - name: DOCKERFILE
+          value: /workspace/source/Dockerfile
+        - name: CONTEXT
+          value: /workspace/source
+        - name: EXTRA_ARGS
+          value: []
+        - name: BUILDER_IMAGE
+          value: gcr.io/kaniko-project/executor:v1.5.1
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: workspace
+        - name: dockerconfig
+          workspace: workspace
+      volumeMounts:
+        - name: kaggle-secret-volume
+          mountPath: /root/.kaggle
+          readOnly: true
+
+  volumes:
+    - name: kaggle-secret-volume
+      secret:
+        secretName: kaggle-secret
