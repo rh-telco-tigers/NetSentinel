@@ -11,9 +11,13 @@ pipeline:
     analyzer: char_wb
     min_ngram: 1
     max_ngram: 4
+  - name: CRFEntityExtractor
   - name: DIETClassifier
     epochs: 100
+    entity_recognition: False
   - name: EntitySynonymMapper
+  - name: RegexEntityExtractor
+    use_lookup_tables: True
   - name: ResponseSelector
     epochs: 100
 
@@ -24,7 +28,7 @@ policies:
     max_history: 5
     epochs: 100
   - name: FallbackPolicy
-    nlu_threshold: 0.4
-    core_threshold: 0.3
+    nlu_threshold: 0.3
+    core_threshold: 0.2
     fallback_action_name: "utter_fallback"
 assistant_id: 20240923-204838-serious-incubator

@@ -130,6 +130,19 @@ nlu:
       - Network policies: what’s applied in namespace [qa](namespace)?
       - Display all network policies in [default](namespace)
       - List the network policies applied in namespace [staging](namespace)
+      - Namespace [default](namespace): show me network policies
+      - In the namespace [Prod](namespace), list network policies
+      - Please list network policies for Namespace: [TEST](namespace)
+      - Show network policies for Namespace: [qa](namespace)
+      - Namespace [staging](namespace): can you display the network policies?
+      - Show network policies in Namespace: [Netsentenial](namespace)
+      - Display policies in namespace: [default](namespace)
+      - Show the network policies for namespace: [production](namespace)
+      - In [Development](namespace) Namespace, what are the network policies?
+      - Network policies: list all in namespace: [kube-system](namespace)
+      - What network policies are active in namespace: [OPENSHIFT-INGRESS](namespace)?
+      - For the [openshift-monitoring](namespace) Namespace, show network policies
+      - Namespace [production](namespace): list down all network policies
 
   - intent: list_services
     examples: |
@@ -149,6 +162,17 @@ nlu:
       - Show me the services in [qa](namespace)
       - What services are available in namespace [default](namespace)?
       - List all services in the cluster
+      - Namespace [default](namespace): list services
+      - What services are running in the Namespace: [PROD](namespace)?
+      - Services in [dev](namespace) Namespace: list
+      - Namespace: [Staging](namespace): show all services
+      - In the [kube-system](namespace) Namespace, display services
+      - Please list all services in the namespace: [openshift-ingress](namespace)
+      - Namespace [development](namespace): show active services
+      - Show me services in namespace: [Netsentenial](namespace)
+      - Namespace: [qa](namespace), list all available services
+      - In [production](namespace) namespace, what are the services?
+      - Services: list for namespace: [openshift-monitoring](namespace)
 
   - intent: list_pods
     examples: |
@@ -173,6 +197,16 @@ nlu:
       - List pods from namespace [redhat-ods-applications](namespace)
       - Show pods from [openshift-ingress](namespace)
       - Pods: list everything in [openshift-monitoring](namespace)
+      - Pods in Namespace: [default](namespace) - list
+      - List all pods in the [openshift-sdn](namespace) Namespace
+      - Show pods for Namespace: [TEST](namespace)
+      - Namespace: [kube-system](namespace), list all pods
+      - Show me pods in Namespace: [development](namespace)
+      - What are the pods in the namespace: [prod](namespace)?
+      - Namespace [production](namespace) - display all pods
+      - Pods: show all in Namespace: [qa](namespace)
+      - List all pods from the namespace [staging](namespace)
+      - Pods: list for Namespace: [openshift-ingress](namespace)
 
   - intent: review_user_access
     examples: |
@@ -184,6 +218,14 @@ nlu:
       - Can you list the user roles for namespace [prod](namespace)?
       - User access: show who has access in [dev](namespace)
       - What are the user access permissions across the cluster?
+      - Review user access for Namespace [dev](namespace)
+      - Show user access roles in Namespace: [PROD](namespace)
+      - What are user access permissions in the Namespace [test](namespace)?
+      - Namespace: [netsentenial](namespace) - show user access roles
+      - Please list user roles for Namespace: [Prod](namespace)
+      - Namespace [development](namespace): who has access?
+      - User access: list all roles in [kube-system](namespace) Namespace
+      - Namespace [qa](namespace): list access permissions
 
   # Check network traffic
   - intent: check_network_traffic
@@ -216,6 +258,14 @@ nlu:
       - How is DNS performing in the cluster?
       - Can you check DNS health across namespaces?
       - DNS health: is it working fine in [test](namespace)?
+      - DNS health check for Namespace: [kube-system](namespace)
+      - Is DNS healthy in the [TEST](namespace) Namespace?
+      - How is DNS status in namespace: [prod](namespace)?
+      - Namespace: [default](namespace), show DNS health status
+      - Check DNS health for [openshift-monitoring](namespace) namespace
+      - Namespace [qa](namespace): DNS health check status
+      - In the [dev](namespace) namespace, check DNS health
+      - DNS health: is it working in Namespace [production](namespace)?
 
   # List security policies
   - intent: list_security_policies
@@ -226,6 +276,13 @@ nlu:
       - What security policies are active in [dev](namespace)?
       - Can you list security policies for the cluster?
       - Display the security policies in [prod](namespace)
+      - Security policies in Namespace [production](namespace): list
+      - Show security policies for Namespace: [TEST](namespace)
+      - Namespace: [Dev](namespace) - list security policies
+      - What security policies are applied in the Namespace [prod](namespace)?
+      - List security policies in Namespace: [openshift](namespace)
+      - Security policies for Namespace [qa](namespace): show all
+      - Namespace [staging](namespace) - display security policies
 
   # Check pod security compliance
   - intent: check_pod_security_compliance
@@ -237,6 +294,14 @@ nlu:
       - Show me non-compliant pods in [dev](namespace)
       - Pod security: which pods failed the compliance check?
       - Are all pods in [prod](namespace) following security policies?
+      - Check pod security compliance in Namespace [dev](namespace)
+      - Are all pods in Namespace: [prod](namespace) compliant?
+      - Show non-compliant pods in [qa](namespace) namespace
+      - Namespace: [Staging](namespace): pod security compliance check
+      - Pod security compliance for Namespace [production](namespace)
+      - Namespace [test](namespace): are there non-compliant pods?
+      - Check compliance in Namespace: [default](namespace)
+      - List all compliant pods in [openshift](namespace) namespace
 
   # Retrieve audit logs
   - intent: retrieve_audit_logs
@@ -330,9 +395,8 @@ nlu:
 
   - regex: namespace
     examples: |
-      - \b[a-z0-9]([-a-z0-9]*[a-z0-9])?\b
-      - namespace: \b[a-z0-9]([-a-z0-9]*[a-z0-9])?\b
-      - [a-z0-9]([-a-z0-9]*[a-z0-9])?\b
+      - \b[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?\b
+      - namespace: \b[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?\b
 
   - regex: time_range
     examples: |
