@@ -12,5 +12,5 @@ spec:
               "http",
               "--log=stdout",
               "--domain=turkey-tops-prawn.ngrok-free.app",
-              "telcolab-netsentinel:5000",
+              "telcolab-netsentinel-service:80",
             ]
