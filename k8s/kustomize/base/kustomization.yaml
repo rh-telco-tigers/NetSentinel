@@ -5,7 +5,7 @@ namespace: netsentinel
 
 resources:
   - ./serviceaccounts/app-serviceaccount.yaml
-  - ./deployments/app-deployment.yaml
+  - ./deployments/app-deployment-kafkacred.yaml
   - ./deployments/ngrok-deployment.yaml
   - ./services/app-service.yaml
   - ./routes/app-route.yaml

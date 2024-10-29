@@ -34,6 +34,9 @@ def load_config(config_path='config.yaml'):
         sys.exit(1)
 
 def create_kafka_consumer(kafka_bootstrap_servers, topic):
+    """
+    Create and return a Kafka consumer using Zeek-like configuration style.
+    """
     try:
         consumer = KafkaConsumer(
             topic,
@@ -41,7 +44,13 @@ def create_kafka_consumer(kafka_bootstrap_servers, topic):
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
             auto_offset_reset='latest',
             enable_auto_commit=True,
-            group_id='prediction_service_group_v2'
+            group_id='data_processor_group',
+            security_protocol="SASL_SSL",
+            sasl_mechanism="SCRAM-SHA-512",
+            sasl_plain_username=os.getenv("KAFKA_USERNAME"),
+            sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
+            ssl_cafile="/usr/local/share/ca-certificates/ca.crt",
+            ssl_check_hostname=False 
         )
         logger.info(f"Connected to Kafka topic '{topic}' as consumer")
         return consumer

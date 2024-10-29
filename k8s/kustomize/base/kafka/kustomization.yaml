@@ -7,6 +7,8 @@ resources:
   - ./prometheus
   - kafka-topic-processed.yaml
   - kafka-topic-raw.yaml
+  - netsentinel-kafka-user.kafkauser.yaml
+
 
 # Copy patches folder and apply following from your overlays
 # patchesStrategicMerge:

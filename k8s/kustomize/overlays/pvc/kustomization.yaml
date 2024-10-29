@@ -10,7 +10,7 @@ patches:
       name: data-pvc
     path: storageclass-patch.yaml
 
-  - target:
-      kind: PersistentVolumeClaim
-      name: models-pvc
-    path: storageclass-patch.yaml
+  # - target:
+  #     kind: PersistentVolumeClaim
+  #     name: models-pvc
+  #   path: storageclass-patch.yaml

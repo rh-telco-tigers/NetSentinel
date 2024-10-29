@@ -29,12 +29,12 @@ rag_config:
   llm_model_name: "models/flan-t5-large"
   # llm_model_type: "causal" # causal for Mistral or seq2seq for google-flan-t5
   llm_model_type: "seq2seq"
-  faiss_index_path: "data/faiss_index/index.faiss"
-  metadata_store_path: "data/faiss_index/metadata.json"
+  faiss_index_path: "vectordata/faiss_index/index.faiss"
+  metadata_store_path: "vectordata/faiss_index/metadata.json"
   max_context_length: 512
   max_answer_length: 150
   num_contexts: 3
-  nlu_model_path: "models/rasa/nlu-20241028-173124-espressivo-capacitor.tar.gz"
+  nlu_model_path: "models/rasa/nlu-model.gz"
 
 llm_model_config:
   model_path: "models/llm_model"
@@ -68,7 +68,7 @@ slack_config:
   slack_signing_secret: "fde84d1823293b0e40fcb806cc353bec"
 
 kafka_config:
-  bootstrap: "console-kafka-kafka-bootstrap:9092"
+  bootstrap: "console-kafka-kafka-secure-bootstrap:9093"
   raw_topic: "raw-traffic-data"
   processed_topic: "processed-traffic-data"
 

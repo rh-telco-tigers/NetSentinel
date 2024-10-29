@@ -7,8 +7,9 @@ resources:
   - ../../base
 
 images:
-  - name: quay.io/bpandey/netsentenial
-    newTag: 0.0.5-torch-cpu
+- name: netsentinel
+  newName: quay.io/bpandey/netsentinel
+  newTag: 0.0.5-torch-cpu-with-models
 
 patches:
   - target:
@@ -28,10 +29,10 @@ patches:
       name: netsentinel-privileged-scc
     path: custom-scc.patch.yaml
 
-  - target:
-      kind: Deployment
-      name: netsentinel
-    path: deployment-sleep-infinity.patch.yaml
+  # - target:
+  #     kind: Deployment
+  #     name: netsentinel
+  #   path: deployment-sleep-infinity.patch.yaml
 
 secretGenerator:
   - name: ngrok-token

@@ -44,23 +44,28 @@ def load_config(config_path="config.yaml"):
         sys.exit(1)
 
 
-def create_producer(kafka_bootstrap_servers):
+def create_kafka_producer(kafka_bootstrap_servers):
     """
-    Create and return a Kafka producer with retries and acks.
+    Create and return a Kafka producer using Zeek-like configuration style.
     """
     try:
         producer = KafkaProducer(
             bootstrap_servers=kafka_bootstrap_servers,
             value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-            retries=5,  # Retry up to 5 times on failure
-            acks="all",  # Wait for all replicas to acknowledge
+            retries=5,
+            acks="all",
+            security_protocol="SASL_SSL",
+            sasl_mechanism="SCRAM-SHA-512",
+            sasl_plain_username=os.getenv("KAFKA_USERNAME"),
+            sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
+            ssl_cafile="/usr/local/share/ca-certificates/ca.crt",
+            ssl_check_hostname=False 
         )
         logger.info(f"Connected to Kafka at {kafka_bootstrap_servers}")
         return producer
     except Exception as e:
         logger.error(f"Failed to connect to Kafka: {e}")
         sys.exit(1)
-
 
 def get_random_ip(subnet_list):
     """
@@ -438,7 +443,7 @@ def main():
     kafka_bootstrap = config.get("kafka_config", {}).get("bootstrap", "localhost:9092")
     raw_topic = config.get("kafka_config", {}).get("raw_topic", "raw-traffic-data")
     
-    producer = create_producer(kafka_bootstrap)
+    producer = create_kafka_producer(kafka_bootstrap)
 
     # Publishing mock data to the raw_topic
     publish_interval = config.get("scanning_tool_config", {}).get("publish_interval_seconds", 10)
