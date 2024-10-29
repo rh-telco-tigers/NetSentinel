@@ -64,8 +64,8 @@ llm_model_config:
 
 slack_config:
   slack_channel: "#netsentinel"
-  slack_bot_token: "xoxb-7834804921362-7836047821639-8ybH7ZoB9nqWglbzHsmBs2hw"
-  slack_signing_secret: "fde84d1823293b0e40fcb806cc353bec"
+  slack_bot_token: "xoxb-7834804921362-7954481014324-DsbXQNymvGhYjySPLHDToR4M"
+  slack_signing_secret: "738c89dc86aa6630b6262a2604eb80c2"
 
 kafka_config:
   bootstrap: "console-kafka-kafka-secure-bootstrap:9093"
