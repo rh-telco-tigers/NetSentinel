@@ -13,6 +13,8 @@ spec:
       value: "git@github.com:pandeybk/NetSentenial.git"
     - name: GIT_REVISION
       value: main
+    - name: DOCKERFILE
+      value: "Dockerfile.buildnlu"
   pipelineRef:
     name: container-build-and-push
   taskRunTemplate:
