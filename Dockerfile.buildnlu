@@ -1,0 +1,2 @@
+FROM quay.io/bpandey/netsentenial:0.0.6-torch-cpu
+RUN rasa train --config /app/rasa/config.yml --domain /app/rasa/domain.yml --data /app/rasa/data --out /app/models/rasa
