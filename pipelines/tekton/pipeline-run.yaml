@@ -5,7 +5,6 @@ metadata:
     chains.tekton.dev/signed: "true"
     pipeline.openshift.io/started-by: admin
   generateName: container-build-and-push-run-
-  namespace: netsentinel
 spec:
   params:
     - name: IMAGE_NAME
