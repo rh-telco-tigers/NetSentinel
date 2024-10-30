@@ -48,6 +48,7 @@ RUN mkdir -p /app/models/flan-t5-large && \
 
 # Copy scripts for downloading, preprocessing data, and training models
 COPY scripts /app/scripts
+RUN mkdir -p /root/.kaggle
 COPY secrets/kaggle.json /root/.kaggle/kaggle.json
 
 # Download and preprocess Kaggle data
