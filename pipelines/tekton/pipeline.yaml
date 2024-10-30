@@ -13,6 +13,9 @@ spec:
     - default: main
       name: GIT_REVISION
       type: string
+    - default: "Dockerfile.buildnlu"
+      name: DOCKERFILE
+      type: string
   workspaces:
     - name: workspace
     - name: quay-credentials
@@ -57,7 +60,7 @@ spec:
         - name: IMAGE
           value: $(params.IMAGE_NAME)
         - name: DOCKERFILE
-          value: ./Dockerfile.multistage
+          value: ./$(params.DOCKERFILE)
         - name: CONTEXT
           value: ./
         - name: EXTRA_ARGS
