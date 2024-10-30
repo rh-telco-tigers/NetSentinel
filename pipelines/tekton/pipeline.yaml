@@ -42,7 +42,7 @@ spec:
         - name: DOCKERFILE
           value: ./Dockerfile.multistage
         - name: CONTEXT
-          value: /workspace/output
+          value: ./
         - name: EXTRA_ARGS
           value: []
         - name: BUILDER_IMAGE
