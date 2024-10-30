@@ -59,8 +59,10 @@ RUN python /app/scripts/download_data.py && \
     python /app/scripts/preprocess_data.py
 
 # Train predictive and Rasa models
-RUN python /app/scripts/train_predictive_model.py --config_file /app/config.yaml && \
-    rasa train --config /app/rasa/config.yml --domain /app/rasa/domain.yml --data /app/rasa/data --out /app/models/rasa
+RUN python /app/scripts/train_predictive_model.py --config_file /app/config.yaml 
+RUN rm -rf /app/models/rasa/*
+RUN rasa train --config /app/rasa/config.yml --domain /app/rasa/domain.yml --data /app/rasa --out /app/models/rasa/
+RUN mv /app/models/rasa/*.gz /app/models/rasa/nlu-model.gz
 
 # Stage 3 - Final image
 FROM base

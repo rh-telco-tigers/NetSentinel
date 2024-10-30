@@ -1,3 +1,5 @@
 FROM quay.io/bpandey/netsentinel:0.0.6-torch-cpu-with-models
 COPY . .
-RUN rasa train --config /app/rasa/config.yml --domain /app/rasa/domain.yml --data /app/rasa/data --out /app/models/rasa
+RUN rm -rf /app/models/rasa/*
+RUN rasa train --config /app/rasa/config.yml --domain /app/rasa/domain.yml --data /app/rasa --out /app/models/rasa/
+RUN mv /app/models/rasa/*.gz /app/models/rasa/nlu-model.gz
