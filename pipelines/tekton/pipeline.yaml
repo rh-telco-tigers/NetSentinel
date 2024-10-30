@@ -4,7 +4,7 @@ metadata:
   name: container-build-and-push
 spec:
   params:
-    - default: "quay.io/bpandey/netsentenial:latest"
+    - default: "quay.io/bpandey/netsentinel:latest"
       name: IMAGE_NAME
       type: string
     - default: "git@github.com:pandeybk/NetSentenial.git"
@@ -15,6 +15,8 @@ spec:
       type: string
   workspaces:
     - name: workspace
+    - name: quay-credentials
+
   tasks:
     - name: fetch-repository
       params:
@@ -40,7 +42,7 @@ spec:
         - name: DOCKERFILE
           value: ./Dockerfile.multistage
         - name: CONTEXT
-          value: /workspace/workspace # Root of the cloned repo
+          value: /workspace/output
         - name: EXTRA_ARGS
           value: []
         - name: BUILDER_IMAGE
@@ -54,4 +56,4 @@ spec:
         - name: source
           workspace: workspace
         - name: dockerconfig
-          workspace: workspace
+          workspace: quay-credentials
