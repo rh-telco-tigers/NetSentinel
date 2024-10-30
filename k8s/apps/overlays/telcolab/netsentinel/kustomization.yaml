@@ -6,11 +6,6 @@ namespace: netsentinel
 resources:
   - ../../../base
 
-images:
-- name: netsentinel
-  newName: quay.io/bpandey/netsentinel
-  newTag: 0.0.5-torch-cpu-with-models
-
 patches:
   - target:
       kind: Deployment

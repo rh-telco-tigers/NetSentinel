@@ -27,7 +27,7 @@ spec:
       serviceAccountName: netsentinel-sa
       containers:
         - name: netsentinel
-          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu-with-models
+          image: quay.io/bpandey/netsentinel:0.0.6-torch-cpu-with-models
           command: ["sh", "-c", "python app/run.py"]
           ports:
             - containerPort: 5000
@@ -56,7 +56,7 @@ spec:
               readOnly: true
 
         - name: create-mock-data
-          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu-with-models
+          image: quay.io/bpandey/netsentinel:0.0.6-torch-cpu-with-models
           command: ["sh", "-c", "python scripts/create_mock_data.py"]
           securityContext:
             allowPrivilegeEscalation: true
@@ -83,7 +83,7 @@ spec:
               readOnly: true
 
         - name: process-mock-data
-          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu-with-models
+          image: quay.io/bpandey/netsentinel:0.0.6-torch-cpu-with-models
           command: ["sh", "-c", "python scripts/process_mock_data.py"]
           securityContext:
             allowPrivilegeEscalation: true
@@ -110,7 +110,7 @@ spec:
               readOnly: true
 
         - name: prediction-service
-          image: quay.io/bpandey/netsentinel:0.0.5-torch-cpu-with-models
+          image: quay.io/bpandey/netsentinel:0.0.6-torch-cpu-with-models
           command: ["sh", "-c", "python scripts/prediction_service.py"]
           securityContext:
             allowPrivilegeEscalation: true
