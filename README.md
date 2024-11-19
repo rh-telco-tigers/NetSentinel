@@ -89,7 +89,14 @@ mv console-ui-secrets.yaml ./k8s/apps/overlays/rhdemo-netsentinel/kafka/.
 
 - Update Cluster DNS
 
-Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name. Ensure the DNS is:
+Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name. 
+
+Example you can run following command
+```
+find ./k8s/apps/overlays/rhdemo-netsentinel/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-q7t72.q7t72.sandbox1729.opentlc.com/g' {} +
+```
+
+Ensure the DNS is:
 
   - Publicly resolvable.
   - Not using a self-signed certificate. Certificates must be valid.
