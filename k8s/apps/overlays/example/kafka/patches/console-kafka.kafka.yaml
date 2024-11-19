@@ -1,0 +1,31 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: console-kafka
+spec:
+  kafka:
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        configuration:
+          useServiceDnsDomain: true
+      - name: secure
+        port: 9093
+        tls: true
+        type: route
+        authentication:
+          type: scram-sha-512
+        configuration:
+          bootstrap:
+            host: bootstrap-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
+            annotations:
+              eyefloaters.github.com/console-listener: 'true'
+          brokers:
+          - broker: 0
+            host: broker-0-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
+          - broker: 1
+            host: broker-1-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
+          - broker: 2
+            host: broker-2-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>

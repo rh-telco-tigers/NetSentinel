@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ocpclient-clusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: netsentinel-sa
+    namespace: netsentinel
+roleRef:
+  kind: ClusterRole
+  name: ocpclient-clusterrole
+  apiGroup: rbac.authorization.k8s.io

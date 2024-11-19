@@ -65,7 +65,6 @@ metadata:
   name: storageclass
 spec:
   storageClassName: gp3-csi
-
 ```
 
 To apply the patch, use the following command:
@@ -92,8 +91,8 @@ mv console-ui-secrets.yaml ./k8s/apps/overlays/rhdemo-netsentinel/kafka/.
 
 Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name. Ensure the DNS is:
 
-	- Publicly resolvable.
-	- Not using a self-signed certificate. Certificates must be valid.
+  - Publicly resolvable.
+  - Not using a self-signed certificate. Certificates must be valid.
 
 > Note: This is required for communication with Slack channels.
 If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround. Refer to `k8s/apps/overlays/telcolab` for an example of this approach.

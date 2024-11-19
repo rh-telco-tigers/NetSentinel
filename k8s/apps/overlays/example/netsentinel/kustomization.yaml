@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: netsentinel
+
+resources:
+  - ../../../base
+
+images:
+- name: netsentinel
+  newName: quay.io/bpandey/netsentinel
+  newTag: 0.0.5-torch-cpu-with-models
+
+patches:
+  - target:
+      kind: Deployment
+      name: ngrok
+    path: deployment-ngrok-delete.patch.yaml
+  - target:
+      kind: Secret
+      name: ngrok-token
+    path: secret-ngrok-token-delete.patch.yaml
+  - target:
+      kind: ClusterRoleBinding
+      name: ocpclient-clusterrolebinding
+    path: clusterrolebinding.patch.yaml
+  - target:
+      kind: ClusterRoleBinding
+      name: cluster-monitoring-view-binding
+    path: cluster-monitoring-view-binding.patch.yaml
+  - target:
+      kind: SecurityContextConstraints
+      name: netsentinel-privileged-scc
+    path: custom-scc.patch.yaml
+
+# secretGenerator:
+#   - name: ngrok-token
+#     literals:
+#       - NGROK_AUTHTOKEN=2gvfdllTZLwjXrKRPGWHGcB5mSt_48N254h3EgdxfFjhziJh9
+#     type: Opaque
+#     behavior: replace
+
+configMapGenerator:
+  - name: app-config
+    files:
+      - config.yaml=app-config.yaml
+    behavior: replace
+

@@ -1,0 +1,19 @@
+# patches/deployment-url-patch.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+spec:
+  template:
+    spec:
+      containers:
+        - name: console-ui
+          env:
+            - name: NEXTAUTH_URL
+              value: 'https://console-ui-route-netsentinel.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>'
+            - name: CONSOLE_METRICS_PROMETHEUS_URL
+              value: 'http://prometheus-operated.netsentinel.svc.cluster.local:9090'
+        - name: console-api
+          env:
+          - name: CONSOLE_KAFKA_EXAMPLE_BOOTSTRAP_SERVERS
+            value: bootstrap-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>:443
