@@ -1,6 +1,6 @@
 ## NetSentinel
 
-NetSentinel is a next-generation network intrusion detection system designed specifically for telecom environments. It combines predictive AI and generative AI (`google-flan-t5` or `Mistral-7B`, support both), observability, and agent-based architecture to report core network events. Deployed on Red Hat OpenShift, NetSentinel integrates multiple specialized agents and Slack-based chatbot functionality, allowing telecom operators to interact with the system in real-time.
+NetSentinel is a next-generation network intrusion detection system designed specifically for telecom environments. It combines predictive AI and generative AI (`google-flan-t5` or `Mistral-7B`, support both), observability, and agent-based architecture to report core network events. Currently a proof of concept using simulated data, NetSentinel is designed to integrate with tools like Zeek and Suricata in the future. Deployed on Red Hat OpenShift, NetSentinel integrates multiple specialized agents and Slack-based chatbot functionality, allowing telecom operators to interact with the system in real-time.
 
 ## Key Components and Features:
 
