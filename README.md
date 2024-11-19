@@ -1,382 +1,165 @@
-# NetSentenial
+## NetSentinel
 
-NetSentenial is a proof-of-concept (POC) network intrusion detection system that leverages both predictive models and Large Language Models (LLMs) to detect intrusions and interact with users via Slack. The project demonstrates how machine learning models can be integrated with a chatbot to provide insights into network security events.
+NetSentinel is a next-generation network intrusion detection system designed specifically for telecom environments. It combines predictive AI and generative AI (`google-flan-t5` or `Mistral-7B`, support both), observability, and agent-based architecture to report core network events. Deployed on Red Hat OpenShift, NetSentinel integrates multiple specialized agents and Slack-based chatbot functionality, allowing telecom operators to interact with the system in real-time.
 
-## Table of Contents
+## Key Components and Features:
 
-- [NetSentenial](#netsentenial)
-  - [Table of Contents](#table-of-contents)
-  - [Project Overview](#project-overview)
-  - [Features](#features)
-  - [Folder Structure](#folder-structure)
-  - [Setup Instructions](#setup-instructions)
-    - [Prerequisites](#prerequisites)
-    - [Clone the Repository](#clone-the-repository)
-    - [Virtual Environment Setup](#virtual-environment-setup)
-      - [Using `venv`](#using-venv)
-      - [Using `conda`](#using-conda)
-    - [Install Dependencies](#install-dependencies)
-    - [Data Preparation](#data-preparation)
-      - [Download the UNSW-NB15 Dataset](#download-the-unsw-nb15-dataset)
-      - [Preprocess the Data](#preprocess-the-data)
-    - [Model Training](#model-training)
-      - [Train the Predictive Model](#train-the-predictive-model)
-      - [Fine-Tune the LLM](#fine-tune-the-llm)
-    - [Running the Backend API](#running-the-backend-api)
-    - [Running the Slack Bot](#running-the-slack-bot)
-  - [Deployment on OpenShift](#deployment-on-openshift)
-  - [Usage](#usage)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Acknowledgements](#acknowledgements)
+- **Agent-Based Architecture:** NetSentinel’s modular design enables seamless scalability and customization, with four primary agents:
 
----
+   - **NLU Agent:** Interprets human intent and extracts key information, enabling operators to engage with NetSentinel through natural language on Slack.
+   - **Predictive Analysis and Generative Model:** Uses AI-powered classification to detect network anomalies and handle network-related queries, offering telecom-specific security insights.
+   - **OpenShift API Agent:** Executes operational commands on OpenShift (list/create network policies, check pods compliance, etc), ensuring a swift response to network issues.
+   - **Prometheus Agent:** Provides observability, running PromQL queries to monitor traffic and health metrics across RAN and core networks.
 
-## Project Overview
+- **Slack Chatbot Integration:** NetSentinel’s chatbot allows telecom operators to ask questions like "List all attacks from the last hour" or "Is there suspicious activity from IP 192.168.1.1?" and receive immediate real-time responses.
 
-NetSentenial aims to:
+### Demo Highlights:
 
-- Build a predictive model to detect network intrusions using the UNSW-NB15 dataset.
-- Fine-tune an LLM (GPT-2) to handle security-related queries.
-- Integrate both models into a backend API.
-- Develop a Slack bot that allows users to interact with the system using natural language.
+- Real-time AI-driven network classification and anomaly detection
+- Interactive Slack-based querying for seamless operator interaction
+- Comprehensive observability and traffic monitoring via Prometheus and OpenShift integration
 
-## Features
+NetSentinel delivers an adaptable security solution for telecom providers, blending observability, predictive AI, and hands-on network management to protect RAN and core infrastructure.
 
-- **Predictive Intrusion Detection Model**: Detects potential network intrusions based on network traffic data.
-- **Fine-Tuned LLM Chatbot**: Responds to user queries about network security events.
-- **Slack Integration**: Allows users to interact with the system through a Slack bot.
-- **Modular Architecture**: Separates concerns into different components for scalability and maintainability.
-- **Deployment on OpenShift**: Supports deployment on OpenShift for container orchestration and management.
 
-## Folder Structure
+## Deploy NetSentinel on OpenShift
+
+### Create a new project 
+
+Ensure that you update the namespace in the Kustomize file if you are using a namespace other than `netsentinel`. This adjustment may need to be made in several locations within the configuration.
+
+For example, to create the `netsentinel` namespace, you can use:
 
 ```
-NetSentenial/
-├── app/                    # Backend Flask API
-├── data/                   # Data files
-│   ├── processed/          # Processed data
-│   └── raw/                # Raw data
-├── deployment/             # Deployment configurations
-├── models/                 # Trained models
-│   ├── llm_model/          # Fine-tuned LLM
-│   └── predictive_model/   # Predictive model
-├── scripts/                # Scripts for data processing and training
-├── slack_bot/              # Slack bot application
-├── tests/                  # Test suite
-├── LICENSE                 # License file
-├── README.md               # Project documentation
-└── requirements.txt        # Project dependencies
+oc new-project netsentinel
 ```
 
----
+### Deploy Operators
 
-## Setup Instructions
-
-### Prerequisites
-
-- **Python 3.8 or higher**
-- **Git**
-- **Virtual Environment tool**: `venv` or `conda` (choose one)
-- **Slack Workspace**: Access to a Slack workspace where you can add a custom app
-- **(Optional) OpenShift Cluster**: For deployment
-
-### Clone the Repository
+The Kafka Operator is required for this setup to function properly. To deploy it, use the following command:
 
 ```
-git clone https://github.com/pandeybk/NetSentenial.git
-cd NetSentenial
+oc apply -k k8s/operators/overlays/rhlab/
 ```
 
-### Virtual Environment Setup
+Currently, we are using the `amq-streams-2.7.x` version. Older versions of Kafka exhibited different behavior, so it is important to use this version for consistency.
 
-It's recommended to use a virtual environment to manage project dependencies.
 
-#### Using `venv`
-
-1. **Create a Virtual Environment**
-
-   ```
-   python3 -m venv venv
-   ```
-
-2. **Activate the Virtual Environment**
-
-   - On Linux/Mac:
-
-     ```
-     source venv/bin/activate
-     ```
-
-   - On Windows:
-
-     ```
-     venv\Scripts\activate
-     ```
-
-#### Using `conda`
-
-1. **Create a Conda Environment**
-
-   ```
-   conda create -n netsentenial_env python=3.8
-   ```
-
-2. **Activate the Conda Environment**
-
-   ```
-   conda activate netsentenial_env
-   ```
-
-### Install Dependencies
+### Copy overlays
+We are using Kustomize to deploy the NetSentinel application. To get started, copy the example overlays and modify them as needed:
 
 ```
-pip install -r requirements.txt
+cp -R k8s/apps/overlays/example k8s/apps/overlays/rhdemo-netsentinel
 ```
 
-### Data Preparation
+After copying, make the necessary adjustments to the new overlay files to match your environment and requirements.
 
-#### Download the UNSW-NB15 Dataset
 
-1. **Register on Kaggle** (if you haven't already).
-
-2. **Set Up Kaggle API Credentials**
-
-   - Place your `kaggle.json` file in the appropriate directory:
-
-     ```
-     mkdir ~/.kaggle
-     cp path_to_kaggle.json ~/.kaggle/
-     chmod 600 ~/.kaggle/kaggle.json
-     ```
-
-3. **Download the Dataset**
-
-   ```
-   python scripts/download_data.py
-   ```
-
-   *Note: Ensure that the `download_data.py` script is properly configured to download the UNSW-NB15 dataset.*
-
-#### Preprocess the Data
+### Create PVC
+To patch the storageClassName for an existing PersistentVolumeClaim, use the following patch file `k8s/apps/overlays/rhdemo-netsentinel/pvc/storageclass-patch.yaml`. Update it with the desired storage class:
 
 ```
-python scripts/preprocess_data.py
-```
-
-- This script will process the raw data and save it to `data/processed/`.
-
-### Model Training
-
-#### Train the Predictive Model
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storageclass
+spec:
+  storageClassName: gp3-csi
 
 ```
-python scripts/train_predictive_model.py
-```
 
-- Trains the intrusion detection model and saves it to `models/predictive_model/`.
-
-#### Fine-Tune the LLM
+To apply the patch, use the following command:
 
 ```
-python scripts/prepare_llm_data.py
-python scripts/train_llm.py
+oc apply -k k8s/apps/overlays/rhdemo-netsentinel/pvc/
 ```
 
-- Prepares the data and fine-tunes the GPT-2 model.
-- The fine-tuned model is saved to `models/llm_model/`.
+Make sure the `storageClassName` matches the desired storage class for your environment and that the patch file aligns with your PVC's namespace and name.
 
-### Running the Backend API
 
-1. **Navigate to the `app/` Directory**
+### Deploy kafka instance
 
-   ```
-   cd app
-   ```
+To deploy the Kafka instance, follow these steps:
 
-2. **Ensure Dependencies are Installed**
+- Generate Secrets
 
-   - If dependencies differ, install them:
+```
+./k8s/apps/base/kafka/generate-console-secrets.sh
+mv console-ui-secrets.yaml ./k8s/apps/overlays/rhdemo-netsentinel/kafka/.
+```
 
-     ```
-     pip install -r requirements.txt
-     ```
+- Update Cluster DNS
 
-3. **Set Environment Variables**
+Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name. Ensure the DNS is:
 
-   - Create a `.env` file or set environment variables as needed.
+	- Publicly resolvable.
+	- Not using a self-signed certificate. Certificates must be valid.
 
-4. **Run the Flask App**
+> Note: This is required for communication with Slack channels.
+If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround. Refer to `k8s/apps/overlays/telcolab` for an example of this approach.
 
-   ```
-   flask run
-   ```
+- Apply Kafka Configuration
 
-   - By default, the app runs on `http://localhost:5000`.
+Deploy the Kafka instance using the following command:
 
-### Running the Slack Bot
+```
+oc apply -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
+```
 
-1. **Navigate to the `slack_bot/` Directory**
+- Wait for Kafka to Start
 
-   ```
-   cd slack_bot
-   ```
+It may take some time for Kafka to be fully operational. The `CreateContainerConfigError` status for certain pods (e.g., Kafka console) will resolve automatically once kafkausers are created and the necessary secrets are available.
 
-2. **Ensure Dependencies are Installed**
+Check the pods status 
 
-   ```
-   pip install -r requirements.txt
-   ```
+```
+oc get pods
+```
 
-3. **Set Up Slack App**
+Example output during initialization:
 
-   - **Create a Slack App** in your workspace.
-   - **Configure Bot Tokens and Signing Secret**.
-   - **Set Environment Variables**:
+```
+NAME                        READY   STATUS                       RESTARTS   AGE
+console-5c498fb9c4-ffm6v    1/2     CreateContainerConfigError   0          67s
+console-kafka-kafka-0       1/1     Running                      0          22s
+console-kafka-kafka-1       0/1     Running                      0          22s
+console-kafka-kafka-2       0/1     Running                      0          22s
+console-kafka-zookeeper-0   1/1     Running                      0          57s
+console-kafka-zookeeper-1   1/1     Running                      0          57s
+console-kafka-zookeeper-2   1/1     Running                      0          57s
+```
 
-     - `SLACK_BOT_TOKEN`
-     - `SLACK_SIGNING_SECRET`
-     - Optionally, store these in a `.env` file.
+- Verify Kafka Users
 
-4. **Run the Slack Bot**
+```
+oc get kafkausers
+NAME                     CLUSTER         AUTHENTICATION   AUTHORIZATION   READY
+console-kafka-user1      console-kafka   scram-sha-512    simple          True
+netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
+```
 
-   ```
-   python bot.py
-   ```
+- Confirm All Pods are Running
 
-5. **Expose the Slack Bot (for local development)**
+After a few minutes, verify that all pods are running as expected:
 
-   - Use a tool like `ngrok` to expose your local server to the internet.
 
-     ```
-     ngrok http 3000
-     ```
+```
+Balkrishnas-MacBook-Pro:NetSentinel bpandey$ oc get pods
+NAME                                             READY   STATUS    RESTARTS   AGE
+console-5c498fb9c4-ffm6v                         2/2     Running   0          2m39s
+console-kafka-entity-operator-74f8599b68-mmrq6   2/2     Running   0          81s
+console-kafka-kafka-0                            1/1     Running   0          114s
+console-kafka-kafka-1                            1/1     Running   0          114s
+console-kafka-kafka-2                            1/1     Running   0          114s
+console-kafka-zookeeper-0                        1/1     Running   0          2m29s
+console-kafka-zookeeper-1                        1/1     Running   0          2m29s
+console-kafka-zookeeper-2                        1/1     Running   0          2m29s
+```
 
-   - Update the Slack app's **Event Subscriptions** with the `ngrok` URL.
+Your Kafka instance is now ready to use!
 
----
 
-## Deployment on OpenShift
-
-*Note: Ensure you have access to an OpenShift cluster and the necessary permissions.*
-
-1. **Build Docker Images**
-
-   - Build images for the backend API and Slack bot.
-
-     ```
-     # From the root directory
-     docker build -t quay.io/bpandey/netsentenial/backend-api:latest -f app/Dockerfile app/
-     docker build -t quay.io/bpandey/netsentenial/slack-bot:latest -f slack_bot/Dockerfile slack_bot/
-     ```
-
-2. **Push Images to a Registry**
-
-   - Push the images to a container registry accessible by OpenShift.
-
-     ```
-     docker push quay.io/bpandey/netsentenial/backend-api:latest
-     docker push quay.io/bpandey/netsentenial/slack-bot:latest
-     ```
-
-3. **Deploy on OpenShift**
-
-   - Use the deployment files in `deployment/openshift/`.
-
-     ```
-     oc apply -f deployment/openshift/backend-deployment.yaml
-     oc apply -f deployment/openshift/backend-service.yaml
-     oc apply -f deployment/openshift/slackbot-deployment.yaml
-     oc apply -f deployment/openshift/slackbot-service.yaml
-     oc apply -f deployment/openshift/route.yaml
-     ```
-
-4. **Configure OpenShift Routes**
-
-   - Ensure the services are accessible externally if needed.
-
-5. **Update Slack App Configuration**
-
-   - Update the Slack app's URLs to point to the OpenShift routes.
-
----
-
-## Usage
-
-- **Interacting with the Slack Bot**
-
-  - Send messages or commands to the Slack bot in your workspace.
-  - Example queries:
-
-    - "What are the recent attacks?"
-    - "List suspicious IPs."
-
-- **API Endpoints**
-
-  - The backend API exposes endpoints (e.g., `/predict`, `/chat`) that can be accessed programmatically if needed.
-
----
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. **Fork the Repository**
-
-2. **Create a Feature Branch**
-
-   ```
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Commit Your Changes**
-
-   ```
-   git commit -m "Description of your changes"
-   ```
-
-4. **Push to Your Fork**
-
-   ```
-   git push origin feature/your-feature-name
-   ```
-
-5. **Create a Pull Request**
-
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Acknowledgements
-
-- **UNSW-NB15 Dataset**: [Link to dataset](https://research.unsw.edu.au/projects/unsw-nb15-dataset)
-- **Hugging Face Transformers**: [GitHub Repository](https://github.com/huggingface/transformers)
-- **Slack Developer Tools**: [Slack API](https://api.slack.com/)
-
----
-
-**Additional Tips:**
-
-- **Environment Variables Management**:
-
-  - Use the `python-dotenv` package to manage environment variables.
-  - Create a `.env` file in the root directory and add it to `.gitignore` to prevent sensitive information from being committed.
-
-- **Testing**:
-
-  - Run tests located in the `tests/` directory to ensure everything is working as expected.
-
-    ```
-    pytest tests/
-    ```
-
-- **Code Style**:
-
-  - Follow PEP 8 guidelines for Python code.
-  - Use linters like `flake8` or formatters like `black` to maintain code quality.
-
----
+### Deploy NetSentinel Application
+```
+oc apply -k k8s/apps/overlays/telcolab/netsentinel/
+```
