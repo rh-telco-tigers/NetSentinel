@@ -172,3 +172,15 @@ oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
 
 ### Configure SLACK for communication with the bot
 Follow doc [Slack Configuration](./docs/slack/configure-slack.md)
+
+
+## Cleanup
+Execute the commands in the specified sequence to ensure proper deletion, as Kafka topics may not be deleted if the order is not followed:
+
+```
+oc delete kafkatopics --all -n netsentinel
+oc delete -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
+oc delete -k k8s/apps/overlays/rhdemo-netsentinel/
+oc delete pvc --all -n netsentinel 
+oc delete ns netsentinel
+```
