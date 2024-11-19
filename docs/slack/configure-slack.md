@@ -57,7 +57,7 @@ settings:
 - You will land at the "Basic Information" page.
 ![App Basic Information](./images/004-slack.png)
 
-- Update the Signing Secret in your `app-config.yaml` under the slack section, using the secret found in the Basic Information menu.
+- Update the Signing Secret in your `app-config.yaml` under the slack section (e.g `k8s/apps/overlays/rhdemo-netsentinel/netsentinel/app-config.yaml`), using the secret found in the Basic Information menu.
 ```
 slack_config:
   slack_channel: "#netsentinel"
@@ -74,7 +74,7 @@ slack_config:
 Redeploy the application and reboot the pods with the updated app config:
 
 ```
-oc apply -k k8s/apps/overlays/rhlab/netsentinel/
+oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
 oc get pods -l app.kubernetes.io/name=netsentinel
 oc delete pods -l app.kubernetes.io/name=netsentinel
 ```
@@ -82,7 +82,7 @@ oc delete pods -l app.kubernetes.io/name=netsentinel
 - Navigate to slack "Event Subscriptions" page.
 ![Retry Event Subscriptions](./images/007-slack.png)
 
-- Click on "Retry" if "Request URL" is not verified.
+- Click on "Retry" if "Request URL" is not verified. Make sure NetSentinel app is fully up and running and you can hit this endpoint in browser.
 ![Verified Event Subscriptions](./images/008-slack.png)
 
 - Your application is now configured and installed in your Slack workspace. Go to [NetSentinel Workspace](https://netsentinel.slack.com/) and confirm that the `NetSentinelRHDev` app appears under the **Apps** section.
