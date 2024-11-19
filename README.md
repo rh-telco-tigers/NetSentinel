@@ -167,5 +167,8 @@ Your Kafka instance is now ready to use!
 
 ### Deploy NetSentinel Application
 ```
-oc apply -k k8s/apps/overlays/telcolab/netsentinel/
+oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
 ```
+
+### Configure SLACK for communication with the bot
+Follow doc [Slack Configuration](./docs/slack/configure-slack.md)
