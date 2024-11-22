@@ -49,23 +49,30 @@ def create_kafka_producer(kafka_bootstrap_servers):
     Create and return a Kafka producer using Zeek-like configuration style.
     """
     try:
-        producer = KafkaProducer(
-            bootstrap_servers=kafka_bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-            retries=5,
-            acks="all",
-            security_protocol="SASL_SSL",
-            sasl_mechanism="SCRAM-SHA-512",
-            sasl_plain_username=os.getenv("KAFKA_USERNAME"),
-            sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
-            ssl_cafile="/usr/local/share/ca-certificates/ca.crt",
-            ssl_check_hostname=False 
-        )
+        use_ssl = os.path.exists("/usr/local/share/ca-certificates/ca.crt")
+
+        producer_args = {
+            "bootstrap_servers": kafka_bootstrap_servers,
+            "value_serializer": lambda v: json.dumps(v).encode("utf-8"),
+            "retries": 5,
+            "acks": "all",
+            "security_protocol": "SASL_SSL" if use_ssl else "SASL_PLAINTEXT",
+            "sasl_mechanism": "SCRAM-SHA-512" if use_ssl else "PLAIN",
+            "sasl_plain_username": os.getenv("KAFKA_USERNAME", "admin"),
+            "sasl_plain_password": os.getenv("KAFKA_PASSWORD", "secret-password"),
+        }
+
+        if use_ssl:
+            producer_args["ssl_cafile"] = "/usr/local/share/ca-certificates/ca.crt"
+            producer_args["ssl_check_hostname"] = False
+
+        producer = KafkaProducer(**producer_args)
         logger.info(f"Connected to Kafka at {kafka_bootstrap_servers}")
         return producer
     except Exception as e:
         logger.error(f"Failed to connect to Kafka: {e}")
         sys.exit(1)
+
 
 def get_random_ip(subnet_list):
     """

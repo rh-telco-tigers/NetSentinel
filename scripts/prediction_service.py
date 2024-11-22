@@ -38,20 +38,25 @@ def create_kafka_consumer(kafka_bootstrap_servers, topic):
     Create and return a Kafka consumer using Zeek-like configuration style.
     """
     try:
-        consumer = KafkaConsumer(
-            topic,
-            bootstrap_servers=kafka_bootstrap_servers,
-            value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-            auto_offset_reset='latest',
-            enable_auto_commit=True,
-            group_id='data_processor_group',
-            security_protocol="SASL_SSL",
-            sasl_mechanism="SCRAM-SHA-512",
-            sasl_plain_username=os.getenv("KAFKA_USERNAME"),
-            sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
-            ssl_cafile="/usr/local/share/ca-certificates/ca.crt",
-            ssl_check_hostname=False 
-        )
+        use_ssl = os.path.exists("/usr/local/share/ca-certificates/ca.crt")
+
+        consumer_args = {
+            "bootstrap_servers": kafka_bootstrap_servers,
+            "value_deserializer": lambda v: json.loads(v.decode('utf-8')),
+            "auto_offset_reset": 'latest',
+            "enable_auto_commit": True,
+            "group_id": 'data_processor_group',
+            "security_protocol": "SASL_SSL" if use_ssl else "SASL_PLAINTEXT",
+            "sasl_mechanism": "SCRAM-SHA-512" if use_ssl else "PLAIN",
+            "sasl_plain_username": os.getenv("KAFKA_USERNAME", "admin"),
+            "sasl_plain_password": os.getenv("KAFKA_PASSWORD", "secret-password"),
+        }
+
+        if use_ssl:
+            consumer_args["ssl_cafile"] = "/usr/local/share/ca-certificates/ca.crt"
+            consumer_args["ssl_check_hostname"] = False
+
+        consumer = KafkaConsumer(topic, **consumer_args)
         logger.info(f"Connected to Kafka topic '{topic}' as consumer")
         return consumer
     except Exception as e:
