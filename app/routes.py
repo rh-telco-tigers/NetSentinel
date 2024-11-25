@@ -2,12 +2,10 @@
 
 from flask import Blueprint, request, jsonify, current_app
 import logging
-import numpy as np
 import asyncio
 import hmac
 import hashlib
 import time
-from datetime import datetime, timedelta
 from threading import Lock
 
 api_bp = Blueprint('api', __name__)
@@ -227,14 +225,6 @@ def slack_events():
     user_text = event.get('text')
     channel = event.get('channel')
     user = event.get('user')
-
-    # Check if the event has already been processed
-    # if event_id in processed_event_ids:
-    #     logger.info(f"Event ID {event_id} has already been processed. Skipping.")
-    #     return jsonify({"status": "Event already processed"}), 200
-
-    # Add the event_id to the processed set
-    # processed_event_ids.add(event_id)
 
     if not user_text:
         logger.warning("No text found in Slack event.")

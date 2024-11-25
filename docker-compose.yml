@@ -6,15 +6,25 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=* -Djava.security.auth.login.config=/etc/zookeeper/zookeeper-jaas.conf"
+      ZOO_AUTH_PROVIDER_1: org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+      ZOO_REQUIRE_CLIENT_AUTH_SCHEME: sasl
+      ZOOKEEPER_OPTS: "-Djava.security.auth.login.config=/etc/zookeeper/zookeeper-jaas.conf"
+      ZOOKEEPER_SASL_ENABLED: "true"
+      ZOOKEEPER_CLIENT_USER: "admin"
+      ZOOKEEPER_CLIENT_PASSWORD: "secret-password"
     ports:
       - "2181:2181"
     networks:
       - netsentenial_network
+    volumes:
+      - ./kafka-compose/zookeeper-jaas.conf:/etc/zookeeper/zookeeper-jaas.conf
+    command: ["sh", "-c", "/etc/confluent/docker/run"]
     healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181", "|", "grep", "imok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
@@ -23,21 +33,45 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:SASL_PLAINTEXT,OUTSIDE:SASL_PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:29092,OUTSIDE://localhost:9092
       KAFKA_LISTENERS: INSIDE://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: "PLAIN"
+      KAFKA_SASL_ENABLED_MECHANISMS: "PLAIN,SCRAM-SHA-512"
+      KAFKA_LISTENER_NAME_INSIDE_SASL_ENABLED_MECHANISMS: "PLAIN"
+      KAFKA_LISTENER_NAME_OUTSIDE_SASL_ENABLED_MECHANISMS: "PLAIN"
+      KAFKA_SUPER_USERS: "User:admin"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka-jaas.conf"
     depends_on:
       zookeeper:
         condition: service_healthy
+    volumes:
+      - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
+      - ./kafka-compose/client.properties:/etc/kafka/client.properties
     networks:
       - netsentenial_network
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"]
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list", "--command-config", "/etc/kafka/client.properties"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka-jaas.conf"
+    networks:
+      - netsentenial_network
+    entrypoint: ["/bin/bash", "-c", "/etc/kafka/create_kafka_users.sh"]
+    volumes:
+      - ./kafka-compose/create_kafka_users.sh:/etc/kafka/create_kafka_users.sh
+      - ./kafka-compose/client.properties:/etc/kafka/client.properties
+      - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -48,6 +82,11 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: PLAIN
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: >
+        org.apache.kafka.common.security.scram.ScramLoginModule required
+        username="admin" password="secret-password";
     depends_on:
       kafka:
         condition: service_healthy

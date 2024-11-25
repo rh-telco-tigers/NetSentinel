@@ -4,7 +4,6 @@ import logging
 import os
 import json
 import faiss
-import numpy as np
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from typing import Dict
@@ -33,21 +32,6 @@ def setup_logging(log_level='DEBUG', log_file=None):
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
-# def load_faiss_index_and_metadata(faiss_index_path, metadata_store_path):
-#     if not os.path.exists(faiss_index_path):
-#         raise FileNotFoundError(f"FAISS index not found at {faiss_index_path}")
-#     if not os.path.exists(metadata_store_path):
-#         raise FileNotFoundError(f"Metadata store not found at {metadata_store_path}")
-
-#     # Load FAISS index
-#     with open(faiss_index_path, 'rb') as faiss_file:
-#         faiss_index = faiss.deserialize_index(faiss_file.read())
-
-#     # Load metadata store
-#     with open(metadata_store_path, 'r') as f:
-#         metadata_store = json.load(f)
-
-#     return faiss_index, metadata_store
 
 def load_faiss_index_and_metadata(faiss_index_path, metadata_store_path):
     try:

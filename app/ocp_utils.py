@@ -4,8 +4,6 @@ from typing import List, Dict
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from prometheus_api_client import PrometheusConnect
-from kubernetes.client import V1NetworkPolicy, V1ObjectMeta, V1NetworkPolicySpec, V1LabelSelector, V1NetworkPolicyIngressRule, V1NetworkPolicyPeer, V1IPBlock
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
