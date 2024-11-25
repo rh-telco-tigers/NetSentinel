@@ -129,44 +129,7 @@ def create_app(config_path='../config.yaml', registry=None):
 
         # Load the embedding model for RAG
         rag_config = app.config['RAG_CONFIG']
-        # llm_model_name = rag_config['llm_model_name']
-        # llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
         nlu_model_path = rag_config.get('nlu_model_path', 'rasa/models/nlu-model.tar.gz')  # Default value if not set
-
-        # embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
-        # embedding_model_path = rag_config.get('embedding_model_path', 'models/embedding_models/all-MiniLM-L6-v2')  # Get the path from config
-
-        # from sentence_transformers import SentenceTransformer
-        # if not os.path.exists(embedding_model_path):
-        #     logger.error(f"Embedding model not found at {embedding_model_path}.")
-        #     raise FileNotFoundError(f"Embedding model not found at {embedding_model_path}.")
-
-        # embedding_model = SentenceTransformer(embedding_model_path)
-        # logger.info(f"Embedding model '{embedding_model_name}' loaded from {embedding_model_path}.")
-
-
-        # Load the LLM model for RAG
-        # from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
-
-        # tokenizer = AutoTokenizer.from_pretrained(llm_model_name)
-        # # Set pad_token_id and eos_token_id if not set
-        # if tokenizer.pad_token_id is None:
-        #     tokenizer.pad_token_id = tokenizer.eos_token_id
-
-        # if llm_model_type == 'seq2seq':
-        #     llm_model = AutoModelForSeq2SeqLM.from_pretrained(llm_model_name)
-        # elif llm_model_type == 'causal':
-        #     llm_model = AutoModelForCausalLM.from_pretrained(llm_model_name)
-        # else:
-        #     raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
-
-        # # Move model to device (CPU or GPU)
-        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # llm_model.to(device)
-
-        # logger.info(f"LLM model '{llm_model_name}' of type '{llm_model_type}' loaded.")
-
-
             # Initialize Remote LLM Client
         remote_llm_config = app.config['REMOTE_LLM_CONFIG']
         model_name = remote_llm_config.get('model_name')
