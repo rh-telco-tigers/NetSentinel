@@ -61,19 +61,6 @@ def verify_slack_request(signing_secret, request):
 
     return True
 
-def build_context_from_event_data(event_data):
-    fields = [
-        f"Event ID: {event_data.get('event_id', 'N/A')}",
-        f"Prediction: {'Attack' if event_data.get('prediction') == 1 else 'Normal'}",
-        f"Protocol: {event_data.get('protocol', 'N/A')}",
-        f"Service: {event_data.get('service', 'N/A')}",
-        f"State: {event_data.get('state', 'N/A')}",
-        f"Source IP: {event_data.get('src_ip', 'N/A')}",
-        f"Destination IP: {event_data.get('dst_ip', 'N/A')}",
-        f"Prediction Probability: {event_data.get('prediction_proba', 'N/A')}"
-    ]
-    return "\n".join(fields)
-
 # Slack Integration Class
 class SlackHandler:
     def __init__(self, app):
@@ -99,59 +86,6 @@ class SlackHandler:
 
     def send_message(self, channel, text):
         self.slack_client.send_message(channel, text)
-
-# Intent Handlers
-def handle_get_event_info(entities, event_id_index):
-    event_id = entities.get('event_id')
-    if not event_id:
-        return "Please provide a valid event ID."
-
-    event_data = get_event_by_id(event_id, event_id_index)
-    if not event_data:
-        return "No data found for the provided event ID."
-
-    text = entities.get('text', '').lower()
-    if "source ip" in text:
-        return f"Source IP: {event_data.get('src_ip', 'N/A')}"
-    elif "destination ip" in text:
-        return f"Destination IP: {event_data.get('dst_ip', 'N/A')}"
-    elif "attack" in text:
-        prediction = event_data.get('prediction')
-        return "Yes, it is an attack." if prediction == 1 else "No, it is not an attack."
-    elif "prediction probability" in text:
-        proba = event_data.get('prediction_proba', 'N/A')
-        return f"Prediction Probability: {proba}"
-    elif "what kind of traffic" in text or "traffic type" in text:
-        protocol = event_data.get('protocol', 'N/A')
-        service = event_data.get('service', 'N/A')
-        return f"Protocol: {protocol}, Service: {service}"
-    else:
-        return build_context_from_event_data(event_data)
-
-def handle_list_attack_events(metadata_store):
-    event_ids = get_all_attack_event_ids(metadata_store)
-    if event_ids:
-        return "Attack Event IDs:\n" + "\n".join(event_ids)
-    else:
-        return "No attack events found."
-
-def handle_get_events_by_ip(entities, metadata_store):
-    ip_address = entities.get('ip_address')
-    if not ip_address:
-        return "Please provide a valid IP address."
-
-    text = entities.get('text', '').lower()
-    if "source ip" in text:
-        events = get_events_by_src_ip(ip_address, metadata_store)
-    elif "destination ip" in text:
-        events = get_events_by_dst_ip(ip_address, metadata_store)
-    else:
-        return "Please specify whether you are interested in source IP or destination IP."
-
-    if events:
-        return "\n".join([f"Event ID: {e['event_id']}" for e in events])
-    else:
-        return "No events found for the specified IP."
 
 # Function to clean up old 'ts' entries
 def cleanup_processed_ts():

@@ -27,7 +27,6 @@ class OCPClient:
             self.network_api = client.NetworkingV1Api()
             self.rbac_api = client.RbacAuthorizationV1Api()
             self.core_api = client.CoreV1Api()
-            self.apps_api = client.AppsV1Api()
             
             # Initialize Prometheus client with Bearer Token
             if prometheus_url:
@@ -57,44 +56,6 @@ class OCPClient:
         except Exception as e:
             logger.error(f"Failed to initialize OCP Client: {e}")
             raise e
-
-    def test_prometheus_connection(self):
-        """
-        Test if the connection to Prometheus is working by running a simple query.
-        """
-        if not self.prom:
-            logger.error("Prometheus client not initialized. Cannot perform test query.")
-            return {
-                "query": "Prometheus client not initialized",
-                "output": {},
-                "final_message": "Prometheus client not initialized. Cannot perform test query."
-            }
-
-        try:
-            test_query = 'up'
-            test_result = self.prom.custom_query(query=test_query)
-            
-            if test_result:
-                logger.info(f"Test query successful. Result: {test_result}")
-                return {
-                    "query": test_query,
-                    "output": test_result,
-                    "final_message": "Successfully connected to Prometheus and retrieved metrics."
-                }
-            else:
-                logger.warning("Test query returned no results.")
-                return {
-                    "query": test_query,
-                    "output": test_result,
-                    "final_message": "Test query returned no results."
-                }
-        except Exception as e:
-            logger.error(f"Error performing test query on Prometheus: {e}")
-            return {
-                "query": test_query,
-                "output": {},
-                "final_message": f"Error performing test query: {e}"
-            }
 
     # -------------------------
     # Networking-Related Functions
