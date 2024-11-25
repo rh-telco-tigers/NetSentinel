@@ -21,6 +21,8 @@ from rasa.shared.utils.io import json_to_string
 from .routes import api_bp
 from .utils import setup_logging, load_faiss_index_and_metadata
 from .slack_integration import SlackClient
+from .remote_llm_client import RemoteLLMClient
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +90,7 @@ def create_app(config_path='../config.yaml', registry=None):
     }
     app.config['TRAINING_CONFIG'] = config.get('training_config', {})
     app.config['RAG_CONFIG'] = config.get('rag_config', {})
+    app.config['REMOTE_LLM_CONFIG'] = app.config['RAG_CONFIG'].get('remote_llm', {})
     app.config['OCP_CONFIG'] = {
         'kubeconfig_path': config.get('ocp_config', {}).get('kubeconfig_path', '/path/to/kubeconfig'),
         'auth_method': config.get('ocp_config', {}).get('auth_method', 'kubeconfig'),  # 'kubeconfig' or 'token'
@@ -126,42 +129,58 @@ def create_app(config_path='../config.yaml', registry=None):
 
         # Load the embedding model for RAG
         rag_config = app.config['RAG_CONFIG']
-        llm_model_name = rag_config['llm_model_name']
-        llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
+        # llm_model_name = rag_config['llm_model_name']
+        # llm_model_type = rag_config.get('llm_model_type', 'seq2seq')
         nlu_model_path = rag_config.get('nlu_model_path', 'rasa/models/nlu-model.tar.gz')  # Default value if not set
 
-        embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
-        embedding_model_path = rag_config.get('embedding_model_path', 'models/embedding_models/all-MiniLM-L6-v2')  # Get the path from config
+        # embedding_model_name = rag_config.get('embedding_model_name', 'all-MiniLM-L6-v2')
+        # embedding_model_path = rag_config.get('embedding_model_path', 'models/embedding_models/all-MiniLM-L6-v2')  # Get the path from config
 
-        from sentence_transformers import SentenceTransformer
-        if not os.path.exists(embedding_model_path):
-            logger.error(f"Embedding model not found at {embedding_model_path}.")
-            raise FileNotFoundError(f"Embedding model not found at {embedding_model_path}.")
+        # from sentence_transformers import SentenceTransformer
+        # if not os.path.exists(embedding_model_path):
+        #     logger.error(f"Embedding model not found at {embedding_model_path}.")
+        #     raise FileNotFoundError(f"Embedding model not found at {embedding_model_path}.")
 
-        embedding_model = SentenceTransformer(embedding_model_path)
-        logger.info(f"Embedding model '{embedding_model_name}' loaded from {embedding_model_path}.")
+        # embedding_model = SentenceTransformer(embedding_model_path)
+        # logger.info(f"Embedding model '{embedding_model_name}' loaded from {embedding_model_path}.")
 
 
         # Load the LLM model for RAG
-        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
+        # from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausalLM
 
-        tokenizer = AutoTokenizer.from_pretrained(llm_model_name)
-        # Set pad_token_id and eos_token_id if not set
-        if tokenizer.pad_token_id is None:
-            tokenizer.pad_token_id = tokenizer.eos_token_id
+        # tokenizer = AutoTokenizer.from_pretrained(llm_model_name)
+        # # Set pad_token_id and eos_token_id if not set
+        # if tokenizer.pad_token_id is None:
+        #     tokenizer.pad_token_id = tokenizer.eos_token_id
 
-        if llm_model_type == 'seq2seq':
-            llm_model = AutoModelForSeq2SeqLM.from_pretrained(llm_model_name)
-        elif llm_model_type == 'causal':
-            llm_model = AutoModelForCausalLM.from_pretrained(llm_model_name)
-        else:
-            raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
+        # if llm_model_type == 'seq2seq':
+        #     llm_model = AutoModelForSeq2SeqLM.from_pretrained(llm_model_name)
+        # elif llm_model_type == 'causal':
+        #     llm_model = AutoModelForCausalLM.from_pretrained(llm_model_name)
+        # else:
+        #     raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
 
-        # Move model to device (CPU or GPU)
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        llm_model.to(device)
+        # # Move model to device (CPU or GPU)
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # llm_model.to(device)
 
-        logger.info(f"LLM model '{llm_model_name}' of type '{llm_model_type}' loaded.")
+        # logger.info(f"LLM model '{llm_model_name}' of type '{llm_model_type}' loaded.")
+
+
+            # Initialize Remote LLM Client
+        remote_llm_config = app.config['REMOTE_LLM_CONFIG']
+        model_name = remote_llm_config.get('model_name')
+        llm_url = remote_llm_config.get('url')
+        llm_token = remote_llm_config.get('token')
+        verify_ssl = remote_llm_config.get('verify_ssl', True)
+
+        if not llm_url:
+            logger.error("Remote LLM URL is not configured.")
+            raise ValueError("Remote LLM URL is missing.")
+
+        remote_llm_client = RemoteLLMClient(url=llm_url, model_name=model_name, token=llm_token, verify_ssl=verify_ssl)
+        logger.info("Remote LLM client initialized.")
+
 
         # Load FAISS index and metadata
         faiss_index_path = rag_config.get('faiss_index_path')
@@ -205,9 +224,7 @@ def create_app(config_path='../config.yaml', registry=None):
 
         # Attach models and clients to app for access in routes
         app.persistent_state = {
-            'embedding_model': embedding_model,
-            'tokenizer': tokenizer,
-            'llm_model': llm_model,
+            'remote_llm_client': remote_llm_client,
             'faiss_index': faiss_index,
             'metadata_store': metadata_store,
             'event_id_index': event_id_index,

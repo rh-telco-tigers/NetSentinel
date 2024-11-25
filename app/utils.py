@@ -114,44 +114,31 @@ def build_context_from_event_data(event_data):
     ]
     return "\n".join(fields)
 
-def generate_response(input_text, tokenizer, llm_model, llm_model_type, max_context_length, max_answer_length):
-    """
-    Generate a response using the appropriate LLM model type.
-    """
-    inputs = tokenizer.encode(
-        input_text,
-        return_tensors='pt',
-        max_length=max_context_length,
-        truncation=True
-    ).to(llm_model.device)
 
-    if llm_model_type == 'seq2seq':
-        outputs = llm_model.generate(
-            inputs,
-            max_length=max_answer_length,
-            num_beams=5,
-            early_stopping=True
-        )
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-    elif llm_model_type == 'causal':
-        total_max_length = inputs.shape[1] + max_answer_length
-        outputs = llm_model.generate(
-            inputs,
-            max_length=total_max_length,
-            do_sample=True,
-            temperature=0.7,
-            top_p=0.9,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.pad_token_id,
-        )
-        full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        # Extract the generated answer
-        response_text = full_response[len(tokenizer.decode(inputs[0], skip_special_tokens=True)):].strip()
-    else:
-        logger.error(f"Unsupported llm_model_type: {llm_model_type}")
-        raise ValueError(f"Unsupported llm_model_type: {llm_model_type}")
+def generate_response(input_text, remote_llm_client, max_answer_length):
+    """
+    Generate a response using the remote LLM client.
 
-    return response_text
+    Parameters:
+        input_text (str): The user's input text.
+        remote_llm_client (RemoteLLMClient): The client to interact with the remote LLM service.
+        max_answer_length (int): The maximum length of the generated response.
+
+    Returns:
+        str: The generated response text.
+    """
+    try:
+        response_text = remote_llm_client.generate_response(
+            input_text=input_text,
+            max_length=max_answer_length
+        )
+        if not response_text.strip():
+            logger.error("Remote LLM returned an empty response.")
+            return "Sorry, I couldn't generate a response at the moment."
+        return response_text
+    except Exception as e:
+        logger.error(f"Error generating response from remote LLM: {e}")
+        return "Sorry, I couldn't generate a response at the moment."
 
 
 def extract_namespace(entities: Dict) -> str:

@@ -23,8 +23,6 @@ lock = Lock()  # To ensure thread-safe operations on the sets
 # Define the time window for keeping 'ts' values (e.g., 1 hour)
 TS_EXPIRATION_SECONDS = 3600
 
-# processed_event_ids = set()
-
 def verify_slack_request(signing_secret, request):
 
     timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
@@ -190,11 +188,9 @@ def slack_events():
         nlu_interpreter = current_app.persistent_state.get('nlu_interpreter')
         metadata_store = current_app.persistent_state.get('metadata_store')
         event_id_index = current_app.persistent_state.get('event_id_index')
-        embedding_model = current_app.persistent_state.get('embedding_model')
-        tokenizer = current_app.persistent_state.get('tokenizer')
-        llm_model = current_app.persistent_state.get('llm_model')
         ocp_client = current_app.persistent_state.get('ocp_client')
-        llm_model_type = current_app.config.get('RAG_CONFIG', {}).get('llm_model_type', 'seq2seq')
+        remote_llm_client = current_app.persistent_state.get('remote_llm_client')
+
 
         missing_components = []
 
@@ -205,14 +201,10 @@ def slack_events():
             missing_components.append('Metadata Store')
         if not event_id_index:
             missing_components.append('Event ID Index')
-        if not embedding_model:
-            missing_components.append('Embedding Model')
-        if not tokenizer:
-            missing_components.append('Tokenizer')
-        if not llm_model:
-            missing_components.append('LLM Model')
         if not ocp_client:
             missing_components.append('OCP Client')
+        if not remote_llm_client:
+            missing_components.append('Remote LLM Client')
 
         # If any component is missing, log the details and notify via Slack
         if missing_components:
@@ -246,10 +238,7 @@ def slack_events():
             input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."
             response_text = generate_response(
                 input_text,
-                tokenizer,
-                llm_model,
-                llm_model_type,
-                max_context_length=512,
+                remote_llm_client=remote_llm_client,
                 max_answer_length=150
             )
         else:
@@ -260,9 +249,7 @@ def slack_events():
                     # Pass necessary components for LLM
                     response_text = handler(
                         entities,
-                        tokenizer=tokenizer,
-                        llm_model=llm_model,
-                        llm_model_type=llm_model_type
+                        remote_llm_client=remote_llm_client
                     )
                 else:
                     # Pass necessary data to the handler
@@ -270,7 +257,8 @@ def slack_events():
                         entities,
                         event_id_index=event_id_index,
                         metadata_store=metadata_store,
-                        ocp_client=ocp_client
+                        ocp_client=ocp_client,
+                        remote_llm_client=remote_llm_client
                     )
 
                     # Extract query, output, and final message if returned in the result
@@ -301,10 +289,7 @@ def slack_events():
                 input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."
                 response_text = generate_response(
                     input_text,
-                    tokenizer,
-                    llm_model,
-                    llm_model_type,
-                    max_context_length=512,
+                    remote_llm_client=remote_llm_client,
                     max_answer_length=150
                 )
 
