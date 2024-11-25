@@ -20,7 +20,6 @@ from rasa.shared.utils.io import json_to_string
 # Import your blueprints and utilities
 from .routes import api_bp
 from .utils import setup_logging, load_faiss_index_and_metadata
-from .models import PredictiveModel
 from .slack_integration import SlackClient
 
 logger = logging.getLogger(__name__)
@@ -82,7 +81,6 @@ def create_app(config_path='../config.yaml', registry=None):
 
     # Application configurations
     app.config['API_CONFIG'] = config.get('api_config', {})
-    app.config['PREDICTIVE_MODEL_CONFIG'] = config.get('predictive_model_config', {})
     app.config['SLACK_CONFIG'] = {
         'slack_bot_token': os.getenv('SLACK_BOT_TOKEN', config.get('slack_config', {}).get('slack_bot_token', '')),
         'slack_signing_secret': os.getenv('SLACK_SIGNING_SECRET', config.get('slack_config', {}).get('slack_signing_secret', '')),
@@ -125,24 +123,6 @@ def create_app(config_path='../config.yaml', registry=None):
 
     # Initialize Models and Slack Client
     try:
-        # Load predictive model configuration
-        predictive_model_config = app.config['PREDICTIVE_MODEL_CONFIG']
-        model_dir = predictive_model_config.get('model_dir')
-        onnx_model_filename = predictive_model_config.get('onnx_model_filename')
-
-        if not model_dir or not onnx_model_filename:
-            logger.error("Model directory or ONNX filename is not specified in the configuration.")
-            raise ValueError("Model directory or ONNX filename is missing in the predictive model configuration.")
-
-        predictive_model_path = os.path.join(model_dir, onnx_model_filename)
-
-        # Load the predictive model (ONNX model)
-        if not os.path.exists(predictive_model_path):
-            logger.error(f"Predictive model path is invalid: {predictive_model_path}")
-            raise FileNotFoundError(f"Predictive model not found at {predictive_model_path}")
-
-        predictive_model = PredictiveModel(predictive_model_path)
-        logger.info("Predictive model loaded.")
 
         # Load the embedding model for RAG
         rag_config = app.config['RAG_CONFIG']
@@ -225,7 +205,6 @@ def create_app(config_path='../config.yaml', registry=None):
 
         # Attach models and clients to app for access in routes
         app.persistent_state = {
-            'predictive_model': predictive_model,
             'embedding_model': embedding_model,
             'tokenizer': tokenizer,
             'llm_model': llm_model,
