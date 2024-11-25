@@ -188,36 +188,6 @@ def handle_ask_capabilities(entities: Dict, **kwargs) -> str:
             "- Monitor security policies and compliance\n"
             "How can I assist you today?")
 
-# def handle_general_question(entities: Dict, **kwargs) -> str:
-#     """
-#     Handle general technical questions by generating a response using the LLM.
-#     """
-#     log_extracted_entities(entities)
-#     user_text = entities.get('text', '')
-#     tokenizer = kwargs.get('tokenizer')
-#     llm_model = kwargs.get('llm_model')
-#     llm_model_type = kwargs.get('llm_model_type', 'seq2seq')
-
-#     if not all([user_text, tokenizer, llm_model]):
-#         logger.error("Missing components for generating LLM response.")
-#         return "Sorry, I couldn't process your request at the moment."
-
-#     # Generate a response using the LLM
-#     input_text = f"User asked: {user_text}\nPlease provide a helpful and accurate response."
-#     try:
-#         response_text = generate_response(
-#             input_text,
-#             tokenizer,
-#             llm_model,
-#             llm_model_type,
-#             max_context_length=512,
-#             max_answer_length=150
-#         )
-#         return response_text
-#     except Exception as e:
-#         logger.error(f"Error generating LLM response: {e}")
-#         return "Sorry, I couldn't generate a response at the moment."
-
 def handle_general_question(entities: Dict, **kwargs) -> str:
     """
     Handle general technical questions by generating a response using the remote LLM.
@@ -239,8 +209,6 @@ def handle_general_question(entities: Dict, **kwargs) -> str:
     )
     return response_text
 
-
-
 def handle_fallback(entities: Dict, **kwargs) -> str:
     """
     Handle fallback by generating a response using the remote LLM.
@@ -261,37 +229,6 @@ def handle_fallback(entities: Dict, **kwargs) -> str:
         max_answer_length=150
     )
     return response_text
-
-
-# def handle_fallback(entities: Dict, **kwargs) -> str:
-#     """
-#     Handle fallback by generating a response using the LLM.
-#     """
-#     log_extracted_entities(entities)
-#     user_text = entities.get('text', '')
-#     tokenizer = kwargs.get('tokenizer')
-#     llm_model = kwargs.get('llm_model')
-#     llm_model_type = kwargs.get('llm_model_type', 'seq2seq')
-
-#     if not all([user_text, tokenizer, llm_model]):
-#         logger.error("Missing components for generating LLM response.")
-#         return "Sorry, I couldn't process your request at the moment."
-
-#     # Generate a response using the LLM
-#     input_text = f"User asked: {user_text}\nPlease provide a helpful and accurate response."
-#     try:
-#         response_text = generate_response(
-#             input_text,
-#             tokenizer,
-#             llm_model,
-#             llm_model_type,
-#             max_context_length=512,
-#             max_answer_length=150
-#         )
-#         return response_text
-#     except Exception as e:
-#         logger.error(f"Error generating LLM response: {e}")
-#         return "Sorry, I couldn't generate a response at the moment."
 
 # -------------------------------
 # Networking Intent Handlers
