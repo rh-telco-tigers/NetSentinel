@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: milvus-operator-scc-access
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+      - get
+      - list
+      - create
+      - update
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: milvus-operator-scc-binding
+subjects:
+  - kind: ServiceAccount
+    name: milvus-operator
+    namespace: milvus-operator
+roleRef:
+  kind: ClusterRole
+  name: milvus-operator-scc-access
+  apiGroup: rbac.authorization.k8s.io

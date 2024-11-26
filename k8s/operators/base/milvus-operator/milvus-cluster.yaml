@@ -1,0 +1,11 @@
+apiVersion: milvus.io/v1beta1
+kind: Milvus
+metadata:
+  name: netsentinel
+#   labels:
+#     app: milvus
+# spec:
+#   mode: cluster
+#   dependencies: {}
+#   components: {}
+#   config: {}
