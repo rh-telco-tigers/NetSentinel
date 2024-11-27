@@ -1,0 +1,22 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    openshift.io/display-name: netsentinel
+    serving.kserve.io/deploymentMode: ModelMesh
+  generation: 1
+  labels:
+    opendatahub.io/dashboard: "true"
+  name: netsentinel
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: onnx
+        version: "1"
+      name: ""
+      resources: {}
+      runtime: netsentinel-triton
+      storage:
+        key: aws-connection-minio
+        path: netsentinel/e05b903d-30a7-461b-8e67-d174b596d583

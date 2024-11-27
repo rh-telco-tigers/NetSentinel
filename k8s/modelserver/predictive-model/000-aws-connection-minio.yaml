@@ -1,0 +1,17 @@
+apiVersion: v1
+data:
+  AWS_ACCESS_KEY_ID: bWluaW8=
+  AWS_DEFAULT_REGION: dXMtZWFzdC0x
+  AWS_S3_BUCKET: cHJlZGljdGl2ZS1tb2RlbC10cmFpbmluZw==
+  AWS_S3_ENDPOINT: aHR0cDovL21pbmlvLXNlcnZpY2UubmV0c2VudGluZWw6OTAwMA==
+  AWS_SECRET_ACCESS_KEY: bWluaW8xMjM=
+kind: Secret
+metadata:
+  annotations:
+    opendatahub.io/connection-type: s3
+    openshift.io/display-name: minio
+  labels:
+    opendatahub.io/dashboard: "true"
+    opendatahub.io/managed: "true"
+  name: aws-connection-minio
+type: Opaque
