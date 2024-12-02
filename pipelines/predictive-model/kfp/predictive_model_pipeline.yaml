@@ -288,52 +288,55 @@ deploymentSpec:
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef preprocess_data_component(\n    raw_data_path: InputPath(),\n\
           \    processed_data_path: OutputPath(),\n):\n    import os\n    import pandas\
-          \ as pd\n    import numpy as np\n    import glob\n    from sklearn.preprocessing\
-          \ import LabelEncoder, StandardScaler\n    import joblib\n\n    # List files\
-          \ in raw_data_path\n    print(f\"Files in raw_data_path: {os.listdir(raw_data_path)}\"\
+          \ as pd\n    import numpy as np\n    from sklearn.preprocessing import OrdinalEncoder,\
+          \ StandardScaler, LabelEncoder\n    import joblib\n\n    # List files in\
+          \ raw_data_path\n    print(f\"Files in raw_data_path: {os.listdir(raw_data_path)}\"\
           )\n\n    # Read the features file to get the column names\n    features_file\
           \ = os.path.join(raw_data_path, \"NUSW-NB15_features.csv\")\n    if not\
           \ os.path.exists(features_file):\n        raise FileNotFoundError(f\"Features\
           \ file not found at {features_file}\")\n    features = pd.read_csv(features_file,\
           \ encoding='cp1252')\n    feature_names = features['Name'].tolist()\n\n\
-          \    # Read only UNSW-NB15_1.csv to UNSW-NB15_4.csv\n    csv_files = [os.path.join(raw_data_path,\
+          \    # Read UNSW-NB15 CSV files\n    csv_files = [os.path.join(raw_data_path,\
           \ f\"UNSW-NB15_{i}.csv\") for i in range(1, 5)]\n    dataframes = []\n \
           \   for csv_file in csv_files:\n        if not os.path.exists(csv_file):\n\
           \            raise FileNotFoundError(f\"Data file not found: {csv_file}\"\
           )\n        print(f\"Reading {csv_file}\")\n        df = pd.read_csv(csv_file,\
-          \ header=None, encoding='latin1', low_memory=False)\n        if df.shape[1]\
-          \ != len(feature_names):\n            raise ValueError(f\"Expected {len(feature_names)}\
-          \ columns, but got {df.shape[1]} columns in {csv_file}\")\n        df.columns\
-          \ = feature_names\n        dataframes.append(df)\n        print(f\"Loaded\
-          \ {csv_file} with shape {df.shape}\")\n\n    # Concatenate dataframes\n\
-          \    train_df = pd.concat(dataframes, ignore_index=True)\n    print(f\"\
-          Dataset shape after concatenation: {train_df.shape}\")\n\n    # Shuffle\
-          \ the data\n    train_df = train_df.sample(frac=1, random_state=42).reset_index(drop=True)\n\
+          \ header=None, names=feature_names, encoding='latin1', low_memory=False)\n\
+          \        dataframes.append(df)\n        print(f\"Loaded {csv_file} with\
+          \ shape {df.shape}\")\n\n    # Concatenate dataframes\n    train_df = pd.concat(dataframes,\
+          \ ignore_index=True)\n    print(f\"Dataset shape after concatenation: {train_df.shape}\"\
+          )\n\n    # Shuffle the data\n    train_df = train_df.sample(frac=1, random_state=42).reset_index(drop=True)\n\
           \n    # Remove duplicates\n    train_df = train_df.drop_duplicates()\n \
           \   print(f\"Dataset shape after removing duplicates: {train_df.shape}\"\
-          )\n\n    # Handle missing values\n    categorical_cols = train_df.select_dtypes(include=['object']).columns\n\
-          \    train_df[categorical_cols] = train_df[categorical_cols].fillna('Unknown')\n\
-          \n    numerical_cols = train_df.select_dtypes(include=['int64', 'float64']).columns\n\
-          \    train_df[numerical_cols] = train_df[numerical_cols].fillna(train_df[numerical_cols].median())\n\
+          )\n\n    # Explicitly define columns to exclude\n    columns_to_exclude\
+          \ = ['srcip', 'sport', 'dstip', 'dsport', 'Stime', 'Ltime', 'Label', 'attack_cat']\n\
+          \n    # Define categorical columns (excluding columns_to_exclude)\n    categorical_cols\
+          \ = [\n        'proto', 'state', 'service',\n        'ct_ftp_cmd',  # If\
+          \ you decide to treat this as categorical\n        # Add any other categorical\
+          \ columns that are not in columns_to_exclude\n    ]\n\n    # Ensure these\
+          \ columns are treated as strings\n    train_df[categorical_cols] = train_df[categorical_cols].astype(str)\n\
+          \n    # Handle missing values in categorical columns\n    train_df[categorical_cols]\
+          \ = train_df[categorical_cols].fillna('Unknown')\n\n    # Handle missing\
+          \ values in numerical columns\n    numerical_cols = [col for col in train_df.columns\
+          \ if col not in categorical_cols + columns_to_exclude]\n    train_df[numerical_cols]\
+          \ = train_df[numerical_cols].fillna(train_df[numerical_cols].median())\n\
           \    print(\"Missing values handled.\")\n\n    # Encode categorical variables\
-          \ using LabelEncoder\n    categorical_cols = train_df.select_dtypes(include=['object']).columns\n\
-          \    label_encoders = {}\n    for col in categorical_cols:\n        le =\
-          \ LabelEncoder()\n        train_df[col] = le.fit_transform(train_df[col].astype(str))\n\
-          \        label_encoders[col] = le\n    print(f\"Categorical variables encoded:\
-          \ {list(categorical_cols)}\")\n\n    # Separate features and target\n  \
-          \  X = train_df.drop(['Label', 'attack_cat'], axis=1)\n    y = train_df['attack_cat']\n\
-          \n    # Encode target variable\n    label_encoder = LabelEncoder()\n   \
-          \ y_encoded = label_encoder.fit_transform(y)\n    print(\"Target variable\
-          \ encoded.\")\n\n    # Scale numerical features\n    numerical_cols = X.select_dtypes(include=['int64',\
-          \ 'float64']).columns\n    scaler = StandardScaler()\n    X[numerical_cols]\
-          \ = scaler.fit_transform(X[numerical_cols])\n    print(\"Numerical features\
-          \ scaled.\")\n\n    # Save preprocessed data and encoders\n    os.makedirs(processed_data_path,\
-          \ exist_ok=True)\n    X.to_pickle(os.path.join(processed_data_path, 'X.pkl'))\n\
-          \    joblib.dump(y_encoded, os.path.join(processed_data_path, 'y_encoded.pkl'))\n\
-          \    joblib.dump(label_encoders, os.path.join(processed_data_path, 'label_encoders.joblib'))\n\
-          \    joblib.dump(scaler, os.path.join(processed_data_path, 'scaler.joblib'))\n\
-          \    joblib.dump(label_encoder, os.path.join(processed_data_path, 'label_encoder.joblib'))\n\
-          \    print(f\"Processed data saved to {processed_data_path}\")\n\n"
+          \ using OrdinalEncoder\n    ordinal_encoder = OrdinalEncoder(handle_unknown='use_encoded_value',\
+          \ unknown_value=-1)\n    train_df[categorical_cols] = ordinal_encoder.fit_transform(train_df[categorical_cols])\n\
+          \    print(f\"Categorical variables encoded using OrdinalEncoder: {categorical_cols}\"\
+          )\n\n    # Separate features and target\n    X = train_df.drop(columns=columns_to_exclude)\n\
+          \    y = train_df['attack_cat']\n\n    # Encode target variable using LabelEncoder\n\
+          \    label_encoder = LabelEncoder()\n    y_encoded = label_encoder.fit_transform(y)\n\
+          \    print(\"Target variable encoded.\")\n\n    # Scale numerical features\n\
+          \    scaler = StandardScaler()\n    X[numerical_cols] = scaler.fit_transform(X[numerical_cols])\n\
+          \    print(\"Numerical features scaled.\")\n\n    # Save preprocessed data\
+          \ and encoders\n    os.makedirs(processed_data_path, exist_ok=True)\n  \
+          \  X.to_pickle(os.path.join(processed_data_path, 'X.pkl'))\n    joblib.dump(y_encoded,\
+          \ os.path.join(processed_data_path, 'y_encoded.pkl'))\n    joblib.dump(ordinal_encoder,\
+          \ os.path.join(processed_data_path, 'ordinal_encoder.joblib'))\n    joblib.dump(scaler,\
+          \ os.path.join(processed_data_path, 'scaler.joblib'))\n    joblib.dump(label_encoder,\
+          \ os.path.join(processed_data_path, 'label_encoder.joblib'))\n    print(f\"\
+          Processed data and encoders saved to {processed_data_path}\")\n\n"
         image: python:3.8
     exec-train-model-component:
       container:
@@ -544,7 +547,7 @@ root:
               componentInputParameter: region_name
             s3_prefix:
               runtimeValue:
-                constant: netsentinel/e05b903d-30a7-461b-8e67-d174b596d583/
+                constant: netsentinel/f061d539-21f6-490e-8e25-41854c755b2a/
         taskInfo:
           name: upload-to-s3-component
   inputDefinitions:
