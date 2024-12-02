@@ -9,25 +9,23 @@ logging_config:
   level: "DEBUG"
 
 predictive_model_config:
-  input_dir: "data/processed"
-  model_dir: "models/predictive_model"
-  model_filename: "model.joblib"
-  onnx_model_filename: "model.onnx"
-  n_estimators: 200
-  random_state: 42
-  n_jobs: -1
-  evaluation:
-    enable_classification_report: true
-    enable_confusion_matrix: true
-    enable_roc_auc: true
+  url: "https://demo-multimodelserver.apps.cluster-76sbq.76sbq.sandbox1319.opentlc.com/v2/models/demo/infer"
+  token: ""
+  verify_ssl: true
+
+milvus_config:
+  host: "localhost"
+  port: "19530"
+  collection_name: "netsentinel"
+  secure: false
 
 # RAG Configuration
 rag_config:
   remote_llm:
-    # url: "https://granite-8b-code-instruct-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1/chat/completions"
-    url: "http://localhost:53950/v1/chat/completions"
-    # model_name: "granite-8b-code-instruct-128k"
-    model_name: ""
+    url: "https://granite-8b-code-instruct-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1/chat/completions"
+    # url: "http://localhost:53950/v1/chat/completions"
+    model_name: "granite-8b-code-instruct-128k"
+    # model_name: ""
     token: "55ebc201ab5b010dc54974bc36fa1d0a"
     verify_ssl: true
   faiss_index_path: "data/faiss_index/index.faiss"
