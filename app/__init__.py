@@ -9,6 +9,8 @@ from flask_limiter.util import get_remote_address
 from prometheus_client import REGISTRY
 from prometheus_flask_exporter import PrometheusMetrics
 from .ocp_utils import OCPClient
+from .milvus_client import MilvusClient
+from .utils import setup_logging
 
 
 import yaml
@@ -19,7 +21,6 @@ from rasa.shared.utils.io import json_to_string
 
 # Import your blueprints and utilities
 from .routes import api_bp
-from .utils import setup_logging, load_faiss_index_and_metadata
 from .slack_integration import SlackClient
 from .remote_llm_client import RemoteLLMClient
 
@@ -144,16 +145,21 @@ def create_app(config_path='../config.yaml', registry=None):
         remote_llm_client = RemoteLLMClient(url=llm_url, model_name=model_name, token=llm_token, verify_ssl=verify_ssl)
         logger.info("Remote LLM client initialized.")
 
+        # Initialize Milvus client
+        milvus_config = config.get('milvus_config', {})
+        milvus_host = milvus_config.get('host', 'localhost')
+        milvus_port = milvus_config.get('port', '19530')
+        collection_name = milvus_config.get('collection_name', 'netsentinel')
+        embedding_dim = 6  # Update as per your application
 
-        # Load FAISS index and metadata
-        faiss_index_path = rag_config.get('faiss_index_path')
-        metadata_store_path = rag_config.get('metadata_store_path')
-        faiss_index, metadata_store = load_faiss_index_and_metadata(faiss_index_path, metadata_store_path)
-        logger.info("FAISS index and metadata store loaded.")
-
-        # Build event_id_index
-        event_id_index = {item['event_id']: item for item in metadata_store}
-        logger.info("Event ID index built.")
+        milvus_client = MilvusClient(
+            host=milvus_host,
+            port=milvus_port,
+            collection_name=collection_name,
+            embedding_dim=embedding_dim,
+            secure=milvus_config.get('secure', False)
+        )
+        logger.info("Milvus client initialized.")
 
         # Initialize OCP Client
         ocp_config = app.config['OCP_CONFIG']
@@ -188,12 +194,10 @@ def create_app(config_path='../config.yaml', registry=None):
         # Attach models and clients to app for access in routes
         app.persistent_state = {
             'remote_llm_client': remote_llm_client,
-            'faiss_index': faiss_index,
-            'metadata_store': metadata_store,
-            'event_id_index': event_id_index,
             'ocp_client': ocp_client,
             'slack_client': slack_client,
-            'nlu_interpreter': nlu_interpreter
+            'nlu_interpreter': nlu_interpreter,
+            'milvus_client': milvus_client
         }
 
         logger.info("Models, FAISS index, Slack client, and NLU model initialized.")

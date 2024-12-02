@@ -186,27 +186,23 @@ def slack_events():
     try:
         # Access models and data from app's persistent_state
         nlu_interpreter = current_app.persistent_state.get('nlu_interpreter')
-        metadata_store = current_app.persistent_state.get('metadata_store')
-        event_id_index = current_app.persistent_state.get('event_id_index')
         ocp_client = current_app.persistent_state.get('ocp_client')
         remote_llm_client = current_app.persistent_state.get('remote_llm_client')
+        milvus_client = current_app.persistent_state.get('milvus_client')
+        collection = milvus_client.collection if milvus_client else None
 
-
+        # Check for missing components
         missing_components = []
 
-        # Check each component and log specific error if not loaded
         if not nlu_interpreter:
             missing_components.append('NLU Interpreter')
-        if not metadata_store:
-            missing_components.append('Metadata Store')
-        if not event_id_index:
-            missing_components.append('Event ID Index')
+        if not collection:
+            missing_components.append('Milvus Collection')
         if not ocp_client:
             missing_components.append('OCP Client')
         if not remote_llm_client:
             missing_components.append('Remote LLM Client')
 
-        # If any component is missing, log the details and notify via Slack
         if missing_components:
             missing_components_str = ', '.join(missing_components)
             logger.error(f"The following components are not loaded: {missing_components_str}")
@@ -255,8 +251,7 @@ def slack_events():
                     # Pass necessary data to the handler
                     result = handler(
                         entities,
-                        event_id_index=event_id_index,
-                        metadata_store=metadata_store,
+                        collection=collection,
                         ocp_client=ocp_client,
                         remote_llm_client=remote_llm_client
                     )

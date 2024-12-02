@@ -2,6 +2,7 @@
 
 import logging
 from typing import Dict
+from pymilvus import Collection
 
 from .utils import (
     generate_response,
@@ -34,13 +35,13 @@ def handle_goodbye(entities: Dict, **kwargs) -> str:
     log_extracted_entities(entities)
     return "Goodbye! If you have more questions, feel free to ask."
 
-def handle_get_event_info(entities: Dict, event_id_index: Dict, **kwargs) -> str:
+def handle_get_event_info(entities: Dict, collection: Collection, **kwargs) -> str:
     log_extracted_entities(entities)
     event_id = entities.get('event_id')
     if not event_id:
         return "Please provide a valid event ID."
 
-    event_data = get_event_by_id(event_id, event_id_index)
+    event_data = get_event_by_id(event_id, collection)
     if not event_data:
         return "No data found for the provided event ID."
 
@@ -62,20 +63,15 @@ def handle_get_event_info(entities: Dict, event_id_index: Dict, **kwargs) -> str
     else:
         return build_context_from_event_data(event_data)
 
-def handle_list_attack_events(entities: Dict, metadata_store: list, **kwargs) -> str:
+def handle_list_attack_events(entities: Dict, collection: Collection, **kwargs) -> str:
     log_extracted_entities(entities)
-    event_ids = get_all_attack_event_ids(metadata_store)
+    event_ids = get_all_attack_event_ids(collection)
     if event_ids:
         return "Attack Event IDs:\n" + "\n".join(event_ids)
     else:
         return "No attack events found."
 
-def handle_list_recent_attack_events(entities: Dict, metadata_store: list, **kwargs) -> str:
-    """
-    Handle intent to list recent attack events.
-    Accepts an optional 'number' entity to specify how many events to list.
-    Defaults to 10 if not provided.
-    """
+def handle_list_recent_attack_events(entities: Dict, collection: Collection, **kwargs) -> str:
     log_extracted_entities(entities)
 
     number = entities.get('number')
@@ -88,9 +84,8 @@ def handle_list_recent_attack_events(entities: Dict, metadata_store: list, **kwa
         limit = 10
 
     logger.info(f"Listing {limit} recent attack events.")
-    # Fetch recent attack events
-    recent_attack_events = get_recent_events(metadata_store, event_type='attack', limit=limit)
-    
+    recent_attack_events = get_recent_events(collection, event_type='attack', limit=limit)
+
     if recent_attack_events:
         event_list = "\n".join([f"- Event ID: {event['event_id']} at {event['timestamp']}" for event in recent_attack_events])
         final_message = f"Here are the last {limit} attack events:\n{event_list}"
@@ -99,13 +94,9 @@ def handle_list_recent_attack_events(entities: Dict, metadata_store: list, **kwa
 
     return final_message
 
-def handle_list_recent_normal_events(entities: Dict, metadata_store: list, **kwargs) -> str:
+def handle_list_recent_normal_events(entities: Dict, collection: Collection, **kwargs) -> str:
     log_extracted_entities(entities)
-    """
-    Handle intent to list recent normal events.
-    Accepts an optional 'number' entity to specify how many events to list.
-    Defaults to 10 if not provided.
-    """
+
     number = entities.get('number')
     try:
         limit = int(number) if number else 10
@@ -113,9 +104,8 @@ def handle_list_recent_normal_events(entities: Dict, metadata_store: list, **kwa
         logger.warning(f"Invalid number provided: {number}. Defaulting to 10.")
         limit = 10
 
-    # Fetch recent normal events
-    recent_normal_events = get_recent_events(metadata_store, event_type='normal', limit=limit)
-    
+    recent_normal_events = get_recent_events(collection, event_type='normal', limit=limit)
+
     if recent_normal_events:
         event_list = "\n".join([f"- Event ID: {event['event_id']} at {event['timestamp']}" for event in recent_normal_events])
         final_message = f"Here are the last {limit} normal events:\n{event_list}"
@@ -124,7 +114,7 @@ def handle_list_recent_normal_events(entities: Dict, metadata_store: list, **kwa
 
     return final_message
 
-def handle_get_events_by_ip(entities: Dict, metadata_store: list, **kwargs) -> str:
+def handle_get_events_by_ip(entities: Dict, collection: Collection, **kwargs) -> str:
     log_extracted_entities(entities)
     ip_address = entities.get('ip_address')
     if not ip_address:
@@ -132,9 +122,9 @@ def handle_get_events_by_ip(entities: Dict, metadata_store: list, **kwargs) -> s
 
     text = entities.get('text', '').lower()
     if "source ip" in text:
-        events = get_events_by_src_ip(ip_address, metadata_store)
+        events = get_events_by_src_ip(ip_address, collection)
     elif "destination ip" in text:
-        events = get_events_by_dst_ip(ip_address, metadata_store)
+        events = get_events_by_dst_ip(ip_address, collection)
     else:
         return "Please specify whether you are interested in source IP or destination IP."
 
