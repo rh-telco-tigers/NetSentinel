@@ -175,24 +175,26 @@ deploymentSpec:
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef evaluate_model_component(\n    model_input_path: InputPath(),\n\
           \    processed_data_path: InputPath(),\n):\n    import os\n    import joblib\n\
-          \    import pandas as pd\n    import matplotlib.pyplot as plt\n    import\
-          \ seaborn as sns\n    from sklearn.metrics import classification_report,\
+          \    import pandas as pd\n    import numpy as np\n    import matplotlib.pyplot\
+          \ as plt\n    import seaborn as sns\n    from sklearn.metrics import classification_report,\
           \ confusion_matrix\n\n    # Load model and test data\n    model = joblib.load(os.path.join(model_input_path,\
           \ 'model.joblib'))\n    X_test = joblib.load(os.path.join(model_input_path,\
           \ 'X_test.pkl'))\n    y_test = joblib.load(os.path.join(model_input_path,\
           \ 'y_test.pkl'))\n\n    # Load label encoder\n    label_encoder = joblib.load(os.path.join(processed_data_path,\
           \ 'label_encoder.joblib'))\n\n    # Predict on test data\n    y_pred = model.predict(X_test)\n\
-          \n    # Decode labels back to original categories\n    y_test_labels = label_encoder.inverse_transform(y_test)\n\
-          \    y_pred_labels = label_encoder.inverse_transform(y_pred)\n\n    # Classification\
+          \n    # Ensure y_test and y_pred are 1D arrays\n    y_test = np.array(y_test).flatten()\n\
+          \    y_pred = np.array(y_pred).flatten()\n\n    # Map numerical labels back\
+          \ to category names\n    label_mapping = dict(zip(label_encoder.transform(label_encoder.classes_),\
+          \ label_encoder.classes_))\n    y_test_labels = [label_mapping[label] for\
+          \ label in y_test]\n    y_pred_labels = [label_mapping[label] for label\
+          \ in y_pred]\n\n    # Debugging prints\n    print(\"y_test_labels type:\"\
+          , type(y_test_labels))\n    print(\"y_pred_labels type:\", type(y_pred_labels))\n\
+          \    print(\"y_test_labels length:\", len(y_test_labels))\n    print(\"\
+          y_pred_labels length:\", len(y_pred_labels))\n    print(\"Unique labels\
+          \ in y_test_labels:\", np.unique(y_test_labels))\n    print(\"Unique labels\
+          \ in y_pred_labels:\", np.unique(y_pred_labels))\n\n    # Classification\
           \ report\n    print(\"Classification Report:\")\n    print(classification_report(y_test_labels,\
-          \ y_pred_labels))\n\n    # Confusion matrix\n    conf_matrix = confusion_matrix(y_test_labels,\
-          \ y_pred_labels)\n    plt.figure(figsize=(12, 10))\n    sns.heatmap(conf_matrix,\
-          \ annot=True, fmt='d', cmap='Blues',\n                xticklabels=label_encoder.classes_,\n\
-          \                yticklabels=label_encoder.classes_)\n    plt.title('Confusion\
-          \ Matrix')\n    plt.xlabel('Predicted Label')\n    plt.ylabel('True Label')\n\
-          \    # Save confusion matrix plot\n    plt.savefig(os.path.join(model_input_path,\
-          \ 'confusion_matrix.png'))\n    plt.close()\n    print(\"Evaluation completed\
-          \ and confusion matrix saved.\")\n\n"
+          \ y_pred_labels))\n\n"
         image: python:3.8
     exec-export-model-to-onnx-component:
       container:
@@ -547,7 +549,7 @@ root:
               componentInputParameter: region_name
             s3_prefix:
               runtimeValue:
-                constant: netsentinel/f061d539-21f6-490e-8e25-41854c755b2a/
+                constant: netsentinel/14d5fe63-121a-4a2a-b635-9d3964ad1829/
         taskInfo:
           name: upload-to-s3-component
   inputDefinitions:

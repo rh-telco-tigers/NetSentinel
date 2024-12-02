@@ -1,2 +1,2 @@
-pymilvus
-sentence-transformers
+pymilvus==2.5.0
+sentence-transformers==3.1.1
