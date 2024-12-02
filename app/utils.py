@@ -45,7 +45,7 @@ def get_events_by_dst_ip(dst_ip, collection: Collection):
 
 def get_all_attack_event_ids(collection: Collection):
     # Adjust the prediction value based on your actual attack class labels
-    attack_prediction_values = [1]  # Replace with actual values if different
+    attack_prediction_values = [1,2,3,4,5,6,7,8,9,10]  # Replace with actual values if different
     expr = f'metadata["prediction"] in {attack_prediction_values}'
     results = collection.query(expr=expr, output_fields=["metadata"])
     return [result['metadata']['event_id'] for result in results]
@@ -84,7 +84,7 @@ def get_recent_events(collection: Collection, event_type: str, limit: int = 10) 
 def build_context_from_event_data(event_data):
     fields = [
         f"Event ID: {event_data.get('event_id', 'N/A')}",
-        f"Prediction: {'Attack' if event_data.get('prediction') == 1 else 'Normal'}",
+        f"Prediction: {'Attack' if event_data.get('prediction') >= 1 else 'Normal'}",
         f"Protocol: {event_data.get('protocol', 'N/A')}",
         f"Service: {event_data.get('service', 'N/A')}",
         f"State: {event_data.get('state', 'N/A')}",
