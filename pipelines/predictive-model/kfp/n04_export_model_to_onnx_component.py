@@ -73,7 +73,7 @@ def export_model_to_onnx_component(
       {
         name: "probabilities"
         data_type: TYPE_FP32
-        dims: [14] 
+        dims: [11] 
       }
     ]
     '''

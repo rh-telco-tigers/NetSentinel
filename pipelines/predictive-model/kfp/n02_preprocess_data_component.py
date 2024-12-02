@@ -1,5 +1,3 @@
-# n02_preprocess_data_component.py
-
 import kfp
 from kfp import dsl
 from kfp.dsl import component, InputPath, OutputPath
@@ -56,7 +54,6 @@ def preprocess_data_component(
     categorical_cols = [
         'proto', 'state', 'service',
         'ct_ftp_cmd',  # If you decide to treat this as categorical
-        # Add any other categorical columns that are not in columns_to_exclude
     ]
 
     # Ensure these columns are treated as strings
@@ -70,6 +67,18 @@ def preprocess_data_component(
     train_df[numerical_cols] = train_df[numerical_cols].fillna(train_df[numerical_cols].median())
     print("Missing values handled.")
 
+    # Fix spaces in attack_cat and handle missing values
+    if 'attack_cat' in train_df.columns:
+        train_df['attack_cat'] = train_df['attack_cat'].str.strip()  # Remove leading and trailing spaces
+        train_df['attack_cat'] = train_df['attack_cat'].fillna('Unknown')  # Replace missing values with 'Unknown'
+
+    # Explicitly reorder 'attack_cat' so 'Unknown' is first
+    categories = train_df['attack_cat'].unique().tolist()
+    categories.remove('Unknown')
+    categories = ['Unknown'] + sorted(categories)
+    train_df['attack_cat'] = pd.Categorical(train_df['attack_cat'], categories=categories, ordered=True)
+    print(f"Unique values in attack_cat after ordering: {train_df['attack_cat'].unique()}")
+
     # Encode categorical variables using OrdinalEncoder
     ordinal_encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
     train_df[categorical_cols] = ordinal_encoder.fit_transform(train_df[categorical_cols])
@@ -79,10 +88,15 @@ def preprocess_data_component(
     X = train_df.drop(columns=columns_to_exclude)
     y = train_df['attack_cat']
 
-    # Encode target variable using LabelEncoder
+    # Encode target variable explicitly ensuring 'Unknown' is 0
     label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(y)
+    label_encoder.classes_ = np.array(categories)  # Explicitly set the order of classes
+    y_encoded = label_encoder.transform(y)
     print("Target variable encoded.")
+
+    # Display the class mapping
+    class_mapping = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
+    print(f"Class mapping: {class_mapping}")
 
     # Scale numerical features
     scaler = StandardScaler()
