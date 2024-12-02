@@ -18,11 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip
 
-# Install Git LFS for downloading large files from Hugging Face repositories
-RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash \
-    && apt-get install -y git-lfs \
-    && git lfs install
-
 # Download wait-for-it.sh script using curl
 RUN curl -o /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x /wait-for-it.sh
@@ -43,23 +38,7 @@ COPY . .
 # Stage 2 - Download models and prepare data
 FROM base as model-data-stage
 
-# Download Hugging Face models directly into the specified directories
-RUN mkdir -p /app/models/flan-t5-large && \
-    git clone https://huggingface.co/google/flan-t5-large /app/models/flan-t5-large && \
-    mkdir -p /app/models/embedding_models && \
-    git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2 /app/models/embedding_models
-
-# Copy scripts for downloading, preprocessing data, and training models
-COPY scripts /app/scripts
-RUN mkdir -p /root/.kaggle
-COPY secrets/kaggle.json /root/.kaggle/kaggle.json
-
-# Download and preprocess Kaggle data
-RUN python /app/scripts/download_data.py && \
-    python /app/scripts/preprocess_data.py
-
-# Train predictive and Rasa models
-RUN python /app/scripts/train_predictive_model.py --config_file /app/config.yaml 
+# Train NLU models
 RUN rm -rf /app/models/rasa/*
 RUN rasa train --config /app/rasa/config.yml --domain /app/rasa/domain.yml --data /app/rasa --out /app/models/rasa/
 RUN mv /app/models/rasa/*.gz /app/models/rasa/nlu-model.gz
@@ -67,9 +46,8 @@ RUN mv /app/models/rasa/*.gz /app/models/rasa/nlu-model.gz
 # Stage 3 - Final image
 FROM base
 
-# Copy only the necessary application files, trained models, and processed data
+# Copy only the necessary application files, trained models
 COPY --from=model-data-stage /app/models /app/models
-COPY --from=model-data-stage /app/data/processed /app/data/processed
 
 # Set environment path and entrypoint
 ENV PYTHONPATH=/app
