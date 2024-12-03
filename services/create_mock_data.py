@@ -13,6 +13,33 @@ import uuid
 import signal
 import sys
 
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+SCANNING_TOOL_CONFIG = {
+    "publish_interval_seconds": 10,
+    "subnets": {
+        "src_subnets": ["192.168.1.0/24", "10.0.0.0/24"],
+        "dst_subnets": ["172.16.0.0/24", "10.1.1.0/24"],
+    },
+    "protocols": {
+        "TCP": {"ports": [80, 443, 22, 21]},
+        "UDP": {"ports": [53, 67, 68]},
+        "ICMP": [],
+        "HTTP": {
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "status_codes": [200, 201, 400, 401, 403, 404, 500],
+            "urls": [
+                "/home", "/login", "/dashboard", "/api/data", "/logout",
+                "/register", "/profile", "/settings", "/search", "/contact",
+                "/products", "/cart", "/checkout", "/help", "/about",
+                "/terms", "/privacy", "/blog", "/news", "/support"
+            ],
+        },
+        "DNS": {"query_types": ["A", "AAAA", "MX", "CNAME", "TXT"]},
+    },
+}
+
 def setup_logging(config):
     """
     Configure logging based on the configuration.
@@ -23,9 +50,6 @@ def setup_logging(config):
         level=numeric_level, format="%(asctime)s - %(levelname)s - %(message)s"
     )
     logger.setLevel(numeric_level)
-
-# Initialize logger
-logger = logging.getLogger(__name__)
 
 def load_config(config_path="config.yaml"):
     """
@@ -91,10 +115,10 @@ def generate_mock_data(config):
         services = ["-", "http", "ftp", "smtp", "ssh", "dns", "ftp-data", "irc"]
 
         # Generate feature values
-        srcip = get_random_ip(config["scanning_tool_config"]["subnets"]["src_subnets"])
-        sport = str(random.randint(1024, 65535))  # Converted to string
-        dstip = get_random_ip(config["scanning_tool_config"]["subnets"]["dst_subnets"])
-        dsport = str(random.randint(1, 1024))     # Converted to string
+        srcip = get_random_ip(SCANNING_TOOL_CONFIG["subnets"]["src_subnets"])
+        sport = str(random.randint(1024, 65535))
+        dstip = get_random_ip(SCANNING_TOOL_CONFIG["subnets"]["dst_subnets"])
+        dsport = str(random.randint(1, 1024))
         proto = random.choice(protocols)
         state = random.choice(states)
         dur = round(random.uniform(0.0, 1000.0), 6)
@@ -130,7 +154,7 @@ def generate_mock_data(config):
         ct_state_ttl = random.randint(0, 10)
         ct_flw_http_mthd = random.randint(0, 5)
         is_ftp_login = random.randint(0, 1)
-        ct_ftp_cmd = str(random.randint(0, 10))  # Converted to string
+        ct_ftp_cmd = str(random.randint(0, 10))
         ct_srv_src = random.randint(0, 1000)
         ct_srv_dst = random.randint(0, 1000)
         ct_dst_ltm = random.randint(0, 1000)
@@ -142,9 +166,9 @@ def generate_mock_data(config):
         # Build the mock data record
         mock_data = {
             "srcip": srcip,
-            "sport": sport,  # Now a string
+            "sport": sport,
             "dstip": dstip,
-            "dsport": dsport,  # Now a string
+            "dsport": dsport,
             "proto": proto,
             "state": state,
             "dur": dur,
@@ -285,9 +309,8 @@ def main():
     
     producer = create_kafka_producer(kafka_bootstrap)
 
-    publish_interval = config.get("scanning_tool_config", {}).get("publish_interval_seconds", 10)
+    publish_interval = SCANNING_TOOL_CONFIG.get("publish_interval_seconds", 10)
 
-    # Register signal handlers for graceful shutdown
     signal.signal(
         signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, producer)
     )
