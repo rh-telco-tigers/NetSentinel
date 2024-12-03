@@ -200,7 +200,7 @@ def create_app(config_path='../config.yaml', registry=None):
             'milvus_client': milvus_client
         }
 
-        logger.info("Models, FAISS index, Slack client, and NLU model initialized.")
+        logger.info("Models, Slack client, and NLU model initialized.")
         logger.info("Persistent state set with components: %s", list(app.persistent_state.keys()))
 
     except Exception as e:

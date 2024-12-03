@@ -16,9 +16,9 @@ services:
     ports:
       - "2181:2181"
     networks:
-      - netsentenial_network
+      - netsentinel_network
     volumes:
-      - ./kafka-compose/zookeeper-jaas.conf:/etc/zookeeper/zookeeper-jaas.conf
+      - ./compose-config/kafka/zookeeper-jaas.conf:/etc/zookeeper/zookeeper-jaas.conf
     command: ["sh", "-c", "/etc/confluent/docker/run"]
     healthcheck:
       test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok || exit 1"]
@@ -48,10 +48,10 @@ services:
       zookeeper:
         condition: service_healthy
     volumes:
-      - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
-      - ./kafka-compose/client.properties:/etc/kafka/client.properties
+      - ./compose-config/kafka/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
+      - ./compose-config/kafka/client.properties:/etc/kafka/client.properties
     networks:
-      - netsentenial_network
+      - netsentinel_network
     healthcheck:
       test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list", "--command-config", "/etc/kafka/client.properties"]
       interval: 10s
@@ -66,16 +66,15 @@ services:
     environment:
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka-jaas.conf"
     networks:
-      - netsentenial_network
+      - netsentinel_network
     entrypoint: ["/bin/bash", "-c", "/etc/kafka/create_kafka_users.sh"]
     volumes:
-      - ./kafka-compose/create_kafka_users.sh:/etc/kafka/create_kafka_users.sh
-      - ./kafka-compose/client.properties:/etc/kafka/client.properties
-      - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
+      - ./compose-config/kafka/create_kafka_users.sh:/etc/kafka/create_kafka_users.sh
+      - ./compose-config/kafka/client.properties:/etc/kafka/client.properties
+      - ./compose-config/kafka/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
     ports:
       - "8080:8080"
     environment:
@@ -91,8 +90,51 @@ services:
       kafka:
         condition: service_healthy
     networks:
-      - netsentenial_network
+      - netsentinel_network
+
+  milvus:
+    image: milvusdb/milvus:v2.5.0-beta
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - ETCD_USE_EMBED=true
+      - ETCD_DATA_DIR=/var/lib/milvus/etcd
+      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
+      - COMMON_STORAGETYPE=local
+    volumes:
+      - milvus-data:/var/lib/milvus
+      - ./compose-config/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ./compose-config/milvus/user.yaml:/milvus/configs/user.yaml
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+      - "2379:2379"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz || exit 1"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    command: ["milvus", "run", "standalone"]
+    networks:
+      - netsentinel_network
+
+  attu:
+    image: zilliz/attu:v2.4.12
+    ports:
+      - "8000:8000" 
+      - "3000:3000"
+    environment:
+      - MILVUS_URL=http://milvus:19530
+    depends_on:
+      milvus:
+        condition: service_healthy
+    networks:
+      - netsentinel_network
 
 networks:
-  netsentenial_network:
+  netsentinel_network:
     driver: bridge
+
+volumes:
+  milvus-data:
