@@ -1,0 +1,13 @@
+resources:
+  - clusterrole.yaml
+  - configmap.yaml
+  - deployment-create-mock-data.yaml
+  - deployment-netsentinel.yaml
+  - deployment-ngrok.yaml
+  - deployment-prediction-service.yaml
+  - deployment-process-mock-data.yaml
+  - routes.yaml
+  - scc.yaml
+  - secrets-ngrok.yaml
+  - service.yaml
+  - serviceaccount.yaml
