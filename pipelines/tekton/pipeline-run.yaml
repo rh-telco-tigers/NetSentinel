@@ -8,13 +8,13 @@ metadata:
 spec:
   params:
     - name: IMAGE_NAME
-      value: "quay.io/bpandey/netsentinel:0.0.6"
+      value: "quay.io/bpandey/netsentinel:0.0.1-cleanup"
     - name: GIT_REPO
       value: "git@github.com:pandeybk/NetSentenial.git"
     - name: GIT_REVISION
-      value: main
+      value: cleanup
     - name: DOCKERFILE
-      value: "Dockerfile.buildnlu"
+      value: "Dockerfile.multistage"
   pipelineRef:
     name: container-build-and-push
   taskRunTemplate:

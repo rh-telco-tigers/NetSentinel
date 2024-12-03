@@ -13,7 +13,7 @@ spec:
     - default: main
       name: GIT_REVISION
       type: string
-    - default: "Dockerfile.buildnlu"
+    - default: "Dockerfile.multistage"
       name: DOCKERFILE
       type: string
   workspaces:
@@ -38,23 +38,6 @@ spec:
         - name: output
           workspace: workspace
 
-    - name: add-kaggle-secret
-      taskRef:
-        kind: Task
-        name: openshift-client
-      params:
-        - name: SCRIPT
-          value: |
-            mkdir -p ./secrets
-            oc extract secret/kaggle-secret --to=./secrets --confirm
-        - name: VERSION
-          value: "4.13"
-      runAfter:
-        - fetch-repository
-      workspaces:
-        - name: manifest-dir
-          workspace: workspace
-
     - name: kaniko
       params:
         - name: IMAGE
@@ -68,7 +51,7 @@ spec:
         - name: BUILDER_IMAGE
           value: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
       runAfter:
-        - add-kaggle-secret
+        - fetch-repository
       taskRef:
         kind: Task
         name: kaniko

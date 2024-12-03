@@ -1,7 +1,9 @@
 kind: Secret
 apiVersion: v1
 metadata:
+  annotations:
+    tekton.dev/git-0: github.com
   name: ssh-key
 data:
-  ssh-privatekey: cat ~/.ssh/id_rsa |base64 
+  ssh-privatekey: cat ~/.ssh/id_rsa |base64
 type: kubernetes.io/ssh-auth

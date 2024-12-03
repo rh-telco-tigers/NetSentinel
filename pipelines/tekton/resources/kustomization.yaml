@@ -1,0 +1,5 @@
+resources:
+  - quay-credentials.yaml
+  - ssh-key.yaml
+  - service-account.yaml
+  - pipeline.yaml
