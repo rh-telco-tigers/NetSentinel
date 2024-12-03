@@ -4,10 +4,9 @@ def display_help():
     Available commands:
 
     - python app/run.py          : Start the main application
-    - python scripts/create_mock_data.py : Generate mock traffic data and publish to Kafka
-    - python scripts/process_mock_data.py: Process mock traffic data from Kafka
-    - python scripts/prediction_service.py: Run the prediction service to analyze processed traffic
-    - python -m unittest discover : Run the unit tests for the project
+    - python services/create_mock_data.py : Generate mock traffic data and publish to Kafka
+    - python services/process_mock_data.py: Process mock traffic data from Kafka
+    - python services/predict_and_store.py: Run the prediction service to analyze processed traffic
 
     Use any of the above commands to run the appropriate task.
     """)

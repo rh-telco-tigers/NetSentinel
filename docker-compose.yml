@@ -16,7 +16,7 @@ services:
     networks:
       - netsentinel_network
     volumes:
-      - ./kafka-compose/zookeeper-jaas.conf:/etc/zookeeper/zookeeper-jaas.conf
+      - ./compose-config/kafka/zookeeper-jaas.conf:/etc/zookeeper/zookeeper-jaas.conf
     command: ["sh", "-c", "/etc/confluent/docker/run"]
     healthcheck:
       test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok || exit 1"]
@@ -46,8 +46,8 @@ services:
       zookeeper:
         condition: service_healthy
     volumes:
-      - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
-      - ./kafka-compose/client.properties:/etc/kafka/client.properties
+      - ./compose-config/kafka/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
+      - ./compose-config/kafka/client.properties:/etc/kafka/client.properties
     networks:
       - netsentinel_network
     healthcheck:
@@ -67,9 +67,9 @@ services:
       - netsentinel_network
     entrypoint: ["/bin/bash", "-c", "/etc/kafka/create_kafka_users.sh"]
     volumes:
-      - ./kafka-compose/create_kafka_users.sh:/etc/kafka/create_kafka_users.sh
-      - ./kafka-compose/client.properties:/etc/kafka/client.properties
-      - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
+      - ./compose-config/kafka/create_kafka_users.sh:/etc/kafka/create_kafka_users.sh
+      - ./compose-config/kafka/client.properties:/etc/kafka/client.properties
+      - ./compose-config/kafka/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -101,8 +101,8 @@ services:
       - COMMON_STORAGETYPE=local
     volumes:
       - milvus-data:/var/lib/milvus
-      - ./milvus-compose/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
-      - ./milvus-compose/user.yaml:/milvus/configs/user.yaml
+      - ./compose-config/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ./compose-config/milvus/user.yaml:/milvus/configs/user.yaml
     ports:
       - "19530:19530"
       - "9091:9091"
@@ -143,7 +143,7 @@ services:
       - netsentinel_network
     volumes:
       - /Users/bkpandey/.kube/config:/root/.kube/config
-      - ./config-for-compose.yaml:/app/config.yaml
+      - ./compose-config/app-config.yaml:/app/config.yaml
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python app/run.py"]
   
   ngrok:
@@ -166,7 +166,7 @@ services:
     networks:
       - netsentinel_network
     volumes:
-      - ./config-for-compose.yaml:/app/config.yaml
+      - ./compose-config/app-config.yaml:/app/config.yaml
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python create_mock_data.py"]
 
   process_mock_data:
@@ -179,7 +179,7 @@ services:
     networks:
       - netsentinel_network
     volumes:
-      - ./config-for-compose.yaml:/app/config.yaml
+      - ./compose-config/app-config.yaml:/app/config.yaml
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python process_mock_data.py"]
 
   prediction_service:
@@ -192,7 +192,7 @@ services:
     networks:
       - netsentinel_network
     volumes:
-      - ./config-for-compose.yaml:/app/config.yaml
+      - ./compose-config/app-config.yaml:/app/config.yaml
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python predict_and_store.py"]
 
 networks:
