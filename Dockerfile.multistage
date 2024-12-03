@@ -22,18 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -o /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x /wait-for-it.sh
 
-# Set working directory
-WORKDIR /app
-
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --no-deps -r requirements.txt
-RUN pip install packaging==20.9
-RUN pip install tensorflow 
-RUN pip install torch==2.4.1 torchvision==0.19.1+cpu torchaudio==2.4.1+cpu --index-url https://download.pytorch.org/whl/cpu
-RUN pip install kaggle
-
-COPY . .
 
 # Stage 2 - Download models and prepare data
 FROM base as model-data-stage
@@ -48,6 +36,20 @@ FROM base
 
 # Copy only the necessary application files, trained models
 COPY --from=model-data-stage /app/models /app/models
+COPY --from=model-data-stage /wait-for-it.sh /wait-for-it.sh
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --no-deps -r requirements.txt
+RUN pip install packaging==20.9
+RUN pip install tensorflow 
+RUN pip install torch==2.4.1 torchvision==0.19.1+cpu torchaudio==2.4.1+cpu --index-url https://download.pytorch.org/whl/cpu
+RUN pip install kaggle
+
+COPY . .
 
 # Set environment path and entrypoint
 ENV PYTHONPATH=/app
