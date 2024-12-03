@@ -20,7 +20,6 @@ models:
     verify_ssl: true
   nlu:
     model_path: "models/rasa/nlu-model.gz"
-    num_contexts: 3
 
 milvus:
   host: "localhost"
