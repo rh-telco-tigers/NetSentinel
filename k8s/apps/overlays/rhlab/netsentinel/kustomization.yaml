@@ -6,11 +6,6 @@ namespace: netsentinel
 resources:
   - ../../../base
 
-images:
-- name: netsentinel
-  newName: quay.io/bpandey/netsentinel
-  newTag: 0.0.5-torch-cpu-with-models
-
 patches:
   - target:
       kind: Deployment
@@ -45,4 +40,3 @@ configMapGenerator:
     files:
       - config.yaml=app-config.yaml
     behavior: replace
-
