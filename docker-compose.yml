@@ -133,7 +133,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.compose
+      dockerfile: Dockerfile
     ports:
       - "5001:5000"
     depends_on:
