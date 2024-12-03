@@ -28,8 +28,6 @@ rag_config:
     # model_name: ""
     token: "55ebc201ab5b010dc54974bc36fa1d0a"
     verify_ssl: true
-  faiss_index_path: "data/faiss_index/index.faiss"
-  metadata_store_path: "data/faiss_index/metadata.json"
   num_contexts: 3
   nlu_model_path: "models/rasa/nlu-model.gz"
 

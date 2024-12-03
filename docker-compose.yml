@@ -1,5 +1,3 @@
-# version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
@@ -16,7 +14,7 @@ services:
     ports:
       - "2181:2181"
     networks:
-      - netsentenial_network
+      - netsentinel_network
     volumes:
       - ./kafka-compose/zookeeper-jaas.conf:/etc/zookeeper/zookeeper-jaas.conf
     command: ["sh", "-c", "/etc/confluent/docker/run"]
@@ -51,7 +49,7 @@ services:
       - ./kafka-compose/kafka-jaas.conf:/etc/kafka/kafka-jaas.conf
       - ./kafka-compose/client.properties:/etc/kafka/client.properties
     networks:
-      - netsentenial_network
+      - netsentinel_network
     healthcheck:
       test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list", "--command-config", "/etc/kafka/client.properties"]
       interval: 10s
@@ -66,7 +64,7 @@ services:
     environment:
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka-jaas.conf"
     networks:
-      - netsentenial_network
+      - netsentinel_network
     entrypoint: ["/bin/bash", "-c", "/etc/kafka/create_kafka_users.sh"]
     volumes:
       - ./kafka-compose/create_kafka_users.sh:/etc/kafka/create_kafka_users.sh
@@ -75,7 +73,6 @@ services:
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
     ports:
       - "8080:8080"
     environment:
@@ -91,43 +88,62 @@ services:
       kafka:
         condition: service_healthy
     networks:
-      - netsentenial_network
+      - netsentinel_network
 
-  zeek:
-    build:
-      context: ./zeek
-      dockerfile: Dockerfile
-    depends_on:
-      kafka:
-        condition: service_healthy
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-    volumes:
-      - ./zeek/zeek-config/node.cfg:/usr/local/zeek/etc/node.cfg
-      - ./zeek/zeek-config/zeekctl.cfg:/usr/local/zeek/etc/zeekctl.cfg
-      - ./zeek/zeek-config/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek
+  milvus:
+    image: milvusdb/milvus:v2.5.0-beta
+    security_opt:
+      - seccomp:unconfined
     environment:
-      LD_LIBRARY_PATH: "/usr/local/lib"
+      - ETCD_USE_EMBED=true
+      - ETCD_DATA_DIR=/var/lib/milvus/etcd
+      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
+      - COMMON_STORAGETYPE=local
+    volumes:
+      - milvus-data:/var/lib/milvus
+      - ./milvus-compose/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ./milvus-compose/user.yaml:/milvus/configs/user.yaml
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+      - "2379:2379"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz || exit 1"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    command: ["milvus", "run", "standalone"]
     networks:
-      - netsentenial_network
+      - netsentinel_network
+
+  attu:
+    image: zilliz/attu:v2.4.12
+    ports:
+      - "8000:8000" 
+      - "3000:3000"
+    environment:
+      - MILVUS_URL=http://milvus:19530
+    depends_on:
+      milvus:
+        condition: service_healthy
+    networks:
+      - netsentinel_network
 
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.compose
     ports:
       - "5001:5000"
     depends_on:
       kafka:
         condition: service_healthy
     networks:
-      - netsentenial_network
+      - netsentinel_network
     volumes:
       - /Users/bkpandey/.kube/config:/root/.kube/config
       - ./config-for-compose.yaml:/app/config.yaml
-      - ./models:/app/models
-      - ./data:/app/data
     command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python app/run.py"]
   
   ngrok:
@@ -138,53 +154,50 @@ services:
     depends_on:
       - app
     networks:
-      - netsentenial_network
+      - netsentinel_network
 
   create_mock_data:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.services
     depends_on:
       kafka:
         condition: service_healthy
     networks:
-      - netsentenial_network
+      - netsentinel_network
     volumes:
       - ./config-for-compose.yaml:/app/config.yaml
-      - ./models:/app/models
-      - ./data:/app/data
-    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/create_mock_data.py"]
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python create_mock_data.py"]
 
   process_mock_data:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.services
     depends_on:
       kafka:
         condition: service_healthy
     networks:
-      - netsentenial_network
+      - netsentinel_network
     volumes:
       - ./config-for-compose.yaml:/app/config.yaml
-      - ./models:/app/models
-      - ./data:/app/data
-    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/process_mock_data.py"]
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python process_mock_data.py"]
 
   prediction_service:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.services
     depends_on:
       kafka:
         condition: service_healthy
     networks:
-      - netsentenial_network
+      - netsentinel_network
     volumes:
       - ./config-for-compose.yaml:/app/config.yaml
-      - ./models:/app/models
-      - ./data:/app/data
-    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python scripts/prediction_service.py"]
+    command: ["sh", "-c", "/wait-for-it.sh kafka:29092 -- python predict_and_store.py"]
 
 networks:
-  netsentenial_network:
+  netsentinel_network:
     driver: bridge
+
+volumes:
+  milvus-data:
