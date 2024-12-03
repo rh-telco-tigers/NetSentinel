@@ -1,4 +1,5 @@
 # app/__init__.py
+
 import os
 import logging
 import asyncio
@@ -11,29 +12,23 @@ from prometheus_flask_exporter import PrometheusMetrics
 from .ocp_utils import OCPClient
 from .milvus_client import MilvusClient
 from .utils import setup_logging
-
-
 import yaml
 import torch
 import requests
 from rasa.core.agent import Agent
-from rasa.shared.utils.io import json_to_string
 
 # Import your blueprints and utilities
 from .routes import api_bp
 from .slack_integration import SlackClient
 from .remote_llm_client import RemoteLLMClient
 
-
 logger = logging.getLogger(__name__)
 
 class NLUModel:
-
     def __init__(self, model_path: str) -> None:
         if not os.path.exists(model_path):
             logger.error(f"NLU model not found at {model_path}. Please train the model first.")
             raise FileNotFoundError(f"NLU model not found at {model_path}")
-        
         # Load the Rasa NLU model using Agent
         self.agent = Agent.load(model_path)
         logger.info("NLU model loaded.")
@@ -43,7 +38,6 @@ class NLUModel:
         # Use asyncio to parse the message asynchronously
         result = await self.agent.parse_message(message)
         return result  # Return the result as a dictionary
-
 
 def fetch_and_set_bot_user_id(app):
     slack_bot_token = app.config['SLACK_CONFIG'].get('slack_bot_token')
@@ -66,7 +60,6 @@ def fetch_and_set_bot_user_id(app):
     else:
         raise ValueError(f"Failed to fetch bot user ID from Slack API. Status code: {response.status_code}")
 
-
 def create_app(config_path='../config.yaml', registry=None):
     # Load environment variables from .env
     load_dotenv()
@@ -83,23 +76,27 @@ def create_app(config_path='../config.yaml', registry=None):
         config = yaml.safe_load(f)
 
     # Application configurations
-    app.config['API_CONFIG'] = config.get('api_config', {})
+    app.config['API_CONFIG'] = config.get('api', {})
     app.config['SLACK_CONFIG'] = {
-        'slack_bot_token': os.getenv('SLACK_BOT_TOKEN', config.get('slack_config', {}).get('slack_bot_token', '')),
-        'slack_signing_secret': os.getenv('SLACK_SIGNING_SECRET', config.get('slack_config', {}).get('slack_signing_secret', '')),
-        'slack_channel': config.get('slack_config', {}).get('slack_channel', '#netsentenial')
+        'slack_bot_token': os.getenv('SLACK_BOT_TOKEN', config.get('slack', {}).get('bot_token', '')),
+        'slack_signing_secret': os.getenv('SLACK_SIGNING_SECRET', config.get('slack', {}).get('signing_secret', '')),
+        'slack_channel': config.get('slack', {}).get('channel', '#netsentinel')
     }
-    app.config['TRAINING_CONFIG'] = config.get('training_config', {})
-    app.config['RAG_CONFIG'] = config.get('rag_config', {})
-    app.config['REMOTE_LLM_CONFIG'] = app.config['RAG_CONFIG'].get('remote_llm', {})
+    app.config['LOGGING_CONFIG'] = config.get('logging', {})
+    app.config['MODELS_CONFIG'] = config.get('models', {})
+    app.config['PREDICTIVE_MODEL_CONFIG'] = app.config['MODELS_CONFIG'].get('predictive', {})
+    app.config['REMOTE_LLM_CONFIG'] = app.config['MODELS_CONFIG'].get('llm', {})
+    app.config['NLU_CONFIG'] = app.config['MODELS_CONFIG'].get('nlu', {})
     app.config['OCP_CONFIG'] = {
-        'kubeconfig_path': config.get('ocp_config', {}).get('kubeconfig_path', '/path/to/kubeconfig'),
-        'auth_method': config.get('ocp_config', {}).get('auth_method', 'kubeconfig'),  # 'kubeconfig' or 'token'
-        'prometheus_url': os.getenv('PROMETHEUS_URL', config.get('ocp_config', {}).get('prometheus_url', ''))
+        'kubeconfig_path': config.get('ocp', {}).get('kubeconfig_path', '/path/to/kubeconfig'),
+        'auth_method': config.get('ocp', {}).get('auth_method', 'kubeconfig'),
+        'prometheus_url': os.getenv('PROMETHEUS_URL', config.get('ocp', {}).get('prometheus_url', '')),
+        'enabled': config.get('ocp', {}).get('enabled', False)
     }
+    app.config['MILVUS_CONFIG'] = config.get('milvus', {})
 
     # Setup logging
-    log_level = app.config['TRAINING_CONFIG'].get('log_level', 'INFO').upper()
+    log_level = app.config['LOGGING_CONFIG'].get('level', 'INFO').upper()
     log_file = os.path.join(os.path.dirname(__file__), '..', 'logs', 'app.log')
 
     # Ensure the logs directory exists
@@ -116,7 +113,7 @@ def create_app(config_path='../config.yaml', registry=None):
         registry = REGISTRY
 
     metrics = PrometheusMetrics(app, registry=registry)
-    metrics.info('app_info', 'NetSentenial Backend API', version='1.0.0')
+    metrics.info('app_info', 'NetSentinel Backend API', version='1.0.0')
 
     # Initialize Rate Limiter
     limiter = Limiter(
@@ -127,11 +124,11 @@ def create_app(config_path='../config.yaml', registry=None):
 
     # Initialize Models and Slack Client
     try:
+        # Load the NLU model
+        nlu_config = app.config['NLU_CONFIG']
+        nlu_model_path = nlu_config.get('model_path', 'models/rasa/nlu-model.gz')
 
-        # Load the embedding model for RAG
-        rag_config = app.config['RAG_CONFIG']
-        nlu_model_path = rag_config.get('nlu_model_path', 'rasa/models/nlu-model.tar.gz')  # Default value if not set
-            # Initialize Remote LLM Client
+        # Initialize Remote LLM Client
         remote_llm_config = app.config['REMOTE_LLM_CONFIG']
         model_name = remote_llm_config.get('model_name')
         llm_url = remote_llm_config.get('url')
@@ -146,11 +143,11 @@ def create_app(config_path='../config.yaml', registry=None):
         logger.info("Remote LLM client initialized.")
 
         # Initialize Milvus client
-        milvus_config = config.get('milvus_config', {})
+        milvus_config = app.config['MILVUS_CONFIG']
         milvus_host = milvus_config.get('host', 'localhost')
         milvus_port = milvus_config.get('port', '19530')
         collection_name = milvus_config.get('collection_name', 'netsentinel')
-        embedding_dim = 6  # Update as per your application
+        embedding_dim = 6 
 
         milvus_client = MilvusClient(
             host=milvus_host,
@@ -161,18 +158,18 @@ def create_app(config_path='../config.yaml', registry=None):
         )
         logger.info("Milvus client initialized.")
 
-        # Initialize OCP Client
+        # Initialize OCP Client if enabled
         ocp_config = app.config['OCP_CONFIG']
         kubeconfig_path = ocp_config.get('kubeconfig_path')
         prometheus_url = ocp_config.get('prometheus_url')
 
         try:
             ocp_client = OCPClient(kubeconfig_path=kubeconfig_path, prometheus_url=prometheus_url)
+            logger.info("OCP client initialized.")
         except Exception as ocp_exception:
             logging.error(f"Failed to initialize OCP Client: {ocp_exception}")
             ocp_client = None
 
-        logger.info("OCP client initialized.")
 
         # Initialize Slack Client
         slack_config = app.config['SLACK_CONFIG']

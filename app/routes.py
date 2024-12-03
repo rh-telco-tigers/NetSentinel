@@ -111,7 +111,6 @@ def start_cleanup_thread():
 
 start_cleanup_thread()
 
-
 # Route Handlers
 @api_bp.route('/')
 def health_check():

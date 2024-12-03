@@ -66,11 +66,12 @@ def main():
     config = load_config()
     setup_logging(config)
 
-    kafka_bootstrap = config.get('kafka_config', {}).get('bootstrap', 'localhost:9092')
-    processed_topic = config.get('kafka_config', {}).get('processed_topic', 'processed-traffic-data')
+    kafka_bootstrap = config.get('kafka', {}).get('bootstrap_servers', 'localhost:9092')
+    processed_topic = config.get('kafka', {}).get('topics', {}).get('processed', 'processed-traffic-data')
 
     # Load the remote predictive model client
-    predictive_model_config = config.get('predictive_model_config', {})
+    models_config = config.get('models', {})
+    predictive_model_config = models_config.get('predictive', {})
     model_url = predictive_model_config.get('url')
     model_token = predictive_model_config.get('token')
     verify_ssl = predictive_model_config.get('verify_ssl', True)
@@ -82,7 +83,7 @@ def main():
     )
 
     # Initialize Milvus client
-    milvus_config = config.get('milvus_config', {})
+    milvus_config = config.get('milvus', {})
     milvus_host = milvus_config.get('host', 'localhost')
     milvus_port = milvus_config.get('port', '19530')
     collection_name = milvus_config.get('collection_name', 'my_collection')

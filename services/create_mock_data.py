@@ -304,8 +304,8 @@ def main():
     config = load_config()
     setup_logging(config)
 
-    kafka_bootstrap = config.get("kafka_config", {}).get("bootstrap", "localhost:9092")
-    raw_topic = config.get("kafka_config", {}).get("raw_topic", "raw-traffic-data")
+    kafka_bootstrap = config.get("kafka", {}).get("bootstrap_servers", "localhost:9092")
+    raw_topic = config.get("kafka", {}).get("topics", {}).get("raw", "raw-traffic-data")
     
     producer = create_kafka_producer(kafka_bootstrap)
 
@@ -321,7 +321,7 @@ def main():
     logger.info("Starting mock data publishing...")
     while True:
         publish_mock_data(producer, raw_topic, config)
-        time.sleep(publish_interval)  # Publish based on configured interval
+        time.sleep(publish_interval)
 
 if __name__ == "__main__":
     main()

@@ -197,11 +197,11 @@ def main():
     config = load_config()
     setup_logging(config)
 
-    kafka_bootstrap = config.get('kafka_config', {}).get('bootstrap', 'localhost:9092')
-    raw_topic = config.get('kafka_config', {}).get('raw_topic', 'raw-traffic-data')
-    processed_topic = config.get('kafka_config', {}).get('processed_topic', 'processed-traffic-data')
+    kafka_bootstrap = config.get('kafka', {}).get('bootstrap_servers', 'localhost:9092')
+    raw_topic = config.get('kafka', {}).get('topics', {}).get('raw', 'raw-traffic-data')
+    processed_topic = config.get('kafka', {}).get('topics', {}).get('processed', 'processed-traffic-data')
     encoders_path = config.get('preprocessor', {}).get('encoders_path', 'models/encoders')
-
+    
     # Create Kafka consumer and producer
     consumer = create_kafka_consumer(kafka_bootstrap, raw_topic)
     producer = create_kafka_producer(kafka_bootstrap)
