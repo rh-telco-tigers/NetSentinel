@@ -10,19 +10,19 @@ Visit the following URL to access the "Models as a Service" applications admin p
 ### 2. Create a New Application
 
 - Click on **"Create new application"**.
-  ![Create New Application](./maas/001-create-new-app.png)
+  ![Create New Application](./images/maas/001-create-new-app.png)
 
 ### 3. Select a Model
 
 - From the list of available models, select **"Granite-8B-Code-Instruct"**.
-  ![Select Model](./maas/002-granite-family.png)
+  ![Select Model](./images/maas/002-granite-family.png)
 
 ### 4. Fill Out the Application Form
 
 - Provide the following details:
   - **Name**: `netsentinel-demo`
   - **Description**: `LLM endpoints for netsentinel agent`
-    ![Application Form](./maas/003-app-details.png)
+    ![Application Form](./images/maas/003-app-details.png)
 
 ### 5. Retrieve API Information
 
@@ -32,7 +32,7 @@ After creating the application, you'll be presented with the following details:
 - **Model Name**: `granite-8b-code-instruct-128k`
 - **API Key**: (e.g., `••••••••••••••••••••••••••••••••••••••••`)
 
-![API Information](./maas/004-llm-credentials.png)
+![API Information](./images/maas/004-llm-credentials.png)
 
 ### 6. Update the `netsentinel` Configuration
 
