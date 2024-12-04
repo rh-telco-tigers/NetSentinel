@@ -4,4 +4,4 @@ kind: Route
 metadata:
   name: console-ui-route
 spec:
-  host: console-ui-route-netsentinel.apps.cluster-76sbq.76sbq.sandbox1319.opentlc.com
+  host: console-ui-route-netsentinel.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com

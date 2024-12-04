@@ -19,4 +19,4 @@ spec:
       runtime: netsentinel-triton
       storage:
         key: aws-connection-minio
-        path: netsentinel/e05b903d-30a7-461b-8e67-d174b596d583
+        path: predictive-model

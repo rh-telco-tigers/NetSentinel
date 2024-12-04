@@ -10,7 +10,7 @@ logging_config:
 
 models:
   predictive:
-    url: "https://demo-multimodelserver.apps.cluster-76sbq.76sbq.sandbox1319.opentlc.com/v2/models/demo/infer"
+    url: "http://modelmesh-serving.netsentinel:8008/v2/models/netsentinel/infer"
     token: ""
     verify_ssl: true
   llm:
