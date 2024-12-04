@@ -36,7 +36,7 @@ After creating the application, you'll be presented with the following details:
 
 ### 6. Update the `netsentinel` Configuration
 
-Replace the relevant placeholders in the `netsentinel` app configuration file (`app-config.yaml`) with the retrieved details:
+Replace the relevant placeholders in the `netsentinel` app configuration file (`k8s/apps/overlays/rhlab/netsentinel/app-config.yaml`) with the retrieved details:
 
 ```yaml
 models:
@@ -53,6 +53,10 @@ models:
     model_path: "models/rasa/nlu-model.gz"
 ```
 
-Replace `YOUR_API_KEY_HERE` with the API key retrieved in step 5.
+Replace `YOUR_API_KEY_HERE` with the API key retrieved in step 5. You can use following command for this.
+
+```
+sed -i 's/token: "<YOUR_API_KEY_HERE>"/token: "your_actual_api_key"/' k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
+```
 
 Your configuration is now updated to use the new API token with the `"Granite-8B-Code-Instruct"` model in the `netsentinel` application.
