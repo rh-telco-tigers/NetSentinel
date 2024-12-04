@@ -143,13 +143,19 @@ echo "https://$URL"
 open "https://$URL"
 ```
 
-### Deploy NetSentinel Application
+### 4. Upload model to s3 bucket
+
+Follow guide [Upload model to buckets](./docs/upload-models-to-bucket.md)
+
+### 5. Deploy NetSentinel Application
+
+This process configures the Titan model server using OpenShift ServingRuntime and deploys the model. Note that there are hardcoded references to MinIO object storage and specific paths, so ensure the model is available in the correct MinIO location by following Step 4. This step also deploys the NetSentinel application along with its components, including the mock data generator, mock data processor, and prediction service. If the model is not properly deployed, the installation will fail.
 
 ```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
+oc apply -k  k8s/apps/overlays/rhlab/
 ```
 
-### Configure SLACK for communication with the bot
+### 6. Configure SLACK for communication with the bot
 
 Follow doc [Slack Configuration](./docs/slack/configure-slack.md)
 
