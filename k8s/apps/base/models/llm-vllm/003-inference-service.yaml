@@ -1,0 +1,20 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    openshift.io/display-name: granite-8b-code-instruct-128k
+    serving.kserve.io/deploymentMode: ModelMesh
+  generation: 1
+  labels:
+    opendatahub.io/dashboard: "true"
+  name: granite-8b-code-instruct-128k
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: tensorflow
+        version: "2"
+      runtime: netsentinel-triton
+      storage:
+        key: aws-connection-minio
+        path: llm-model
