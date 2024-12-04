@@ -165,7 +165,7 @@ oc apply -k  k8s/apps/overlays/rhlab/
 
 ### 6. Configure SLACK for communication with the bot
 
-Follow doc [Slack Configuration](./docs/slack/configure-slack.md)
+Follow doc [Slack Configuration](./docs/configure-slack.md)
 
 ## Cleanup
 

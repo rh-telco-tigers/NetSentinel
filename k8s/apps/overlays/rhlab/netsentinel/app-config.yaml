@@ -16,7 +16,7 @@ models:
   llm:
     url: "https://granite-8b-code-instruct-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1/chat/completions"
     model_name: "granite-8b-code-instruct-128k"
-    token: "55ebc201ab5b010dc54974bc36fa1d0a"
+    token: "<YOUR_API_KEY_HERE>"
     verify_ssl: true
   nlu:
     model_path: "models/rasa/nlu-model.gz"
