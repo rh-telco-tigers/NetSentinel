@@ -69,23 +69,21 @@ Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name.
 Example you can run following command
 
 ```
-find ./k8s/instances/overlays/rhlab/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-q7t72.q7t72.sandbox1729.opentlc.com/g' {} +
+find ./k8s/instances/overlays/rhlab/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-bbgs4.bbgs4.sandbox592.opentlc.com/g' {} +
 ```
 
-Ensure the DNS is:
-
-- Publicly resolvable.
-- Not using a self-signed certificate. Certificates must be valid.
-
+> Ensure the DNS is:
+> Publicly resolvable.
+> Domain is Not using a self-signed certificate. Certificates must be valid.
 > Note: This is required for communication with Slack channels.
-> If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround. Refer to `k8s/apps/overlays/telcolab` for an example of this approach.
+> If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround.
 
 - Apply Kafka Configuration
 
 Deploy the Kafka instance using the following command:
 
 ```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
+oc apply -k k8s/instances/overlays/rhlab/
 ```
 
 - Wait for Kafka to Start
@@ -137,7 +135,13 @@ console-kafka-zookeeper-1                        1/1     Running   0          2m
 console-kafka-zookeeper-2                        1/1     Running   0          2m29s
 ```
 
-Your Kafka instance is now ready to use!
+Your Kafka instance is now ready to use. You can browse kafka console using following url.
+
+```
+URL=$(oc get routes console-ui-route -o jsonpath='{.spec.host}')
+echo "https://$URL"
+open "https://$URL"
+```
 
 ### Deploy NetSentinel Application
 
