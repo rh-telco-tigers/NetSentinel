@@ -6,10 +6,10 @@ NetSentinel is a next-generation network intrusion detection system designed spe
 
 - **Agent-Based Architecture:** NetSentinel’s modular design enables seamless scalability and customization, with four primary agents:
 
-   - **NLU Agent:** Interprets human intent and extracts key information, enabling operators to engage with NetSentinel through natural language on Slack.
-   - **Predictive Analysis and Generative Model:** Uses AI-powered classification to detect network anomalies and handle network-related queries, offering telecom-specific security insights.
-   - **OpenShift API Agent:** Executes operational commands on OpenShift (list/create network policies, check pods compliance, etc), ensuring a swift response to network issues.
-   - **Prometheus Agent:** Provides observability, running PromQL queries to monitor traffic and health metrics across RAN and core networks.
+  - **NLU Agent:** Interprets human intent and extracts key information, enabling operators to engage with NetSentinel through natural language on Slack.
+  - **Predictive Analysis and Generative Model:** Uses AI-powered classification to detect network anomalies and handle network-related queries, offering telecom-specific security insights.
+  - **OpenShift API Agent:** Executes operational commands on OpenShift (list/create network policies, check pods compliance, etc), ensuring a swift response to network issues.
+  - **Prometheus Agent:** Provides observability, running PromQL queries to monitor traffic and health metrics across RAN and core networks.
 
 - **Slack Chatbot Integration:** NetSentinel’s chatbot allows telecom operators to ask questions like "List all attacks from the last hour" or "Is there suspicious activity from IP 192.168.1.1?" and receive immediate real-time responses.
 
@@ -21,88 +21,64 @@ NetSentinel is a next-generation network intrusion detection system designed spe
 
 NetSentinel delivers an adaptable security solution for telecom providers, blending observability, predictive AI, and hands-on network management to protect RAN and core infrastructure.
 
+## Order OpenShift Environment
+
+- Any OpenShift environment should work technically, provided there are no operator conflicts. To avoid issues, it’s recommended to start with a clean environment since the project requires installing multiple operators and configurations.
+- For testing purposes, we are using the following environment.
+  - Order an OCP demo cluster via this [URL](https://catalog.demo.redhat.com/catalog?item=babylon-catalog-prod/sandboxes-gpte.ocp-wksp.prod&utm_source=webapp&utm_medium=share-link)
+  - Select **OpenShift Version 4.16** during setup.
+  - Only a single control plane is sufficient.
+  - If you are using **Model as a Service** for the LLM model, a CPU-only setup is adequate for deploying this project.
 
 ## Deploy NetSentinel on OpenShift
 
-### Create a new project 
+### 1. Create new openshift projects
 
-Ensure that you update the namespace in the Kustomize file if you are using a namespace other than `netsentinel`. This adjustment may need to be made in several locations within the configuration.
-
-For example, to create the `netsentinel` namespace, you can use:
+Apply the pre-defined namespace configurations using Kustomize:
 
 ```
-oc new-project netsentinel
+kubectl apply -k k8s/namespaces/base
 ```
 
-### Deploy Operators
+Ensure the namespace in the Kustomize configuration matches your desired namespace (e.g., `netsentinel`). Update it in all relevant locations if needed.
 
-The Kafka Operator is required for this setup to function properly. To deploy it, use the following command:
+### 2. Deploy Operators
 
 ```
-oc apply -k k8s/operators/overlays/rhlab/
+oc apply -k k8s/operators/overlays/common
 ```
 
 Currently, we are using the `amq-streams-2.7.x` version. Older versions of Kafka exhibited different behavior, so it is important to use this version for consistency.
 
+### 3. Deploy Instances of Operators
 
-### Copy overlays
-We are using Kustomize to deploy the NetSentinel application. To get started, copy the example overlays and modify them as needed:
-
-```
-cp -R k8s/apps/overlays/example k8s/apps/overlays/rhdemo-netsentinel
-```
-
-After copying, make the necessary adjustments to the new overlay files to match your environment and requirements.
-
-
-### Create PVC
-To patch the storageClassName for an existing PersistentVolumeClaim, use the following patch file `k8s/apps/overlays/rhdemo-netsentinel/pvc/storageclass-patch.yaml`. Update it with the desired storage class:
+#### Deploy common opertors
 
 ```
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: storageclass
-spec:
-  storageClassName: gp3-csi
+oc apply -k k8s/instances/overlays/common
 ```
 
-To apply the patch, use the following command:
-
-```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/pvc/
-```
-
-Make sure the `storageClassName` matches the desired storage class for your environment and that the patch file aligns with your PVC's namespace and name.
-
-
-### Deploy kafka instance
+#### Deploy kafka instance
 
 To deploy the Kafka instance, follow these steps:
 
-- Generate Secrets
-
-```
-./k8s/apps/base/kafka/generate-console-secrets.sh
-mv console-ui-secrets.yaml ./k8s/apps/overlays/rhdemo-netsentinel/kafka/.
-```
-
 - Update Cluster DNS
 
-Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name. 
+Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name.
 
 Example you can run following command
+
 ```
-find ./k8s/apps/overlays/rhdemo-netsentinel/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-q7t72.q7t72.sandbox1729.opentlc.com/g' {} +
+find ./k8s/instances/overlays/rhlab/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-q7t72.q7t72.sandbox1729.opentlc.com/g' {} +
 ```
 
 Ensure the DNS is:
 
-  - Publicly resolvable.
-  - Not using a self-signed certificate. Certificates must be valid.
+- Publicly resolvable.
+- Not using a self-signed certificate. Certificates must be valid.
 
 > Note: This is required for communication with Slack channels.
-If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround. Refer to `k8s/apps/overlays/telcolab` for an example of this approach.
+> If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround. Refer to `k8s/apps/overlays/telcolab` for an example of this approach.
 
 - Apply Kafka Configuration
 
@@ -116,7 +92,7 @@ oc apply -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
 
 It may take some time for Kafka to be fully operational. The `CreateContainerConfigError` status for certain pods (e.g., Kafka console) will resolve automatically once kafkausers are created and the necessary secrets are available.
 
-Check the pods status 
+Check the pods status
 
 ```
 oc get pods
@@ -148,7 +124,6 @@ netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
 
 After a few minutes, verify that all pods are running as expected:
 
-
 ```
 Balkrishnas-MacBook-Pro:NetSentinel bpandey$ oc get pods
 NAME                                             READY   STATUS    RESTARTS   AGE
@@ -164,23 +139,30 @@ console-kafka-zookeeper-2                        1/1     Running   0          2m
 
 Your Kafka instance is now ready to use!
 
-
 ### Deploy NetSentinel Application
+
 ```
 oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
 ```
 
 ### Configure SLACK for communication with the bot
+
 Follow doc [Slack Configuration](./docs/slack/configure-slack.md)
 
-
 ## Cleanup
+
 Execute the commands in the specified sequence to ensure proper deletion, as Kafka topics may not be deleted if the order is not followed:
 
 ```
+oc delete -k k8s/apps/overlays/rhlab/netsentinel/
+oc delete -k k8s/instances/overlays/common
 oc delete kafkatopics --all -n netsentinel
-oc delete -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
-oc delete -k k8s/apps/overlays/rhdemo-netsentinel/
-oc delete pvc --all -n netsentinel 
-oc delete ns netsentinel
+oc delete -k k8s/instances/overlays/rhlab
+
+oc delete pvc --all -n netsentinel
+
+oc delete deployment --all -n milvus-operator
+oc delete sts --all -n milvus-operator
+oc delete pvc --all -n milvus-operator
+oc delete -k k8s/namespaces/base
 ```

@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ../../base/minio
   - ../../base/milvus
+  - ../../base/rhoai

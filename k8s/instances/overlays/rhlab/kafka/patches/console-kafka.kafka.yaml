@@ -19,13 +19,13 @@ spec:
           type: scram-sha-512
         configuration:
           bootstrap:
-            host: bootstrap-console-kafka.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com
+            host: bootstrap-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
             annotations:
               eyefloaters.github.com/console-listener: "true"
           brokers:
             - broker: 0
-              host: broker-0-console-kafka.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com
+              host: broker-0-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
             - broker: 1
-              host: broker-1-console-kafka.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com
+              host: broker-1-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
             - broker: 2
-              host: broker-2-console-kafka.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com
+              host: broker-2-console-kafka.apps.<CLUSTER_NAME_WITH_BASE_DOMAIN>
