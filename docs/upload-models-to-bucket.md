@@ -80,3 +80,9 @@ Output:
 2024-12-04 18:23:24  300449102 predictive-model/1/model.onnx
 2024-12-04 18:21:33        276 predictive-model/config.pbtxt
 ```
+
+Go back to root folder
+
+```
+cd ..
+```
