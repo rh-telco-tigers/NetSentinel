@@ -87,7 +87,7 @@ Go back to root folder
 cd ..
 ```
 
-## Deploy Model Using RHOAI Serving Runtime
+## Deploy Model Using Triton Serving Runtime
 
 ### Step 1: Create Serving Runtime
 
