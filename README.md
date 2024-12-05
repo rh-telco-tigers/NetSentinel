@@ -222,47 +222,54 @@ Follow guide [Model as a service](./docs/model-as-a-service.md)
 
 ### 6. Deploy NetSentinel Application
 
-This process configures the "NVIDIA Triton Inference Server" using OpenShift ServingRuntime and deploys the predictive model in `netsentinel` namespace. Note that there are hardcoded references to MinIO object storage and specific paths, so ensure the model is available in the correct MinIO location by following Step 4. This step also deploys the NetSentinel application along with its components, including the mock data generator, mock data processor, and prediction service. If the model is not properly deployed, the installation will fail.
-
-Also, ensure that `<YOUR_API_KEY_HERE>` is replaced with the actual API key in the `models.llm.token` section of the file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml` as part of Step 5. The URL and model name should remain consistent across all MaaS-deployed services. If they differ, adjust those values accordingly to maintain consistency.
-
-Now execute following.
-
-- Deploy Serving Runtime template
+- Ensure that you are using `netsentinel` when you deploy the model so that it will match following config otherwise update this config in this file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml`
 
 ```
-oc apply -f k8s/apps/base/models/predictive-triton/001-template.yaml
+models:
+  predictive:
+    url: "http://modelmesh-serving.netsentinel:8008/v2/models/netsentinel/infer"
+    token: ""
+    verify_ssl: true
+``
+
+- Ensure that `<YOUR_API_KEY_HERE>` is replaced with the actual API key in the `models.llm.token` section of the file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml` as part of Step 5. The URL and model name should remain consistent across all MaaS-deployed services. If they differ, adjust those values accordingly to maintain consistency.
+
+
+Now Deploy NetSentinel application
+
 ```
 
-- Deploy Model and
-
-```
 oc apply -k k8s/apps/overlays/rhlab/
+
 ```
 
 Validate:
 
 ```
+
 oc get pods -n netsentinel
+
 ```
 
 Output:
 
 ```
-NAME                                             READY   STATUS              RESTARTS   AGE
-console-68c9df5c59-6qfff                         2/2     Running             0          16m
-console-kafka-entity-operator-7fc848f9fc-bnncl   2/2     Running             0          15m
-console-kafka-kafka-0                            1/1     Running             0          16m
-console-kafka-kafka-1                            1/1     Running             0          16m
-console-kafka-kafka-2                            1/1     Running             0          16m
-console-kafka-zookeeper-0                        1/1     Running             0          16m
-console-kafka-zookeeper-1                        1/1     Running             0          16m
-console-kafka-zookeeper-2                        1/1     Running             0          16m
-create-mock-data-98df85fdc-7kxx7                 0/1     ContainerCreating   0          31s
-minio-6c95767dc6-642zv                           1/1     Running             0          24m
-netsentinel-5d9896664b-twblx                     0/1     ContainerCreating   0          31s
-prediction-service-d6b56cd88-2bd2r               0/1     ContainerCreating   0          32s
-process-mock-data-575bd9bd64-5vdf5               0/1     ContainerCreating   0          31s
+
+NAME READY STATUS RESTARTS AGE
+console-68c9df5c59-6qfff 2/2 Running 0 16m
+console-kafka-entity-operator-7fc848f9fc-bnncl 2/2 Running 0 15m
+console-kafka-kafka-0 1/1 Running 0 16m
+console-kafka-kafka-1 1/1 Running 0 16m
+console-kafka-kafka-2 1/1 Running 0 16m
+console-kafka-zookeeper-0 1/1 Running 0 16m
+console-kafka-zookeeper-1 1/1 Running 0 16m
+console-kafka-zookeeper-2 1/1 Running 0 16m
+create-mock-data-98df85fdc-7kxx7 0/1 ContainerCreating 0 31s
+minio-6c95767dc6-642zv 1/1 Running 0 24m
+netsentinel-5d9896664b-twblx 0/1 ContainerCreating 0 31s
+prediction-service-d6b56cd88-2bd2r 0/1 ContainerCreating 0 32s
+process-mock-data-575bd9bd64-5vdf5 0/1 ContainerCreating 0 31s
+
 ```
 
 ### 6. Configure SLACK for communication with the bot
@@ -274,6 +281,7 @@ Follow doc [Slack Configuration](./docs/configure-slack.md)
 Execute the commands in the specified sequence to ensure proper deletion, as Kafka topics may not be deleted if the order is not followed:
 
 ```
+
 oc delete -k k8s/apps/overlays/rhlab/netsentinel/
 oc delete -k k8s/instances/overlays/common
 oc delete kafkatopics --all -n netsentinel
@@ -285,4 +293,7 @@ oc delete deployment --all -n milvus-operator
 oc delete sts --all -n milvus-operator
 oc delete pvc --all -n milvus-operator
 oc delete -k k8s/namespaces/base
+
+```
+
 ```
