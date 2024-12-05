@@ -255,7 +255,7 @@ Now Deploy NetSentinel application
 oc apply -k k8s/apps/overlays/rhlab/
 ```
 
-Validate:
+The `netsentinel-xxxxxx-xxxx` application may continuously reboot due to the absence of a valid Slack token. However, the other services `create-mock-data`, `prediction-service`, and p`rocess-mock-data` should remain operational. If this is the only issue currently observed, you can proceed to the next section.
 
 ```
 oc get pods -n netsentinel
@@ -264,21 +264,21 @@ oc get pods -n netsentinel
 Output:
 
 ```
-NAME                                                    READY   STATUS    RESTARTS       AGE
-console-5c7f4fd77b-8r52v                                2/2     Running   0              85m
-console-kafka-entity-operator-74f8599b68-lqqr7          2/2     Running   0              84m
-console-kafka-kafka-0                                   1/1     Running   0              84m
-console-kafka-kafka-1                                   1/1     Running   0              84m
-console-kafka-kafka-2                                   1/1     Running   0              84m
-console-kafka-zookeeper-0                               1/1     Running   0              85m
-console-kafka-zookeeper-1                               1/1     Running   0              85m
-console-kafka-zookeeper-2                               1/1     Running   0              85m
-create-mock-data-849c468b85-qkt8c                       1/1     Running   0              52m
-minio-79f8869bf5-xbrjt                                  1/1     Running   0              87m
-modelmesh-serving-netsentinel-triton-86c48cfd45-7r7vn   5/5     Running   0              18m
-netsentinel-85c56c767b-rmvq6                            1/1     Running   0              52m
-prediction-service-6b5558dc66-6lk6k                     1/1     Running   11 (24m ago)   52m
-process-mock-data-78bb5fbff8-n9rfq                      1/1     Running   0              52m
+NAME                                                    READY   STATUS             RESTARTS      AGE
+console-6f98ccfd7b-p4st9                                2/2     Running            0             28m
+console-kafka-entity-operator-74f8599b68-jp5ld          2/2     Running            0             26m
+console-kafka-kafka-0                                   1/1     Running            0             27m
+console-kafka-kafka-1                                   1/1     Running            0             27m
+console-kafka-kafka-2                                   1/1     Running            0             27m
+console-kafka-zookeeper-0                               1/1     Running            0             28m
+console-kafka-zookeeper-1                               1/1     Running            0             28m
+console-kafka-zookeeper-2                               1/1     Running            0             28m
+create-mock-data-849c468b85-2njfd                       1/1     Running            0             8m43s
+minio-79f8869bf5-wmp6z                                  1/1     Running            0             29m
+modelmesh-serving-netsentinel-triton-86c48cfd45-jw5h4   5/5     Running            0             16m
+netsentinel-85c56c767b-mstsk                            0/1     CrashLoopBackOff   3 (47s ago)   8m43s
+prediction-service-6b5558dc66-rj7d4                     1/1     Running            0             8m43s
+process-mock-data-78bb5fbff8-2jh69                      1/1     Running            0             8m43s
 ```
 
 ### 7. Configure SLACK for communication with the bot
