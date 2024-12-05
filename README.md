@@ -183,7 +183,7 @@ Follow guide [Model as a service](./docs/model-as-a-service.md)
 
 ### 6. Deploy NetSentinel Application
 
-This process configures the Titan model server using OpenShift ServingRuntime and deploys the predictive model in `netsentinel` namespace. Note that there are hardcoded references to MinIO object storage and specific paths, so ensure the model is available in the correct MinIO location by following Step 4. This step also deploys the NetSentinel application along with its components, including the mock data generator, mock data processor, and prediction service. If the model is not properly deployed, the installation will fail.
+This process configures the "NVIDIA Triton Inference Server" using OpenShift ServingRuntime and deploys the predictive model in `netsentinel` namespace. Note that there are hardcoded references to MinIO object storage and specific paths, so ensure the model is available in the correct MinIO location by following Step 4. This step also deploys the NetSentinel application along with its components, including the mock data generator, mock data processor, and prediction service. If the model is not properly deployed, the installation will fail.
 
 Also, ensure that `<YOUR_API_KEY_HERE>` is replaced with the actual API key in the `models.llm.token` section of the file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml` as part of Step 5. The URL and model name should remain consistent across all MaaS-deployed services. If they differ, adjust those values accordingly to maintain consistency.
 
