@@ -13,9 +13,8 @@ Any S3-compatible bucket will work, but we assume the default credentials are `m
 Get the minio endpoints as follows.
 
 ```
-oc get routes minio-api -n netsentinel
-NAME        HOST/PORT                                                               PATH   SERVICES        PORT   TERMINATION     WILDCARD
-minio-api   minio-api-netsentinel.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com          minio-service   api    edge/Redirect   None
+S3_ENDPOINTS=$(oc get routes minio-api -o jsonpath='{.spec.host}' -n netsentinel)
+echo $S3_ENDPOINTS
 ```
 
 ## Install AWS CLI
@@ -39,7 +38,8 @@ Default output format [None]:
 Minio endpoints from above.
 
 ```
-alias s3="aws s3 --endpoint-url https://minio-api-netsentinel.apps.cluster-bbgs4.bbgs4.sandbox592.opentlc.com"
+
+alias s3="aws s3 --endpoint-url https://$S3_ENDPOINTS"
 s3 mb s3://netsentinel
 ```
 
@@ -50,8 +50,8 @@ s3 mb s3://netsentinel
 Download the predictive model from Hugging Face and upload it to MinIO:
 
 ```
-git clone https://huggingface.co/bkpandey/netsentinel netsentinel-model
-cd netsentinel-model/
+git clone https://huggingface.co/bkpandey/netsentinel predictive-model
+cd predictive-model/
 s3 cp v1/config.pbtxt s3://netsentinel/predictive-model/config.pbtxt
 s3 cp v1/1/model.onnx s3://netsentinel/predictive-model/1/model.onnx
 ```

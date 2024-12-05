@@ -56,7 +56,7 @@ models:
 Replace `YOUR_API_KEY_HERE` with the API key retrieved in step 5. You can use following command for this.
 
 ```
-sed -i 's/token: "<YOUR_API_KEY_HERE>"/token: "your_actual_api_key"/' k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
+sed -i '' 's/token: "<YOUR_API_KEY_HERE>"/token: "your-api-key-here"/' k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
 ```
 
 Your configuration is now updated to use the new API token with the `"Granite-8B-Code-Instruct"` model in the `netsentinel` application.
