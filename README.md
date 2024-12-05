@@ -56,8 +56,8 @@ NetSentinel offers a glimpse into the future of AI-enhanced operational workflow
 ## Clone NetSentinel locally
 
 ```
-git clone git@github.com:pandeybk/NetSentenial.git
-cd NetSentenial
+git clone ssh://git@gitlab.consulting.redhat.com:2222/ai-odyssey-2025/netsentinel/netsentinel.git
+cd netsentinel
 ```
 
 ## Deploy NetSentinel on OpenShift
