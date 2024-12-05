@@ -87,7 +87,7 @@ Go back to root folder
 cd ..
 ```
 
-## Deploy Model Using Triton Serving Runtime
+## Deploy Predictive Model using RHOAI Dashboard
 
 ### Step 1: Create Serving Runtime
 
@@ -116,30 +116,44 @@ cd ..
    - **Model server size:** Set to **Medium**.
    - Uncheck **Model route**, its ok to check it if you want to expose outside, but make sure token authentication is disabled.
    - Uncheck **Require token authentication** (token authentication is not functioning for the predictive model at the moment).
-6. Click **Create**.
+6. Click **Add**.
 
-## Step 3: Deploy Model Using Inferencing File
+### Step 3: Deploy Model Using oc cli
 
 1. Ensure that the serving runtime in the inferencing file matches the name **`netsentinel-triton`**.
 2. Apply the inferencing file to the **netsentinel** namespace by running the following command:
 
 ```
+oc apply -f k8s/apps/base/models/predictive-triton/000-aws-connection-minio.yaml -n netsentinel
 oc apply -f k8s/apps/base/models/predictive-triton/003-inference-service.yaml -n netsentinel
 ```
-3. Check the progress of modelmesh server 
+
+3. Check the progress of modelmesh server
+
 ```
 oc get pods -n netsentinel | grep modelmesh
 ```
 
 Output:
+
 ```
 modelmesh-serving-netsentinel-triton-86c48cfd45-rfzpw   0/5     ContainerCreating   0          2m36s
 ```
+
 4. Ensure the model is deployed and the status column displays a green check mark.
+
+## Deploy Model Using oc cli
+
+This command is intended to automate the model deployment process, including enabling "Multi-Model Serving" for new namespaces. However, in some cases, the "Multi-Model Serving" configuration is not applied correctly in new namespaces, even within the same environment. The root cause of this inconsistency is currently unclear. If this process fails fallback to "Deploy Predictive Model using RHOAI Dashboard" mentioned above.
+
+```
+oc apply -k k8s/apps/base/models/
+```
 
 ### Troubleshooting:
 
 If you encounter the following error message:
+
 ```
 MountVolume.SetUp failed for volume "storage-config": secret "storage-config" not found
 ```
@@ -149,5 +163,3 @@ try running the following command:
 ```
 oc apply -k k8s/apps/base/models/
 ```
-
-This command is intended to automate the model deployment process, including enabling "Multi-Model Serving" for new namespaces. However, in some cases, the "Multi-Model Serving" configuration is not applied correctly in new namespaces, even within the same environment. The root cause of this inconsistency is currently unclear.
