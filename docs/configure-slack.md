@@ -89,7 +89,7 @@ oc delete pods -l app.kubernetes.io/name=netsentinel -n netsentinel
 - Click on "Retry" if "Request URL" is not verified. Make sure NetSentinel app is fully up and running and you can hit this endpoint in browser.
   ![Verified Event Subscriptions](./images/slack/008-slack.png)
 
-- Your application is now configured and installed in your Slack workspace. Go to [NetSentinel Workspace](https://<yourslack>.slack.com/) and confirm that the `NetSentinelRHDev` app appears under the **Apps** section.
+- Your application is now configured and installed in your Slack workspace. Go to [https://<yourslack>.slack.com/](https://<yourslack>.slack.com/) and confirm that the `NetSentinelRHDev` app appears under the **Apps** section.
   ![New app](./images/slack/009-slack.png)
 
 - Create a new channel (e.g., `#demo-channel`). The channel name can be anything; it doesn't have to match the `#netsentinel` name used in `app-config.yaml`.
