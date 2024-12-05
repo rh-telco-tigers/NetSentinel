@@ -8,6 +8,7 @@ metadata:
   labels:
     opendatahub.io/dashboard: "true"
   name: netsentinel
+  namespace: netsentinel
 spec:
   predictor:
     model:

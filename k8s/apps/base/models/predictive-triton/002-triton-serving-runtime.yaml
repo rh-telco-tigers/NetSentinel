@@ -4,6 +4,7 @@ metadata:
   name: netsentinel-triton
   labels:
     name: netsentinel-triton
+    namespace: netsentinel
     opendatahub.io/dashboard: "true"
   annotations:
     enable-route: "true"
