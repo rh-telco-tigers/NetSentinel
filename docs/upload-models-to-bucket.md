@@ -43,6 +43,18 @@ alias s3="aws s3 --endpoint-url https://$S3_ENDPOINTS"
 s3 mb s3://netsentinel
 ```
 
+Validate:
+
+```
+s3 ls
+```
+
+Output:
+
+```
+2024-12-04 18:20:38 netsentinel
+```
+
 ---
 
 ## Download and Upload Predictive Model
@@ -56,16 +68,15 @@ s3 cp v1/config.pbtxt s3://netsentinel/predictive-model/config.pbtxt
 s3 cp v1/1/model.onnx s3://netsentinel/predictive-model/1/model.onnx
 ```
 
----
-
-## Download and Upload Generative Model (Optional)
-
-If you are using [Models as a Service on OpenShift AI](https://maas.apps.prod.rhoai.rh-aiservices-bu.com/) skip this step and refer to the relevant [documentation](./model-as-a-service.md). Otherwise, download the generative model from Hugging Face and upload it to MinIO:
+Validate:
 
 ```
-git clone https://huggingface.co/ibm-granite/granite-8b-code-instruct-128k
-cd granite-8b-code-instruct-128k
-s3 cp . s3://netsentinel/llm-model/1/ --recursive --exclude ".*"
+s3 ls s3://netsentinel --recursive
 ```
 
-> Note: This section is not properly tested for now use [Models as a Service on OpenShift AI](https://maas.apps.prod.rhoai.rh-aiservices-bu.com/)
+Output:
+
+```
+2024-12-04 18:23:24  300449102 predictive-model/1/model.onnx
+2024-12-04 18:21:33        276 predictive-model/config.pbtxt
+```
