@@ -122,7 +122,7 @@ It may take some time for Kafka to be fully operational. The `CreateContainerCon
 Check the pods status
 
 ```
-oc get pods
+oc get pods -n netsentinel
 ```
 
 Example output during initialization:
@@ -141,7 +141,7 @@ console-kafka-zookeeper-2   1/1     Running                      0          57s
 - Verify Kafka Users
 
 ```
-oc get kafkausers
+oc get kafkausers -n netsentinel
 NAME                     CLUSTER         AUTHENTICATION   AUTHORIZATION   READY
 console-kafka-user1      console-kafka   scram-sha-512    simple          True
 netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
@@ -152,7 +152,8 @@ netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
 After a few minutes, verify that all pods are running as expected:
 
 ```
-Balkrishnas-MacBook-Pro:NetSentinel bpandey$ oc get pods
+oc get pods -n netsentinel
+
 NAME                                             READY   STATUS    RESTARTS   AGE
 console-5c498fb9c4-ffm6v                         2/2     Running   0          2m39s
 console-kafka-entity-operator-74f8599b68-mmrq6   2/2     Running   0          81s
