@@ -1,7 +1,0 @@
-kind: Secret
-apiVersion: v1
-metadata:
-  name: ssh-key
-data:
-  ssh-privatekey: cat ~/.ssh/id_rsa |base64 
-type: kubernetes.io/ssh-auth

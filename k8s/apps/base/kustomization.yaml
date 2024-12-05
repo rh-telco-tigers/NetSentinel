@@ -4,17 +4,7 @@ kind: Kustomization
 namespace: netsentinel
 
 resources:
-  - ./serviceaccounts/app-serviceaccount.yaml
-  - ./deployments/app-deployment-kafkacred.yaml
-  - ./deployments/ngrok-deployment.yaml
-  - ./services/app-service.yaml
-  - ./routes/app-route.yaml
-  - ./secrets/ngrok-token-secret.yaml
-  - ./configmaps/app-configmap.yaml
-  - ./rbac/clusterrole.yaml
-  - ./rbac/clusterrolebinding.yaml
-  - ./rbac/custom-scc.yaml
-  - ./rbac/cluster-monitoring-view-binding.yaml
+  - ./netsentinel
 
 secretGenerator:
   - name: ngrok-token

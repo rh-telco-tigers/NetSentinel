@@ -2,12 +2,10 @@
 
 from flask import Blueprint, request, jsonify, current_app
 import logging
-import numpy as np
 import asyncio
 import hmac
 import hashlib
 import time
-from datetime import datetime, timedelta
 from threading import Lock
 
 api_bp = Blueprint('api', __name__)
@@ -24,8 +22,6 @@ lock = Lock()  # To ensure thread-safe operations on the sets
 
 # Define the time window for keeping 'ts' values (e.g., 1 hour)
 TS_EXPIRATION_SECONDS = 3600
-
-# processed_event_ids = set()
 
 def verify_slack_request(signing_secret, request):
 
@@ -63,19 +59,6 @@ def verify_slack_request(signing_secret, request):
 
     return True
 
-def build_context_from_event_data(event_data):
-    fields = [
-        f"Event ID: {event_data.get('event_id', 'N/A')}",
-        f"Prediction: {'Attack' if event_data.get('prediction') == 1 else 'Normal'}",
-        f"Protocol: {event_data.get('protocol', 'N/A')}",
-        f"Service: {event_data.get('service', 'N/A')}",
-        f"State: {event_data.get('state', 'N/A')}",
-        f"Source IP: {event_data.get('src_ip', 'N/A')}",
-        f"Destination IP: {event_data.get('dst_ip', 'N/A')}",
-        f"Prediction Probability: {event_data.get('prediction_proba', 'N/A')}"
-    ]
-    return "\n".join(fields)
-
 # Slack Integration Class
 class SlackHandler:
     def __init__(self, app):
@@ -102,59 +85,6 @@ class SlackHandler:
     def send_message(self, channel, text):
         self.slack_client.send_message(channel, text)
 
-# Intent Handlers
-def handle_get_event_info(entities, event_id_index):
-    event_id = entities.get('event_id')
-    if not event_id:
-        return "Please provide a valid event ID."
-
-    event_data = get_event_by_id(event_id, event_id_index)
-    if not event_data:
-        return "No data found for the provided event ID."
-
-    text = entities.get('text', '').lower()
-    if "source ip" in text:
-        return f"Source IP: {event_data.get('src_ip', 'N/A')}"
-    elif "destination ip" in text:
-        return f"Destination IP: {event_data.get('dst_ip', 'N/A')}"
-    elif "attack" in text:
-        prediction = event_data.get('prediction')
-        return "Yes, it is an attack." if prediction == 1 else "No, it is not an attack."
-    elif "prediction probability" in text:
-        proba = event_data.get('prediction_proba', 'N/A')
-        return f"Prediction Probability: {proba}"
-    elif "what kind of traffic" in text or "traffic type" in text:
-        protocol = event_data.get('protocol', 'N/A')
-        service = event_data.get('service', 'N/A')
-        return f"Protocol: {protocol}, Service: {service}"
-    else:
-        return build_context_from_event_data(event_data)
-
-def handle_list_attack_events(metadata_store):
-    event_ids = get_all_attack_event_ids(metadata_store)
-    if event_ids:
-        return "Attack Event IDs:\n" + "\n".join(event_ids)
-    else:
-        return "No attack events found."
-
-def handle_get_events_by_ip(entities, metadata_store):
-    ip_address = entities.get('ip_address')
-    if not ip_address:
-        return "Please provide a valid IP address."
-
-    text = entities.get('text', '').lower()
-    if "source ip" in text:
-        events = get_events_by_src_ip(ip_address, metadata_store)
-    elif "destination ip" in text:
-        events = get_events_by_dst_ip(ip_address, metadata_store)
-    else:
-        return "Please specify whether you are interested in source IP or destination IP."
-
-    if events:
-        return "\n".join([f"Event ID: {e['event_id']}" for e in events])
-    else:
-        return "No events found for the specified IP."
-
 # Function to clean up old 'ts' entries
 def cleanup_processed_ts():
     with lock:
@@ -180,7 +110,6 @@ def start_cleanup_thread():
     thread.start()
 
 start_cleanup_thread()
-
 
 # Route Handlers
 @api_bp.route('/')
@@ -228,14 +157,6 @@ def slack_events():
     channel = event.get('channel')
     user = event.get('user')
 
-    # Check if the event has already been processed
-    # if event_id in processed_event_ids:
-    #     logger.info(f"Event ID {event_id} has already been processed. Skipping.")
-    #     return jsonify({"status": "Event already processed"}), 200
-
-    # Add the event_id to the processed set
-    # processed_event_ids.add(event_id)
-
     if not user_text:
         logger.warning("No text found in Slack event.")
         return jsonify({"error": "No text found in event"}), 400
@@ -264,33 +185,23 @@ def slack_events():
     try:
         # Access models and data from app's persistent_state
         nlu_interpreter = current_app.persistent_state.get('nlu_interpreter')
-        metadata_store = current_app.persistent_state.get('metadata_store')
-        event_id_index = current_app.persistent_state.get('event_id_index')
-        embedding_model = current_app.persistent_state.get('embedding_model')
-        tokenizer = current_app.persistent_state.get('tokenizer')
-        llm_model = current_app.persistent_state.get('llm_model')
         ocp_client = current_app.persistent_state.get('ocp_client')
-        llm_model_type = current_app.config.get('RAG_CONFIG', {}).get('llm_model_type', 'seq2seq')
+        remote_llm_client = current_app.persistent_state.get('remote_llm_client')
+        milvus_client = current_app.persistent_state.get('milvus_client')
+        collection = milvus_client.collection if milvus_client else None
 
+        # Check for missing components
         missing_components = []
 
-        # Check each component and log specific error if not loaded
         if not nlu_interpreter:
             missing_components.append('NLU Interpreter')
-        if not metadata_store:
-            missing_components.append('Metadata Store')
-        if not event_id_index:
-            missing_components.append('Event ID Index')
-        if not embedding_model:
-            missing_components.append('Embedding Model')
-        if not tokenizer:
-            missing_components.append('Tokenizer')
-        if not llm_model:
-            missing_components.append('LLM Model')
+        if not collection:
+            missing_components.append('Milvus Collection')
         if not ocp_client:
             missing_components.append('OCP Client')
+        if not remote_llm_client:
+            missing_components.append('Remote LLM Client')
 
-        # If any component is missing, log the details and notify via Slack
         if missing_components:
             missing_components_str = ', '.join(missing_components)
             logger.error(f"The following components are not loaded: {missing_components_str}")
@@ -322,10 +233,7 @@ def slack_events():
             input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."
             response_text = generate_response(
                 input_text,
-                tokenizer,
-                llm_model,
-                llm_model_type,
-                max_context_length=512,
+                remote_llm_client=remote_llm_client,
                 max_answer_length=150
             )
         else:
@@ -336,17 +244,15 @@ def slack_events():
                     # Pass necessary components for LLM
                     response_text = handler(
                         entities,
-                        tokenizer=tokenizer,
-                        llm_model=llm_model,
-                        llm_model_type=llm_model_type
+                        remote_llm_client=remote_llm_client
                     )
                 else:
                     # Pass necessary data to the handler
                     result = handler(
                         entities,
-                        event_id_index=event_id_index,
-                        metadata_store=metadata_store,
-                        ocp_client=ocp_client
+                        collection=collection,
+                        ocp_client=ocp_client,
+                        remote_llm_client=remote_llm_client
                     )
 
                     # Extract query, output, and final message if returned in the result
@@ -377,10 +283,7 @@ def slack_events():
                 input_text = f"User asked: {question}\nPlease provide a helpful and accurate response."
                 response_text = generate_response(
                     input_text,
-                    tokenizer,
-                    llm_model,
-                    llm_model_type,
-                    max_context_length=512,
+                    remote_llm_client=remote_llm_client,
                     max_answer_length=150
                 )
 

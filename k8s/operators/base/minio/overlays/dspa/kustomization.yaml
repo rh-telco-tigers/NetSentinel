@@ -1,5 +1,0 @@
-namespace: netsentinel
-
-resources:
-  - ../../base 
-  - dspa.yaml

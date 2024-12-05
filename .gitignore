@@ -24,4 +24,3 @@ models/Mistral-7B-v0.1/
 rasa/models
 *.tar.gz
 models/*
-console-ui-secrets.yaml

@@ -1,0 +1,5 @@
+apiVersion: milvus.io/v1beta1
+kind: Milvus
+metadata:
+  name: netsentinel
+  namespace: milvus-operator

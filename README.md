@@ -1,125 +1,160 @@
-## NetSentinel
+### NetSentinel
 
-NetSentinel is a next-generation network intrusion detection system designed specifically for telecom environments. It combines predictive AI and generative AI (`google-flan-t5` or `Mistral-7B`, support both), observability, and agent-based architecture to report core network events. Currently a proof of concept using simulated data, NetSentinel is designed to integrate with tools like Zeek and Suricata in the future. Deployed on Red Hat OpenShift, NetSentinel integrates multiple specialized agents and Slack-based chatbot functionality, allowing telecom operators to interact with the system in real-time.
+NetSentinel is an AI-powered chatbot platform integrated with Slack, showcasing the potential of predictive analysis, generative AI and Natural Language Understanding (NLU) for advanced use cases. Designed as a versatile proof of concept, it demonstrates attack detection and response using mock data. While initially focused on network intrusion detection, and communication with OCP API and Prometheus API, its flexible architecture supports use cases across industries, from customer support to billing inquiries.
 
-## Key Components and Features:
+NetSentinel's future vision includes integrating human agents into workflows, allowing users to escalate queries that the AI cannot answer. Agents could range from document processors to knowledge base managers or balance inquiry handlers, showcasing the system's adaptability to various operational needs.
 
-- **Agent-Based Architecture:** NetSentinel’s modular design enables seamless scalability and customization, with four primary agents:
+![NetSentinel Architecture](./docs/images/netsentinel-architecture.jpg)
 
-   - **NLU Agent:** Interprets human intent and extracts key information, enabling operators to engage with NetSentinel through natural language on Slack.
-   - **Predictive Analysis and Generative Model:** Uses AI-powered classification to detect network anomalies and handle network-related queries, offering telecom-specific security insights.
-   - **OpenShift API Agent:** Executes operational commands on OpenShift (list/create network policies, check pods compliance, etc), ensuring a swift response to network issues.
-   - **Prometheus Agent:** Provides observability, running PromQL queries to monitor traffic and health metrics across RAN and core networks.
+### Key Components and Features:
 
-- **Slack Chatbot Integration:** NetSentinel’s chatbot allows telecom operators to ask questions like "List all attacks from the last hour" or "Is there suspicious activity from IP 192.168.1.1?" and receive immediate real-time responses.
+- **Generative and Predictive AI:** The system leverages `granite-8b-code-instruct-128k` for generative capabilities, a predictive model trained on the `UNSW-NB15` dataset for anomaly detection, and an NLU component to interpret human intent as the entry point for all interactions.
+
+- **Slack Chatbot Integration:** Users can interact with the chatbot through Slack, asking queries like "List all network events identified as attacks" or "Check network traffic metrics" and receiving instant, AI-driven or API-driven responses.
+
+- **Future-Ready Human-in-the-Loop Design:** Though not currently implemented, the architecture envisions seamless escalation to human agents for cases requiring specialized intervention.
+
+- **Multi-Agent Architecture:**
+  - **NLU Agent:** Processes natural language queries to extract user intent and actionable data.
+  - **Predictive and Generative Agents:** Detect anomalies and respond to network or general queries.
+  - **OpenShift API Agent:** Executes operational commands like listing network policies or checking pod compliance in an OpenShift environment.
+  - **Prometheus Agent:** Enables observability, running PromQL queries to monitor metrics.
+
+### Use Case Versatility:
+
+NetSentinel's design extends beyond telecom. The framework can be adapted to create:
+
+- Customer support chatbots
+- Billing inquiry handlers
+- Document processing agents
+- Knowledge base assistants
+- And more, with minimal customization.
 
 ### Demo Highlights:
 
-- Real-time AI-driven network classification and anomaly detection
-- Interactive Slack-based querying for seamless operator interaction
-- Comprehensive observability and traffic monitoring via Prometheus and OpenShift integration
+- Showcases AI-driven attack detection using simulated data
+- Demonstrates interactive Slack-based querying for various scenarios
+- Highlights adaptability for industry-specific use cases, such as customer service or network operations
+- Leverages various OpenShift components to demonstrate Red Hat OpenShift AI functionality:
+  - **Kafka** as a middleware service for event streaming
+  - **NVIDIA Triton** model server to deploy the predictive model
+  - Hosted **Model-as-a-Service** integration to interact with `granite-8b-code-instruct-128k`
+  - **OpenShift Tekton Pipeline** to automate the image-building process
+  - **RHOAI Kubeflow Pipeline** to showcase the predictive model training process
 
-NetSentinel delivers an adaptable security solution for telecom providers, blending observability, predictive AI, and hands-on network management to protect RAN and core infrastructure.
+NetSentinel offers a glimpse into the future of AI-enhanced operational workflows, emphasizing adaptability, scalability, and real-time response for diverse applications.
 
+## Order OpenShift Environment
+
+- Any OpenShift environment should work technically, provided there are no operator conflicts. To avoid issues, it’s recommended to start with a clean environment since the project requires installing multiple operators and configurations.
+- For testing purposes, we are using the following environment.
+  - Order an OCP demo cluster via this [URL](https://catalog.demo.redhat.com/catalog?item=babylon-catalog-prod/sandboxes-gpte.ocp-wksp.prod&utm_source=webapp&utm_medium=share-link)
+  - Select **OpenShift Version 4.17** during setup.
+  - Only a single control plane is sufficient.
+  - If you are using **Model as a Service** for the LLM model, a CPU-only setup is adequate for deploying this project.
+
+## Clone NetSentinel locally
+
+```
+git clone ssh://git@gitlab.consulting.redhat.com:2222/ai-odyssey-2025/netsentinel/netsentinel.git
+cd netsentinel
+```
 
 ## Deploy NetSentinel on OpenShift
 
-### Create a new project 
+### 1. Create new openshift projects
 
-Ensure that you update the namespace in the Kustomize file if you are using a namespace other than `netsentinel`. This adjustment may need to be made in several locations within the configuration.
-
-For example, to create the `netsentinel` namespace, you can use:
+Apply the pre-defined namespace configurations using Kustomize:
 
 ```
-oc new-project netsentinel
+kubectl apply -k k8s/namespaces/base
 ```
 
-### Deploy Operators
+Ensure the namespace in the Kustomize configuration matches your desired namespace (e.g., `netsentinel`). Update it in all relevant locations if needed.
 
-The Kafka Operator is required for this setup to function properly. To deploy it, use the following command:
-
-```
-oc apply -k k8s/operators/overlays/rhlab/
-```
-
-Currently, we are using the `amq-streams-2.7.x` version. Older versions of Kafka exhibited different behavior, so it is important to use this version for consistency.
-
-
-### Copy overlays
-We are using Kustomize to deploy the NetSentinel application. To get started, copy the example overlays and modify them as needed:
+### 2. Deploy Operators
 
 ```
-cp -R k8s/apps/overlays/example k8s/apps/overlays/rhdemo-netsentinel
+oc apply -k k8s/operators/overlays/common
 ```
 
-After copying, make the necessary adjustments to the new overlay files to match your environment and requirements.
+> Note: Currently, we are using the `amq-streams-2.7.x` version. Older versions of Kafka exhibited different behavior, so it is important to use this version for consistency.
 
+> Note: The demo environment we are using above already contains cert manager operator. If you are using different demo environment you may have to install this operator separtely. Check following files to include this operator as well, `k8s/operators/overlays/common/kustomization.yaml` and `k8s/instances/overlays/common/kustomization.yaml`
 
-### Create PVC
-To patch the storageClassName for an existing PersistentVolumeClaim, use the following patch file `k8s/apps/overlays/rhdemo-netsentinel/pvc/storageclass-patch.yaml`. Update it with the desired storage class:
+> Note: Ensure all operators are active and running before proceeding. Navigate to Operators > Installed Operators in the OpenShift Console to verify their status.
 
-```
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: storageclass
-spec:
-  storageClassName: gp3-csi
-```
+> Note: Verify that the Red Hat OpenShift AI Operator is properly configured and that all components are active and functioning correctly. You can check their status on the Operator page under "All Instances" in the OpenShift Console.
 
-To apply the patch, use the following command:
+### 3. Deploy Instances of Operators
+
+#### Deploy common Operators
 
 ```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/pvc/
+oc apply -k k8s/instances/overlays/common
 ```
 
-Make sure the `storageClassName` matches the desired storage class for your environment and that the patch file aligns with your PVC's namespace and name.
-
-
-### Deploy kafka instance
+#### Deploy kafka instance
 
 To deploy the Kafka instance, follow these steps:
 
-- Generate Secrets
-
-```
-./k8s/apps/base/kafka/generate-console-secrets.sh
-mv console-ui-secrets.yaml ./k8s/apps/overlays/rhdemo-netsentinel/kafka/.
-```
-
 - Update Cluster DNS
 
-Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name. 
+Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name.
 
 Example you can run following command
+
 ```
-find ./k8s/apps/overlays/rhdemo-netsentinel/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-q7t72.q7t72.sandbox1729.opentlc.com/g' {} +
+find ./k8s/instances/overlays/rhlab/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-bbgs4.bbgs4.sandbox592.opentlc.com/g' {} +
 ```
 
-Ensure the DNS is:
+Ensure the following files have been modified as expected:
 
-  - Publicly resolvable.
-  - Not using a self-signed certificate. Certificates must be valid.
+```
+git status
+```
 
+Output:
+
+```
+On branch cleanup
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console-kafka.kafka.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console-ui.route.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console.deployment.yaml
+
+```
+
+To further validate the changes, you can run the following command:
+
+```
+git diff .
+```
+
+> Ensure the DNS is:
+> Publicly resolvable.
+> Domain is Not using a self-signed certificate. Certificates must be valid.
 > Note: This is required for communication with Slack channels.
-If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround. Refer to `k8s/apps/overlays/telcolab` for an example of this approach.
+> If deploying in an OpenShift cluster where the DNS is not publicly resolvable and uses self-signed certificates, you can use tools like ngrok as a workaround.
 
 - Apply Kafka Configuration
 
 Deploy the Kafka instance using the following command:
 
 ```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
+oc apply -k k8s/instances/overlays/rhlab/
 ```
 
 - Wait for Kafka to Start
 
 It may take some time for Kafka to be fully operational. The `CreateContainerConfigError` status for certain pods (e.g., Kafka console) will resolve automatically once kafkausers are created and the necessary secrets are available.
 
-Check the pods status 
+Check the pods status
 
 ```
-oc get pods
+oc get pods -n netsentinel
 ```
 
 Example output during initialization:
@@ -138,7 +173,12 @@ console-kafka-zookeeper-2   1/1     Running                      0          57s
 - Verify Kafka Users
 
 ```
-oc get kafkausers
+oc get kafkausers -n netsentinel
+```
+
+Output:
+
+```
 NAME                     CLUSTER         AUTHENTICATION   AUTHORIZATION   READY
 console-kafka-user1      console-kafka   scram-sha-512    simple          True
 netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
@@ -148,9 +188,13 @@ netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
 
 After a few minutes, verify that all pods are running as expected:
 
+```
+oc get pods -n netsentinel
+```
+
+Output:
 
 ```
-Balkrishnas-MacBook-Pro:NetSentinel bpandey$ oc get pods
 NAME                                             READY   STATUS    RESTARTS   AGE
 console-5c498fb9c4-ffm6v                         2/2     Running   0          2m39s
 console-kafka-entity-operator-74f8599b68-mmrq6   2/2     Running   0          81s
@@ -162,25 +206,86 @@ console-kafka-zookeeper-1                        1/1     Running   0          2m
 console-kafka-zookeeper-2                        1/1     Running   0          2m29s
 ```
 
-Your Kafka instance is now ready to use!
+Your Kafka instance is now ready to use. You can browse kafka console using following url.
 
-
-### Deploy NetSentinel Application
 ```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
+URL=$(oc get routes console-ui-route -o jsonpath='{.spec.host}' -n netsentinel)
+echo "https://$URL"
+open "https://$URL"
 ```
 
-### Configure SLACK for communication with the bot
-Follow doc [Slack Configuration](./docs/slack/configure-slack.md)
+### 4. Deploy Predictive Model
 
+Follow guide [Deploy Predictive Model](./docs/deploy-predictive-model.md)
+
+### 5. Create a New API Token for "Models as a Service" on OpenShift AI
+
+Follow guide [Model as a service](./docs/model-as-a-service.md)
+
+### 6. Deploy NetSentinel Application
+
+- Ensure that you are using `netsentinel` when you deploy the model so that it will match following config otherwise update this config in this file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml`
+
+```
+models:
+  predictive:
+    url: "http://modelmesh-serving.netsentinel:8008/v2/models/netsentinel/infer"
+    token: ""
+    verify_ssl: true
+```
+
+- Ensure that `<YOUR_API_KEY_HERE>` is replaced with the actual API key in the `models.llm.token` section of the file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml` as part of Step 5. The URL and model name should remain consistent across all MaaS-deployed services. If they differ, adjust those values accordingly to maintain consistency.
+
+Now Deploy NetSentinel application
+
+```
+oc apply -k k8s/apps/overlays/rhlab/
+```
+
+Validate:
+
+```
+oc get pods -n netsentinel
+```
+
+Output:
+
+```
+NAME                                                    READY   STATUS    RESTARTS       AGE
+console-5c7f4fd77b-8r52v                                2/2     Running   0              85m
+console-kafka-entity-operator-74f8599b68-lqqr7          2/2     Running   0              84m
+console-kafka-kafka-0                                   1/1     Running   0              84m
+console-kafka-kafka-1                                   1/1     Running   0              84m
+console-kafka-kafka-2                                   1/1     Running   0              84m
+console-kafka-zookeeper-0                               1/1     Running   0              85m
+console-kafka-zookeeper-1                               1/1     Running   0              85m
+console-kafka-zookeeper-2                               1/1     Running   0              85m
+create-mock-data-849c468b85-qkt8c                       1/1     Running   0              52m
+minio-79f8869bf5-xbrjt                                  1/1     Running   0              87m
+modelmesh-serving-netsentinel-triton-86c48cfd45-7r7vn   5/5     Running   0              18m
+netsentinel-85c56c767b-rmvq6                            1/1     Running   0              52m
+prediction-service-6b5558dc66-6lk6k                     1/1     Running   11 (24m ago)   52m
+process-mock-data-78bb5fbff8-n9rfq                      1/1     Running   0              52m
+```
+
+### 6. Configure SLACK for communication with the bot
+
+Follow doc [Slack Configuration](./docs/configure-slack.md)
 
 ## Cleanup
+
 Execute the commands in the specified sequence to ensure proper deletion, as Kafka topics may not be deleted if the order is not followed:
 
 ```
+oc delete -k k8s/apps/overlays/rhlab/netsentinel/
+oc delete -k k8s/instances/overlays/common
 oc delete kafkatopics --all -n netsentinel
-oc delete -k k8s/apps/overlays/rhdemo-netsentinel/kafka/
-oc delete -k k8s/apps/overlays/rhdemo-netsentinel/
-oc delete pvc --all -n netsentinel 
-oc delete ns netsentinel
+oc delete -k k8s/instances/overlays/rhlab
+
+oc delete pvc --all -n netsentinel
+
+oc delete deployment --all -n milvus-operator
+oc delete sts --all -n milvus-operator
+oc delete pvc --all -n milvus-operator
+oc delete -k k8s/namespaces/base
 ```

@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    chains.tekton.dev/signed: "true"
+    pipeline.openshift.io/started-by: admin
+  generateName: container-build-and-push-run-
+spec:
+  params:
+    - name: IMAGE_NAME
+      value: "quay.io/bpandey/netsentinel:0.0.1-cleanup"
+    - name: GIT_REPO
+      value: "git@github.com:pandeybk/NetSentenial.git"
+    - name: GIT_REVISION
+      value: cleanup
+    - name: DOCKERFILE
+      value: "Dockerfile"
+  pipelineRef:
+    name: container-build-and-push
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 1h0m0s
+  workspaces:
+    - name: workspace
+      volumeClaimTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
+          # storageClassName: gp3-csi
+          volumeMode: Filesystem
+        status: {}
+    - name: quay-credentials
+      secret:
+        secretName: quay-credentials

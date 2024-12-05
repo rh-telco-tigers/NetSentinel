@@ -1,0 +1,29 @@
+resources:
+  - pvc.yaml
+  - secret.yaml
+  - deployment.yaml
+  - service.yaml
+  - route-api.yaml
+  - route-ui.yaml
+
+secretGenerator:
+  - name: minio-tls-secret
+    files:
+      - certs/tls.crt
+      - certs/tls.key
+    behavior: create
+
+  - name: kaggle-secret
+    files:
+      - kaggle.json=kaggle/kaggle.json
+    type: Opaque
+    behavior: create
+
+configMapGenerator:
+  - name: custom-ca-bundle
+    files:
+      - certs/ca-bundle.crt
+    behavior: create
+
+generatorOptions:
+  disableNameSuffixHash: true

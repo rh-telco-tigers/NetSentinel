@@ -1,0 +1,3 @@
+resources:
+  - predictive-triton
+  # - llm-vllm

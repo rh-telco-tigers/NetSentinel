@@ -1,7 +1,0 @@
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: console-ui-route
-spec:
-  host: console-ui-route-netsentinel.apps.cluster-ms294.ms294.sandbox951.opentlc.com
