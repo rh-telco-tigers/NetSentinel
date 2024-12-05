@@ -324,6 +324,9 @@ For now, you can use the queries below to test the functionality. As we expand t
 #### Other sample agents
 
 - Which pods are non-compliant with security policies?
+
+> The following query consistently returns the same response; it is intended solely to demonstrate ability to invoke different functions. This approach can be extended to implement features like Clair integration, logging solutions, or similar functionalities.
+
 - Audit logs: get security logs for the past day
 - Scan the cluster for vulnerabilities
 
