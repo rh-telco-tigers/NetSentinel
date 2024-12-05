@@ -6,7 +6,7 @@ NetSentinel's future vision includes integrating human agents into workflows, al
 
 ### Key Components and Features:
 
-- **Generative and Predictive AI:** Powered by `granite-8b-code-instruct-128k`, the system identifies and classifies potential anomalies while handling complex queries.
+- **Generative and Predictive AI:** The system leverages `granite-8b-code-instruct-128k` for generative capabilities, a predictive model trained on the `UNSW-NB15` dataset for anomaly detection, and an NLU component to interpret human intent as the entry point for all interactions.
 
 - **Slack Chatbot Integration:** Users can interact with the chatbot through Slack, asking queries like "List all network events identified as attacks" or "Check network traffic metrics" and receiving instant, AI-driven or API-driven responses.
 
@@ -33,6 +33,12 @@ NetSentinel's design extends beyond telecom. The framework can be adapted to cre
 - Showcases AI-driven attack detection using simulated data
 - Demonstrates interactive Slack-based querying for various scenarios
 - Highlights adaptability for industry-specific use cases, such as customer service or network operations
+- Leverages various OpenShift components to demonstrate Red Hat OpenShift AI functionality:
+  - **Kafka** as a middleware service for event streaming
+  - **NVIDIA Triton** model server to deploy the predictive model
+  - Hosted **Model-as-a-Service** integration to interact with `granite-8b-code-instruct-128k`
+  - **OpenShift Tekton Pipeline** to automate the image-building process
+  - **RHOAI Kubeflow Pipeline** to showcase the predictive model training process
 
 NetSentinel offers a glimpse into the future of AI-enhanced operational workflows, emphasizing adaptability, scalability, and real-time response for diverse applications.
 
