@@ -193,6 +193,31 @@ Now execute following.
 oc apply -k  k8s/apps/overlays/rhlab/
 ```
 
+Validate:
+
+```
+oc get pods -n netsentinel
+```
+
+Output:
+
+```
+NAME                                             READY   STATUS              RESTARTS   AGE
+console-68c9df5c59-6qfff                         2/2     Running             0          16m
+console-kafka-entity-operator-7fc848f9fc-bnncl   2/2     Running             0          15m
+console-kafka-kafka-0                            1/1     Running             0          16m
+console-kafka-kafka-1                            1/1     Running             0          16m
+console-kafka-kafka-2                            1/1     Running             0          16m
+console-kafka-zookeeper-0                        1/1     Running             0          16m
+console-kafka-zookeeper-1                        1/1     Running             0          16m
+console-kafka-zookeeper-2                        1/1     Running             0          16m
+create-mock-data-98df85fdc-7kxx7                 0/1     ContainerCreating   0          31s
+minio-6c95767dc6-642zv                           1/1     Running             0          24m
+netsentinel-5d9896664b-twblx                     0/1     ContainerCreating   0          31s
+prediction-service-d6b56cd88-2bd2r               0/1     ContainerCreating   0          32s
+process-mock-data-575bd9bd64-5vdf5               0/1     ContainerCreating   0          31s
+```
+
 ### 6. Configure SLACK for communication with the bot
 
 Follow doc [Slack Configuration](./docs/configure-slack.md)
