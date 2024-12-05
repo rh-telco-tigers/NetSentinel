@@ -60,3 +60,23 @@ sed -i '' 's/token: "<YOUR_API_KEY_HERE>"/token: "your-api-key-here"/' k8s/apps/
 ```
 
 Your configuration is now updated to use the new API token with the `"Granite-8B-Code-Instruct"` model in the `netsentinel` application.
+
+Validate using git command
+
+```
+git status
+On branch cleanup
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console-kafka.kafka.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console-ui.route.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console.deployment.yaml
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	predictive-model/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
