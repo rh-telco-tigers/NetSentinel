@@ -81,6 +81,26 @@ Example you can run following command
 find ./k8s/instances/overlays/rhlab/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-bbgs4.bbgs4.sandbox592.opentlc.com/g' {} +
 ```
 
+Ensure the following files have been modified as expected:
+
+```
+git status
+On branch cleanup
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console-kafka.kafka.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console-ui.route.yaml
+	modified:   k8s/instances/overlays/rhlab/kafka/patches/console.deployment.yaml
+
+```
+
+To further validate the changes, you can run the following command:
+
+```
+git diff .
+```
+
 > Ensure the DNS is:
 > Publicly resolvable.
 > Domain is Not using a self-signed certificate. Certificates must be valid.
