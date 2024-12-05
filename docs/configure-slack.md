@@ -77,7 +77,7 @@ slack:
 Redeploy the application and reboot the pods with the updated app config:
 
 ```
-oc apply -k k8s/apps/overlays/rhdemo-netsentinel/netsentinel/
+oc apply -k k8s/apps/overlays/rhlab/
 oc get pods -l app.kubernetes.io/name=netsentinel
 oc delete pods -l app.kubernetes.io/name=netsentinel
 ```
