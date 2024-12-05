@@ -4,6 +4,8 @@ NetSentinel is an AI-powered chatbot platform integrated with Slack, showcasing 
 
 NetSentinel's future vision includes integrating human agents into workflows, allowing users to escalate queries that the AI cannot answer. Agents could range from document processors to knowledge base managers or balance inquiry handlers, showcasing the system's adaptability to various operational needs.
 
+![NetSentinel Architecture](./docs/images/netsentinel-architecture.jpg)
+
 ### Key Components and Features:
 
 - **Generative and Predictive AI:** The system leverages `granite-8b-code-instruct-128k` for generative capabilities, a predictive model trained on the `UNSW-NB15` dataset for anomaly detection, and an NLU component to interpret human intent as the entry point for all interactions.
