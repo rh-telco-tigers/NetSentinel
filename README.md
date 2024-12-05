@@ -1,25 +1,40 @@
-## NetSentinel
+### NetSentinel
 
-NetSentinel is a next-generation network intrusion detection system designed specifically for telecom environments. It combines predictive AI and generative AI (`google-flan-t5` or `Mistral-7B`, support both), observability, and agent-based architecture to report core network events. Currently a proof of concept using simulated data, NetSentinel is designed to integrate with tools like Zeek and Suricata in the future. Deployed on Red Hat OpenShift, NetSentinel integrates multiple specialized agents and Slack-based chatbot functionality, allowing telecom operators to interact with the system in real-time.
+NetSentinel is an AI-powered chatbot platform integrated with Slack, showcasing the potential of predictive analysis, generative AI and Natural Language Understanding (NLU) for advanced use cases. Designed as a versatile proof of concept, it demonstrates attack detection and response using mock data. While initially focused on network intrusion detection, and communication with OCP API and Prometheus API, its flexible architecture supports use cases across industries, from customer support to billing inquiries.
 
-## Key Components and Features:
+NetSentinel's future vision includes integrating human agents into workflows, allowing users to escalate queries that the AI cannot answer. Agents could range from document processors to knowledge base managers or balance inquiry handlers, showcasing the system's adaptability to various operational needs.
 
-- **Agent-Based Architecture:** NetSentinel’s modular design enables seamless scalability and customization, with four primary agents:
+### Key Components and Features:
 
-  - **NLU Agent:** Interprets human intent and extracts key information, enabling operators to engage with NetSentinel through natural language on Slack.
-  - **Predictive Analysis and Generative Model:** Uses AI-powered classification to detect network anomalies and handle network-related queries, offering telecom-specific security insights.
-  - **OpenShift API Agent:** Executes operational commands on OpenShift (list/create network policies, check pods compliance, etc), ensuring a swift response to network issues.
-  - **Prometheus Agent:** Provides observability, running PromQL queries to monitor traffic and health metrics across RAN and core networks.
+- **Generative and Predictive AI:** Powered by `granite-8b-code-instruct-128k`, the system identifies and classifies potential anomalies while handling complex queries.
 
-- **Slack Chatbot Integration:** NetSentinel’s chatbot allows telecom operators to ask questions like "List all attacks from the last hour" or "Is there suspicious activity from IP 192.168.1.1?" and receive immediate real-time responses.
+- **Slack Chatbot Integration:** Users can interact with the chatbot through Slack, asking queries like "List all network events identified as attacks" or "Check network traffic metrics" and receiving instant, AI-driven or API-driven responses.
+
+- **Future-Ready Human-in-the-Loop Design:** Though not currently implemented, the architecture envisions seamless escalation to human agents for cases requiring specialized intervention.
+
+- **Multi-Agent Architecture:**
+  - **NLU Agent:** Processes natural language queries to extract user intent and actionable data.
+  - **Predictive and Generative Agents:** Detect anomalies and respond to network or general queries.
+  - **OpenShift API Agent:** Executes operational commands like listing network policies or checking pod compliance in an OpenShift environment.
+  - **Prometheus Agent:** Enables observability, running PromQL queries to monitor metrics.
+
+### Use Case Versatility:
+
+NetSentinel's design extends beyond telecom. The framework can be adapted to create:
+
+- Customer support chatbots
+- Billing inquiry handlers
+- Document processing agents
+- Knowledge base assistants
+- And more, with minimal customization.
 
 ### Demo Highlights:
 
-- Real-time AI-driven network classification and anomaly detection
-- Interactive Slack-based querying for seamless operator interaction
-- Comprehensive observability and traffic monitoring via Prometheus and OpenShift integration
+- Showcases AI-driven attack detection using simulated data
+- Demonstrates interactive Slack-based querying for various scenarios
+- Highlights adaptability for industry-specific use cases, such as customer service or network operations
 
-NetSentinel delivers an adaptable security solution for telecom providers, blending observability, predictive AI, and hands-on network management to protect RAN and core infrastructure.
+NetSentinel offers a glimpse into the future of AI-enhanced operational workflows, emphasizing adaptability, scalability, and real-time response for diverse applications.
 
 ## Order OpenShift Environment
 
