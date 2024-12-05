@@ -1,4 +1,5 @@
-- Navigate to [https://api.slack.com/apps](https://api.slack.com/apps)
+- Create a new Slack account or use an existing one. Ensure you have admin permissions to configure the required settings. You can get started at: [https://slack.com/get-started#/createnew](https://slack.com/get-started#/createnew).
+- Once the slack account is setup navigate to [https://api.slack.com/apps](https://api.slack.com/apps)
   ![Create App](./images/slack/001-slack.png)
 
 - Click on **Create New App**
@@ -78,8 +79,8 @@ Redeploy the application and reboot the pods with the updated app config:
 
 ```
 oc apply -k k8s/apps/overlays/rhlab/
-oc get pods -l app.kubernetes.io/name=netsentinel
-oc delete pods -l app.kubernetes.io/name=netsentinel
+oc get pods -l app.kubernetes.io/name=netsentinel -n netsentinel
+oc delete pods -l app.kubernetes.io/name=netsentinel -n netsentinel
 ```
 
 - Navigate to slack "Event Subscriptions" page.
@@ -88,7 +89,7 @@ oc delete pods -l app.kubernetes.io/name=netsentinel
 - Click on "Retry" if "Request URL" is not verified. Make sure NetSentinel app is fully up and running and you can hit this endpoint in browser.
   ![Verified Event Subscriptions](./images/slack/008-slack.png)
 
-- Your application is now configured and installed in your Slack workspace. Go to [NetSentinel Workspace](https://netsentinel.slack.com/) and confirm that the `NetSentinelRHDev` app appears under the **Apps** section.
+- Your application is now configured and installed in your Slack workspace. Go to [NetSentinel Workspace](https://<yourslack>.slack.com/) and confirm that the `NetSentinelRHDev` app appears under the **Apps** section.
   ![New app](./images/slack/009-slack.png)
 
 - Create a new channel (e.g., `#demo-channel`). The channel name can be anything; it doesn't have to match the `#netsentinel` name used in `app-config.yaml`.
