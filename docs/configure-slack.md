@@ -8,7 +8,7 @@
 - Choose your workspace where you want to create this app
   ![Slack Workspace](./images/slack/003-slack.png)
 
-- Use the following manifest, replacing the `request_url` as needed. Example uses OpenShift routes, requiring verified SSL certificates (self-signed certs won’t work). Use ngrok like service to bypass this if necessary for non-prod use case.
+- Use the following manifest, replace the `request_url` using netsentinel routes. This requires verified SSL certificates (self-signed certs won’t work).
 
 #### Get OpenShift Routes
 
@@ -45,7 +45,7 @@ oauth_config:
       - links:read
 settings:
   event_subscriptions:
-    request_url: https://netsentinel-route-netsentinel.apps.cluster-svlfp.svlfp.sandbox2951.opentlc.com/slack/events
+    request_url: https://<REPLACE-ME-WITH-OCP-ROUTES>/slack/events
     bot_events:
       - app_mention
       - link_shared
@@ -59,13 +59,13 @@ settings:
 - You will land at the "Basic Information" page.
   ![App Basic Information](./images/slack/004-slack.png)
 
-- Update the Signing Secret in your `app-config.yaml` under the slack section (e.g `k8s/apps/overlays/rhdemo-netsentinel/netsentinel/app-config.yaml`), using the secret found in the Basic Information menu.
+- Update the Signing Secret in your `app-config.yaml` under the slack section (e.g `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml`), using the secret found in the Basic Information menu.
 
 ```
-slack_config:
-  slack_channel: "#netsentinel"
-  slack_bot_token: "xoxb-783421362-783601639-8ybH7ZoB9nHsmBs2hw"
-  slack_signing_secret: "fde84d1823293b0b806cc353bec"
+slack:
+  channel: "#netsentinel"
+  bot_token: "xoxb-7834804921362-8122041681668-BC7bK0UVWrc1pEEbr7O9Ovld"
+  signing_secret: "496d06f2437b4c31dc99702bd576bd49"
 ```
 
 - Navigate to OAuth & Permissions and click Install to NetSentinel under the "OAuth Tokens" section
