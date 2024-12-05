@@ -1,4 +1,4 @@
-- Create a new Slack account or use an existing one. Ensure you have admin permissions to configure the required settings. You can get started at: [https://slack.com/get-started#/createnew](https://slack.com/get-started#/createnew).
+- Create a new Slack account or use an existing one. Ensure you have admin permissions to configure the required settings. You can get started at: [https://slack.com/get-started#/createnew](https://slack.com/get-started#/createnew). Once the account is setup create a slack workspace. 
 - Once the slack account is setup navigate to [https://api.slack.com/apps](https://api.slack.com/apps)
   ![Create App](./images/slack/001-slack.png)
 

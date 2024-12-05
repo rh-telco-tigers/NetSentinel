@@ -67,13 +67,24 @@ cd netsentinel
 Apply the pre-defined namespace configurations using Kustomize:
 
 ```
-kubectl apply -k k8s/namespaces/base
+oc apply -k k8s/namespaces/base
 ```
 
 Ensure the namespace in the Kustomize configuration matches your desired namespace (e.g., `netsentinel`). Update it in all relevant locations if needed.
 
 ### 2. Deploy Operators
+We are using the following operators for this project. If they are already installed, ensure there are no conflicts with the new installation:
 
+- amq-streams-operator
+- milvus
+- minio
+- openshift-ai
+- openshift-cert-manager-operator
+- openshift-servicemesh
+- prometheus-operator
+- serverless-operator
+
+You can use the following command to install them:
 ```
 oc apply -k k8s/operators/overlays/common
 ```
@@ -102,7 +113,7 @@ To deploy the Kafka instance, follow these steps:
 
 Replace `<CLUSTER_NAME_WITH_BASE_DOMAIN>` with your cluster's DNS name.
 
-Example you can run following command
+Example you can run following command, replace `cluster-bbgs4.bbgs4.sandbox592.opentlc.com` with your cluster DNS.
 
 ```
 find ./k8s/instances/overlays/rhlab/kafka/ -type f -exec sed -i '' 's/<CLUSTER_NAME_WITH_BASE_DOMAIN>/cluster-bbgs4.bbgs4.sandbox592.opentlc.com/g' {} +
@@ -271,6 +282,46 @@ process-mock-data-78bb5fbff8-n9rfq                      1/1     Running   0     
 ### 6. Configure SLACK for communication with the bot
 
 Follow doc [Slack Configuration](./docs/configure-slack.md)
+
+
+### 7. Test cases using Slack
+You can now execute the following queries to test the features and capabilities of the agents. Currently, the NLU model is trained on a limited dataset of approximately 400 records, so the model's responses may not be highly accurate. You can review the dataset in `rasa/nlu.yml`.
+
+For now, you can use the queries below to test the functionality. As we expand the dataset and build more stories, the model's performance will improve without requiring significant changes to the codebase.
+
+#### Trigger NLU Agent 
+* Hello
+* Who are you?
+* What else you can do?
+
+#### Trigger Predictive Model 
+- Get me recent event identified as attack
+- Get me 5 recent event identified as normal traffic
+
+- Tell more more about this event id: f656df24-a94c-4325-a91e-074c871a012c
+- Any other events from source ip: 10.0.0.249
+- Any other events going to destination ip 172.16.0.197
+
+
+#### Trigger Openshift API Agent
+- list all pods from namespace: netsentinel
+- list all network policy from namespace: netsentinel
+- Create network policy in namespace: default to block traffic from source ip 192.168.1.91
+
+
+#### Trigger Promethues Agents
+- what is the network traffic usage looks like
+
+
+#### General answer from LLM model
+- What is Openshift AI?
+- What is TCP IP?
+
+#### Other sample agents
+- Which pods are non-compliant with security policies?
+- Audit logs: get security logs for the past day
+- Scan the cluster for vulnerabilities
+
 
 ## Cleanup
 

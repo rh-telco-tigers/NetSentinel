@@ -126,3 +126,28 @@ cd ..
 ```
 oc apply -f k8s/apps/base/models/predictive-triton/003-inference-service.yaml -n netsentinel
 ```
+3. Check the progress of modelmesh server 
+```
+oc get pods -n netsentinel | grep modelmesh
+```
+
+Output:
+```
+modelmesh-serving-netsentinel-triton-86c48cfd45-rfzpw   0/5     ContainerCreating   0          2m36s
+```
+4. Ensure the model is deployed and the status column displays a green check mark.
+
+### Troubleshooting:
+
+If you encounter the following error message:
+```
+MountVolume.SetUp failed for volume "storage-config": secret "storage-config" not found
+```
+
+try running the following command:
+
+```
+oc apply -k k8s/apps/base/models/
+```
+
+This command is intended to automate the model deployment process, including enabling "Multi-Model Serving" for new namespaces. However, in some cases, the "Multi-Model Serving" configuration is not applied correctly in new namespaces, even within the same environment. The root cause of this inconsistency is currently unclear.
