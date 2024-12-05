@@ -5,3 +5,4 @@ resources:
   - ../../base/minio
   - ../../base/milvus
   - ../../base/rhoai
+  - ../../base/cert-manager

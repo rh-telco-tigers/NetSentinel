@@ -30,6 +30,13 @@ NetSentinel delivers an adaptable security solution for telecom providers, blend
   - Only a single control plane is sufficient.
   - If you are using **Model as a Service** for the LLM model, a CPU-only setup is adequate for deploying this project.
 
+## Clone NetSentinel locally
+
+```
+git clone git@github.com:pandeybk/NetSentenial.git
+cd NetSentenial
+```
+
 ## Deploy NetSentinel on OpenShift
 
 ### 1. Create new openshift projects
@@ -49,6 +56,8 @@ oc apply -k k8s/operators/overlays/common
 ```
 
 Currently, we are using the `amq-streams-2.7.x` version. Older versions of Kafka exhibited different behavior, so it is important to use this version for consistency.
+
+> Note: Ensure all operators are active and running before proceeding. Navigate to Operators > Installed Operators in the OpenShift Console to verify their status.
 
 ### 3. Deploy Instances of Operators
 
@@ -138,7 +147,7 @@ console-kafka-zookeeper-2                        1/1     Running   0          2m
 Your Kafka instance is now ready to use. You can browse kafka console using following url.
 
 ```
-URL=$(oc get routes console-ui-route -o jsonpath='{.spec.host}')
+URL=$(oc get routes console-ui-route -o jsonpath='{.spec.host}' -n netsentinel)
 echo "https://$URL"
 open "https://$URL"
 ```
