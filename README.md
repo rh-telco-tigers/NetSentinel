@@ -86,7 +86,7 @@ oc apply -k k8s/operators/overlays/common
 
 ### 3. Deploy Instances of Operators
 
-#### Deploy common opertors
+#### Deploy common Operators
 
 ```
 oc apply -k k8s/instances/overlays/common
@@ -110,6 +110,11 @@ Ensure the following files have been modified as expected:
 
 ```
 git status
+```
+
+Output:
+
+```
 On branch cleanup
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
@@ -167,6 +172,11 @@ console-kafka-zookeeper-2   1/1     Running                      0          57s
 
 ```
 oc get kafkausers -n netsentinel
+```
+
+Output:
+
+```
 NAME                     CLUSTER         AUTHENTICATION   AUTHORIZATION   READY
 console-kafka-user1      console-kafka   scram-sha-512    simple          True
 netsentinel-kafka-user   console-kafka   scram-sha-512    simple          True
@@ -178,7 +188,11 @@ After a few minutes, verify that all pods are running as expected:
 
 ```
 oc get pods -n netsentinel
+```
 
+Output:
+
+```
 NAME                                             READY   STATUS    RESTARTS   AGE
 console-5c498fb9c4-ffm6v                         2/2     Running   0          2m39s
 console-kafka-entity-operator-74f8599b68-mmrq6   2/2     Running   0          81s
@@ -198,9 +212,9 @@ echo "https://$URL"
 open "https://$URL"
 ```
 
-### 4. Upload model to s3 bucket
+### 4. Deploy Predictive Model
 
-Follow guide [Upload model to buckets](./docs/upload-models-to-bucket.md)
+Follow guide [Deploy Predictive Model](./docs/deploy-predictive-model.md)
 
 ### 5. Create a New API Token for "Models as a Service" on OpenShift AI
 
@@ -214,8 +228,16 @@ Also, ensure that `<YOUR_API_KEY_HERE>` is replaced with the actual API key in t
 
 Now execute following.
 
+- Deploy Serving Runtime template
+
 ```
-oc apply -k  k8s/apps/overlays/rhlab/
+oc apply -f k8s/apps/base/models/predictive-triton/001-template.yaml
+```
+
+- Deploy Model and
+
+```
+oc apply -k k8s/apps/overlays/rhlab/
 ```
 
 Validate:

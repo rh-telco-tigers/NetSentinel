@@ -5,7 +5,6 @@ namespace: netsentinel
 
 resources:
   - ./netsentinel
-  - ./models
 
 secretGenerator:
   - name: ngrok-token
