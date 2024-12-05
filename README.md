@@ -230,46 +230,40 @@ models:
     url: "http://modelmesh-serving.netsentinel:8008/v2/models/netsentinel/infer"
     token: ""
     verify_ssl: true
-``
+```
 
 - Ensure that `<YOUR_API_KEY_HERE>` is replaced with the actual API key in the `models.llm.token` section of the file `k8s/apps/overlays/rhlab/netsentinel/app-config.yaml` as part of Step 5. The URL and model name should remain consistent across all MaaS-deployed services. If they differ, adjust those values accordingly to maintain consistency.
-
 
 Now Deploy NetSentinel application
 
 ```
-
 oc apply -k k8s/apps/overlays/rhlab/
-
 ```
 
 Validate:
 
 ```
-
 oc get pods -n netsentinel
-
 ```
 
 Output:
 
 ```
-
-NAME READY STATUS RESTARTS AGE
-console-68c9df5c59-6qfff 2/2 Running 0 16m
-console-kafka-entity-operator-7fc848f9fc-bnncl 2/2 Running 0 15m
-console-kafka-kafka-0 1/1 Running 0 16m
-console-kafka-kafka-1 1/1 Running 0 16m
-console-kafka-kafka-2 1/1 Running 0 16m
-console-kafka-zookeeper-0 1/1 Running 0 16m
-console-kafka-zookeeper-1 1/1 Running 0 16m
-console-kafka-zookeeper-2 1/1 Running 0 16m
-create-mock-data-98df85fdc-7kxx7 0/1 ContainerCreating 0 31s
-minio-6c95767dc6-642zv 1/1 Running 0 24m
-netsentinel-5d9896664b-twblx 0/1 ContainerCreating 0 31s
-prediction-service-d6b56cd88-2bd2r 0/1 ContainerCreating 0 32s
-process-mock-data-575bd9bd64-5vdf5 0/1 ContainerCreating 0 31s
-
+NAME                                                    READY   STATUS    RESTARTS       AGE
+console-5c7f4fd77b-8r52v                                2/2     Running   0              85m
+console-kafka-entity-operator-74f8599b68-lqqr7          2/2     Running   0              84m
+console-kafka-kafka-0                                   1/1     Running   0              84m
+console-kafka-kafka-1                                   1/1     Running   0              84m
+console-kafka-kafka-2                                   1/1     Running   0              84m
+console-kafka-zookeeper-0                               1/1     Running   0              85m
+console-kafka-zookeeper-1                               1/1     Running   0              85m
+console-kafka-zookeeper-2                               1/1     Running   0              85m
+create-mock-data-849c468b85-qkt8c                       1/1     Running   0              52m
+minio-79f8869bf5-xbrjt                                  1/1     Running   0              87m
+modelmesh-serving-netsentinel-triton-86c48cfd45-7r7vn   5/5     Running   0              18m
+netsentinel-85c56c767b-rmvq6                            1/1     Running   0              52m
+prediction-service-6b5558dc66-6lk6k                     1/1     Running   11 (24m ago)   52m
+process-mock-data-78bb5fbff8-n9rfq                      1/1     Running   0              52m
 ```
 
 ### 6. Configure SLACK for communication with the bot
@@ -281,7 +275,6 @@ Follow doc [Slack Configuration](./docs/configure-slack.md)
 Execute the commands in the specified sequence to ensure proper deletion, as Kafka topics may not be deleted if the order is not followed:
 
 ```
-
 oc delete -k k8s/apps/overlays/rhlab/netsentinel/
 oc delete -k k8s/instances/overlays/common
 oc delete kafkatopics --all -n netsentinel
@@ -293,7 +286,4 @@ oc delete deployment --all -n milvus-operator
 oc delete sts --all -n milvus-operator
 oc delete pvc --all -n milvus-operator
 oc delete -k k8s/namespaces/base
-
-```
-
 ```
