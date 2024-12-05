@@ -2,9 +2,9 @@ apiVersion: serving.kserve.io/v1alpha1
 kind: ServingRuntime
 metadata:
   name: netsentinel-triton
+  namespace: netsentinel
   labels:
     name: netsentinel-triton
-    namespace: netsentinel
     opendatahub.io/dashboard: "true"
   annotations:
     enable-route: "true"

@@ -339,6 +339,7 @@ oc delete -k k8s/apps/overlays/rhlab/netsentinel/
 oc delete -k k8s/instances/overlays/common
 oc delete kafkatopics --all -n netsentinel
 oc delete -k k8s/instances/overlays/rhlab
+oc delete -k k8s/apps/base/models
 
 oc delete pvc --all -n netsentinel
 
