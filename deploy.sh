@@ -163,8 +163,8 @@ apply_and_wait "k8s/apps/base/models/"
 
 echo "Updating application configuration..."
 sed -i '' "s/token: \"<YOUR_API_KEY_HERE>\"/token: \"$MAAS_TOKEN\"/" k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
-sed -i '' "s/token: \"<SLACK_BOT_TOKEN_HERE>\"/token: \"$SLACK_BOT_TOKEN\"/" k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
-sed -i '' "s/token: \"<SLACK_SIGNING_SECRET_HERE>\"/token: \"$SLACK_SIGNING_SECRET\"/" k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
+sed -i '' "s/bot_token: \"<SLACK_BOT_TOKEN_HERE>\"/bot_token: \"$SLACK_BOT_TOKEN\"/" k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
+sed -i '' "s/signing_secret: \"<SLACK_SIGNING_SECRET_HERE>\"/signing_secret: \"$SLACK_SIGNING_SECRET\"/" k8s/apps/overlays/rhlab/netsentinel/app-config.yaml
 
 
 echo "Deploying the application..."
