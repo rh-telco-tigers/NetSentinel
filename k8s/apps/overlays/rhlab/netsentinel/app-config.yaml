@@ -29,8 +29,8 @@ milvus:
 
 slack:
   channel: "#netsentinel"
-  bot_token: "xoxb-<Bot User OAuth Token>"
-  signing_secret: "<Signing Secret>"
+  bot_token: "<SLACK_BOT_TOKEN_HERE>"
+  signing_secret: "<SLACK_SIGNING_SECRET_HERE>"
 
 kafka:
   bootstrap_servers: "console-kafka-kafka-secure-bootstrap:9093"
