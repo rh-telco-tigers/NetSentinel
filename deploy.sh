@@ -9,11 +9,19 @@ set -u  # Treat unset variables as an error
 # SLACK_BOT_TOKEN="xoxb-7834804921362-8126334417046-44zknlYfRlonLRFK1jXULGz0"
 # SLACK_SIGNING_SECRET="ce06e4bf1c817f4611d5b339d3ad7f17"
 
-
-read -p "Enter the OpenShift Domain (e.g., cluster-4b8nj.4b8nj.sandbox81.opentlc.com): " DOMAIN
-read -p "Enter the MAAS Token: " MAAS_TOKEN
+read -p "Enter the LLM MAAS Token: " MAAS_TOKEN
 read -p "Enter the Slack Bot Token: " SLACK_BOT_TOKEN
 read -p "Enter the Slack Signing Secret: " SLACK_SIGNING_SECRET
+
+
+# Dynamically derive the DOMAIN
+SERVER_URL=$(oc whoami --show-server)
+if [[ -z "$SERVER_URL" ]]; then
+  echo "Error: Could not retrieve OpenShift server URL. Ensure you are logged in using 'oc login'."
+  exit 1
+fi
+DOMAIN=$(echo "$SERVER_URL" | sed -E 's~https://api\.~~;s~:.*~~')
+echo "Derived OpenShift DOMAIN: $DOMAIN"
 
 ### Utility Functions ###
 

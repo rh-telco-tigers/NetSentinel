@@ -23,10 +23,6 @@ patches:
       kind: ClusterRoleBinding
       name: cluster-monitoring-view-binding
     path: cluster-monitoring-view-binding.patch.yaml
-  - target:
-      kind: SecurityContextConstraints
-      name: netsentinel-privileged-scc
-    path: custom-scc.patch.yaml
 
 configMapGenerator:
   - name: app-config
