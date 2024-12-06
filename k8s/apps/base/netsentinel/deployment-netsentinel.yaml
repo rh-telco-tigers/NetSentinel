@@ -23,6 +23,9 @@ spec:
           command: ["sh", "-c", "python app/run.py"]
           ports:
             - containerPort: 5000
+          securityContext:
+            allowPrivilegeEscalation: true
+            runAsUser: 0
           env:
             - name: KAFKA_USERNAME
               value: "netsentinel-kafka-user"
