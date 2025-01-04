@@ -6,6 +6,9 @@ NetSentinel's future vision includes integrating human agents into workflows, al
 
 ![NetSentinel Architecture](./docs/images/netsentinel-architecture.jpg)
 
+### Demo Video
+To see NetSentinel in action, check out the [demo video on YouTube](https://youtu.be/jxnB854MqH0?si=vYtpjuv-ogjInwet). The video showcases the platform's capabilities, including real-time query handling through Slack, AI-powered attack detection, and integration with OpenShift components. It provides a step-by-step walkthrough of how NetSentinel's multi-agent architecture processes queries and delivers insights, offering a comprehensive view of its potential applications.
+
 ### Key Components and Features:
 
 - **Generative and Predictive AI:** The system leverages `granite-8b-code-instruct-128k` for generative capabilities, a predictive model trained on the `UNSW-NB15` dataset for anomaly detection, and an NLU component to interpret human intent as the entry point for all interactions.
