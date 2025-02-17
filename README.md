@@ -351,3 +351,12 @@ oc delete sts --all -n milvus-operator
 oc delete pvc --all -n milvus-operator
 oc delete -k k8s/namespaces/base
 ```
+
+## Disclaimer
+This repository contains code that was partially generated with the assistance of ChatGPT, an AI language model developed by OpenAI. While AI was used to assist in writing and refining portions of the code, all code has been reviewed, tested, and modified as necessary to align with project requirements.
+
+This project is intended for demonstration and educational purposes. It should not be considered production-ready without thorough validation, security reviews, and additional refinements.
+
+Use this code at your own discretion, and feel free to contribute, improve, or modify it as needed.
+
+For any issues or inquiries, please open an issue in the repository.
