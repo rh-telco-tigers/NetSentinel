@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngrok
+spec:
+  template:
+    spec:
+      containers:
+        - name: ngrok
+          args:
+            [
+              "http",
+              "--log=stdout",
+              "--domain=turkey-tops-prawn.ngrok-free.app",
+              "telcolab-netsentinel-service:80",
+            ]

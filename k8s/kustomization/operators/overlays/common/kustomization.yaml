@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/openshift-servicemesh/operator/overlays/stable
+  - ../../base/serverless-operator/operator/overlays/stable
+  - ../../base/openshift-ai/operator/overlays/stable
+  - ../../base/amq-streams-operator/overlays/amq-streams-2.7.x
+  # - ../../base/openshift-cert-manager-operator/operator/overlays/stable-v1
+  - ../../base/milvus/

@@ -1,0 +1,62 @@
+apiVersion: datasciencepipelinesapplications.opendatahub.io/v1alpha1
+kind: DataSciencePipelinesApplication
+metadata:
+  name: dspa
+spec:
+  apiServer:
+    applyTektonCustomResource: true
+    archiveLogs: false
+    artifactSignedURLExpirySeconds: 60
+    autoUpdatePipelineDefaultVersion: true
+    caBundleFileMountPath: ""
+    caBundleFileName: ""
+    collectMetrics: true
+    dbConfigConMaxLifetimeSec: 120
+    deploy: true
+    enableOauth: true
+    enableSamplePipeline: false
+    injectDefaultScript: true
+    stripEOF: true
+    terminateStatus: Cancelled
+    trackArtifacts: true
+    cABundle:
+      configMapName: custom-ca-bundle
+      configMapKey: ca-bundle.crt
+  database:
+    disableHealthCheck: false
+    mariaDB:
+      deploy: true
+      pipelineDBName: mlpipeline
+      pvcSize: 10Gi
+      username: mlpipeline
+  dspVersion: v2
+  objectStorage:
+    disableHealthCheck: false
+    enableExternalRoute: false
+    # minio:
+    #   image: quay.io/minio/minio:RELEASE.2023-06-19T19-52-50Z
+    #   deploy: true
+    #   pvcSize: 200Gi
+    #   bucket: rhoaipipelines
+    #   s3CredentialsSecret: 
+    #     accessKey: minio_root_user
+    #     secretKey: minio_root_password
+    #     secretName: minio-secret
+    externalStorage:
+      basePath: ""
+      bucket: pipelines
+      host: minio-service.netsentinel
+      port: "9000"
+      region: us-east-1
+      s3CredentialsSecret: 
+        accessKey: AWS_ACCESS_KEY_ID
+        secretKey: AWS_SECRET_ACCESS_KEY
+        secretName: minio-secret
+      scheme: http
+  persistenceAgent:
+    deploy: true
+    numWorkers: 2
+  podToPodTLS: true
+  scheduledWorkflow:
+    cronScheduleTimezone: UTC
+    deploy: true

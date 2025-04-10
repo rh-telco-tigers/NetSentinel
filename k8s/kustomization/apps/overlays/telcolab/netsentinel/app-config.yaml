@@ -1,0 +1,123 @@
+# config.yaml
+
+api_config:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true
+
+logging_config:
+  level: "DEBUG"
+
+predictive_model_config:
+  input_dir: "data/processed"
+  model_dir: "models/predictive_model"
+  model_filename: "model.joblib"
+  onnx_model_filename: "model.onnx"
+  n_estimators: 200
+  random_state: 42
+  n_jobs: -1
+  evaluation:
+    enable_classification_report: true
+    enable_confusion_matrix: true
+    enable_roc_auc: true
+
+# RAG Configuration
+rag_config:
+  embedding_model_name: "all-MiniLM-L6-v2"
+  embedding_model_path: "models/embedding_models/all-MiniLM-L6-v2"
+  # llm_model_name: "models/Mistral-7B-v0.1" # Or "google/flan-t5-base"
+  llm_model_name: "models/flan-t5-large"
+  # llm_model_type: "causal" # causal for Mistral or seq2seq for google-flan-t5
+  llm_model_type: "seq2seq"
+  faiss_index_path: "vectordata/faiss_index/index.faiss"
+  metadata_store_path: "vectordata/faiss_index/metadata.json"
+  max_context_length: 512
+  max_answer_length: 150
+  num_contexts: 3
+  nlu_model_path: "models/rasa/nlu-model.gz"
+
+llm_model_config:
+  model_path: "models/llm_model"
+  data_file: "data/processed/qa_pairs.jsonl"
+  tokenizer_name: "gpt2"
+  model_name: "gpt2"
+  num_train_epochs: 1
+  learning_rate: 0.004
+  per_device_train_batch_size: 4
+  logging_steps: 100
+  save_steps: 500
+  save_total_limit: 2
+  gradient_accumulation_steps: 1
+  max_length: 512
+  early_stopping: true
+  early_stopping_patience: 1
+  eval_strategy: "steps"
+  eval_steps: 500
+  save_strategy: "steps"
+  load_best_model_at_end: true
+  use_cpu: false
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  subset_size: 100
+  preprocessor_path: "data/processed/preprocessor.pkl"
+  resume_from_checkpoint: null
+
+slack_config:
+  slack_channel: "#netsentinel"
+  slack_bot_token: "xoxb-7834804921362-7836047821639-8ybH7ZoB9nqWglbzHsmBs2hw"
+  slack_signing_secret: "fde84d1823293b0e40fcb806cc353bec"
+
+kafka_config:
+  bootstrap: "console-kafka-kafka-secure-bootstrap:9093"
+  raw_topic: "raw-traffic-data"
+  processed_topic: "processed-traffic-data"
+
+ocp_config:
+  kubeconfig_path: "/root/.kube/config"
+  auth_method: "kubeconfig"
+  prometheus_url: "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091"
+
+# embedding_model:
+#   name: "all-MiniLM-L6-v2"
+
+scanning_tool_config:
+  publish_interval_seconds: 10
+  subnets:
+    src_subnets:
+      - "192.168.1.0/24"
+      - "10.0.0.0/24"
+    dst_subnets:
+      - "172.16.0.0/24"
+      - "10.1.1.0/24"
+  protocols:
+    TCP:
+      ports: [80, 443, 22, 21]
+    UDP:
+      ports: [53, 67, 68]
+    ICMP: []
+    HTTP:
+      methods: ["GET", "POST", "PUT", "DELETE"]
+      status_codes: [200, 201, 400, 401, 403, 404, 500]
+      urls:
+        - "/home"
+        - "/login"
+        - "/dashboard"
+        - "/api/data"
+        - "/logout"
+        - "/register"
+        - "/profile"
+        - "/settings"
+        - "/search"
+        - "/contact"
+        - "/products"
+        - "/cart"
+        - "/checkout"
+        - "/help"
+        - "/about"
+        - "/terms"
+        - "/privacy"
+        - "/blog"
+        - "/news"
+        - "/support"
+    DNS:
+      query_types: ["A", "AAAA", "MX", "CNAME", "TXT"]
