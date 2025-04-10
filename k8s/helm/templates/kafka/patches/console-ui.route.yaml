@@ -1,7 +1,0 @@
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: console-ui-route
-spec:
-  host: console-ui-route-netsentinel.apps.cloud.xtoph152.dfw.ocp.run
