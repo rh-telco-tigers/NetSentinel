@@ -21,9 +21,6 @@ spec:
         - name: create-mock-data
           image: quay.io/bpandey/netsentinel:0.0.1-services
           command: ["sh", "-c", "python create_mock_data.py"]
-          securityContext:
-            allowPrivilegeEscalation: true
-            runAsUser: 0
           env:
             - name: KAFKA_USERNAME
               value: "netsentinel-kafka-user"
