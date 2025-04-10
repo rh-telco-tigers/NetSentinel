@@ -1,6 +1,0 @@
-kind: SecurityContextConstraints
-metadata:
-  name: netsentinel-privileged-scc
-users:
-- system:admin
-- system:serviceaccount:netsentinel:telcolab-netsentinel-sa

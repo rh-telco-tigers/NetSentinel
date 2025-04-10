@@ -1,3 +1,0 @@
-resources:
-  - netsentinel.yaml
-  - milvus-operator.yaml

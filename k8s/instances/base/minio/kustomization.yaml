@@ -1,4 +1,0 @@
-namespace: netsentinel
-
-resources:
-  - ../../../operators/base/minio

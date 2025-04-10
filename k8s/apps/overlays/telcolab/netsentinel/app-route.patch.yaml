@@ -1,9 +1,0 @@
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: netsentinel-route
-spec:
-  to:
-    kind: Service
-    name: telcolab-netsentinel-service
-    weight: 100
