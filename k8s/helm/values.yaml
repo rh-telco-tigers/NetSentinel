@@ -1,0 +1,2 @@
+netsentinel:
+  replicas: 1
