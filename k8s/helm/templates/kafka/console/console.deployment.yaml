@@ -33,7 +33,7 @@ spec:
           value: netsentinel/console-kafka
         - name: CONSOLE_KAFKA_EXAMPLE_BOOTSTRAP_SERVERS
           # Replace with your Kafka's boostrap address
-          value: bootstrap-console-kafka.apps.cloud.xtoph152.dfw.ocp.run:443
+          value: bootstrap-console-kafka.{{ .Values.kafka.baseDomain }}:443
         - name: CONSOLE_KAFKA_EXAMPLE_SASL_JAAS_CONFIG
           valueFrom:
             secretKeyRef:
@@ -57,7 +57,7 @@ spec:
               name: console-ui-secrets
               key: SESSION_SECRET
         - name: NEXTAUTH_URL
-          value: 'https://console-ui-route-netsentinel.apps.cloud.xtoph152.dfw.ocp.run'
+          value: 'https://console-ui-route-netsentinel.{{ .Values.kafka.baseDomain }}'
         - name: BACKEND_URL
           value: 'http://127.0.0.1:8080'
         - name: CONSOLE_METRICS_PROMETHEUS_URL

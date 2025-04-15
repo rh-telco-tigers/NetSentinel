@@ -32,16 +32,16 @@ spec:
           type: scram-sha-512
         configuration:
           bootstrap:
-            host: bootstrap-console-kafka.apps.cloud.xtoph152.dfw.ocp.run
+            host: bootstrap-console-kafka.{{ .Values.kafka.baseDomain }}
             annotations:
               eyefloaters.github.com/console-listener: 'true'
           brokers:
           - broker: 0
-            host: broker-0-console-kafka.apps.cloud.xtoph152.dfw.ocp.run
+            host: broker-0-console-kafka.{{ .Values.kafka.baseDomain }}
           - broker: 1
-            host: broker-1-console-kafka.apps.cloud.xtoph152.dfw.ocp.run
+            host: broker-1-console-kafka.{{ .Values.kafka.baseDomain }}
           - broker: 2
-            host: broker-2-console-kafka.apps.cloud.xtoph152.dfw.ocp.run
+            host: broker-2-console-kafka.{{ .Values.kafka.baseDomain }}
     replicas: 3
     storage:
       type: jbod

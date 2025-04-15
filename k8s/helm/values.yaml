@@ -1,2 +1,5 @@
 netsentinel:
   replicas: 1
+
+kafka:
+  baseDomain: "apps.cloud.example.dfw.ocp.run"
