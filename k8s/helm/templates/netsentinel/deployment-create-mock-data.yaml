@@ -46,7 +46,7 @@ spec:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "console-kafka-kafka-secure-bootstrap:9093"
           volumeMounts:
-            - name: config-volume
+            - name: config-final
               mountPath: /app/config.yaml
               subPath: config.yaml
             - name: console-kafka-cluster-ca-cert
