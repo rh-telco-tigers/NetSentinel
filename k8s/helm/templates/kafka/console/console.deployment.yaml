@@ -33,7 +33,7 @@ spec:
           value: netsentinel/console-kafka
         - name: CONSOLE_KAFKA_EXAMPLE_BOOTSTRAP_SERVERS
           # Replace with your Kafka's boostrap address
-          value: bootstrap-console-kafka.{{ .Values.kafka.baseDomain }}:443
+          value: console-kafka-kafka-secure-bootstrap:9093
         - name: CONSOLE_KAFKA_EXAMPLE_SASL_JAAS_CONFIG
           valueFrom:
             secretKeyRef:

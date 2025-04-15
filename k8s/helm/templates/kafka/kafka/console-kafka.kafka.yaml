@@ -32,16 +32,16 @@ spec:
           type: scram-sha-512
         configuration:
           bootstrap:
-            host: bootstrap-console-kafka.{{ .Values.kafka.baseDomain }}
+            host: console-kafka-kafka-secure-bootstrap:9093
             annotations:
               eyefloaters.github.com/console-listener: 'true'
           brokers:
           - broker: 0
-            host: broker-0-console-kafka.{{ .Values.kafka.baseDomain }}
+            host: console-kafka-kafka-secure-0:9093
           - broker: 1
-            host: broker-1-console-kafka.{{ .Values.kafka.baseDomain }}
+            host: console-kafka-kafka-secure-1:9093
           - broker: 2
-            host: broker-2-console-kafka.{{ .Values.kafka.baseDomain }}
+            host: console-kafka-kafka-secure-2:9093
     replicas: 3
     storage:
       type: jbod
