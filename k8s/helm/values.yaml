@@ -4,7 +4,7 @@ netsentinel:
 kafka:
   baseDomain: "apps.cluster-czw8n.czw8n.sandbox2851.opentlc.com"
 
-createAppSecret: true
+createAppSecret: false
 
 secrets:
   slack:
