@@ -17,6 +17,20 @@ spec:
         app.kubernetes.io/name: prediction-service
     spec:
       serviceAccountName: netsentinel-sa
+      initContainers:
+        - name: merge-config
+          image: docker.io/mikefarah/yq:4
+          command: ["sh", "-c"]
+          args:
+            - |
+              yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' /mnt/base/base.yaml /mnt/secret/secret.yaml > /mnt/final/config.yaml
+          volumeMounts:
+            - name: config-base
+              mountPath: /mnt/base
+            - name: config-secret
+              mountPath: /mnt/secret
+            - name: config-final
+              mountPath: /mnt/final
       containers:
         - name: prediction-service
           image: quay.io/bpandey/netsentinel:0.0.1-services
@@ -32,16 +46,21 @@ spec:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "console-kafka-kafka-secure-bootstrap:9093"
           volumeMounts:
-            - name: config-volume
+            - name: config-final
               mountPath: /app/config.yaml
               subPath: config.yaml
             - name: console-kafka-cluster-ca-cert
               mountPath: /usr/local/share/ca-certificates/
               readOnly: true
       volumes:
-        - name: config-volume
+        - name: config-base
           configMap:
-            name: app-config
+            name: app-config-base
+        - name: config-secret
+          secret:
+            secretName: app-config-secret
+        - name: config-final
+          emptyDir: {}
         - name: console-kafka-cluster-ca-cert
           secret:
             secretName: console-kafka-cluster-ca-cert
