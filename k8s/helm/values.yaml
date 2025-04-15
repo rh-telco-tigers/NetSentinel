@@ -1,9 +1,6 @@
 netsentinel:
   replicas: 1
 
-kafka:
-  baseDomain: "apps.cluster-czw8n.czw8n.sandbox2851.opentlc.com"
-
 createAppSecret: false
 
 secrets:
