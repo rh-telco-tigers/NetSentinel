@@ -3,3 +3,12 @@ netsentinel:
 
 kafka:
   baseDomain: "apps.cluster-czw8n.czw8n.sandbox2851.opentlc.com"
+
+createAppSecret: true
+
+secrets:
+  slack:
+    bot_token: "your-slack-token"
+    signing_secret: "your-signing-secret"
+  llm:
+    token: "your-llm-token"
