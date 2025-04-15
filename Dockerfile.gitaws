@@ -1,0 +1,2 @@
+FROM python:3.11-alpine
+RUN apk add --no-cache py3-pip git curl && pip install awscli

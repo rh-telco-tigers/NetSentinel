@@ -1,0 +1,101 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minio-access-sa
+  namespace: netsentinel
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: minio-job-route-reader
+  namespace: netsentinel
+rules:
+  - apiGroups: ["route.openshift.io"]
+    resources: ["routes"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: minio-job-route-reader-binding
+  namespace: netsentinel
+subjects:
+  - kind: ServiceAccount
+    name: minio-access-sa
+    namespace: netsentinel
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: minio-job-route-reader
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: s3-model-sync
+  namespace: netsentinel
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      serviceAccountName: minio-access-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: setup-model
+          image: quay.io/bpandey/netsentinel-init:latest
+          command: ["/bin/sh", "-c"]
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: AWS_SECRET_ACCESS_KEY
+          args:
+            - |
+              S3_ENDPOINT="minio-service:9000"
+
+              echo "⏳ Waiting for MinIO service at $S3_ENDPOINT..."
+              for i in $(seq 1 30); do
+                wget --quiet --spider --timeout=2 http://$S3_ENDPOINT/minio/health/ready && echo "✅ MinIO is ready!" && break
+                echo "⏳ Not ready yet... ($i/30)"
+                sleep 5
+              done
+
+              wget --quiet --spider --timeout=2 http://$S3_ENDPOINT/minio/health/ready || {
+                echo "❌ MinIO is not reachable after 30 retries. Exiting.";
+                exit 1;
+              }
+
+              echo "⚙️ Installing awscli and git..."
+              apk add --no-cache py3-pip git curl && pip install awscli
+
+              echo "⚙️ Configuring AWS CLI..."
+              aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+              aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+              aws configure set default.region us-east-1
+              aws configure set default.output text
+
+              echo "🔐 Creating bucket..."
+              alias s3="aws s3 --endpoint-url http://$S3_ENDPOINT"
+              s3 mb s3://netsentinel || echo "Bucket may already exist"
+
+              echo "⬇️ Downloading model..."
+              git clone https://huggingface.co/bkpandey/netsentinel /tmp/predictive-model || exit 1
+
+              echo "⬆️ Uploading model to MinIO..."
+              s3 cp /tmp/predictive-model/v1/config.pbtxt s3://netsentinel/predictive-model/config.pbtxt
+              s3 cp /tmp/predictive-model/v1/1/model.onnx s3://netsentinel/predictive-model/1/model.onnx
+
+              echo "✅ Upload complete. Contents:"
+              s3 ls s3://netsentinel --recursive
+
