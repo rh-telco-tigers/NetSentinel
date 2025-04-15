@@ -37,9 +37,6 @@ kind: Job
 metadata:
   name: s3-model-sync
   namespace: netsentinel
-  annotations:
-    argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     spec:
@@ -91,6 +88,7 @@ spec:
 
               echo "⬇️ Downloading model..."
               git clone https://huggingface.co/bkpandey/netsentinel /tmp/predictive-model || exit 1
+              cd /tmp/predictive-model && git lfs pull
 
               echo "⬆️ Uploading model to MinIO..."
               s3 cp /tmp/predictive-model/v1/config.pbtxt s3://netsentinel/predictive-model/config.pbtxt

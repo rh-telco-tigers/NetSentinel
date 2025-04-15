@@ -1,2 +1,24 @@
+# Start from a lightweight base with Python
 FROM python:3.11-alpine
-RUN apk add --no-cache py3-pip git curl && pip install awscli
+
+# Set environment variables to avoid prompts and set default path
+ENV PATH="/root/.local/bin:$PATH"
+
+# Install system dependencies
+RUN apk add --no-cache \
+    bash \
+    git \
+    git-lfs \
+    curl \
+    wget \
+    py3-pip \
+    && pip install --no-cache-dir \
+      awscli \
+      huggingface_hub \
+    && git lfs install
+
+# Optional: create a working directory
+WORKDIR /app
+
+# Optional: add an entrypoint script or keep it flexible
+CMD ["/bin/sh"]
