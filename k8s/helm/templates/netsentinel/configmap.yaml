@@ -26,7 +26,7 @@ data:
         model_path: "models/rasa/nlu-model.gz"
 
     milvus:
-      host: "netsentinel-milvus.svc.cluster.local"
+      host: "netsentinel-milvus.milvus-operator.svc.cluster.local"
       port: "19530"
       collection_name: "netsentinel"
       secure: false
