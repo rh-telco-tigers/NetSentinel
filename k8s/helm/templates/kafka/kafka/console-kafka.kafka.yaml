@@ -32,16 +32,16 @@ spec:
           type: scram-sha-512
         configuration:
           bootstrap:
-            host: console-kafka-kafka-secure-bootstrap:9093
+            host: console-kafka-kafka-secure-bootstrap
             annotations:
               eyefloaters.github.com/console-listener: 'true'
           brokers:
           - broker: 0
-            host: console-kafka-kafka-secure-0:9093
+            host: console-kafka-kafka-secure-0
           - broker: 1
-            host: console-kafka-kafka-secure-1:9093
+            host: console-kafka-kafka-secure-1
           - broker: 2
-            host: console-kafka-kafka-secure-2:9093
+            host: console-kafka-kafka-secure-2
     replicas: 3
     storage:
       type: jbod
