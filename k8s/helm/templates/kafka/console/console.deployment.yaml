@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: console
+  template:
+    metadata:
+      labels:
+        app: console
+    spec:
+      serviceAccountName: console-server
+      volumes:
+      - emptyDir: {}
+        name: cache
+      containers:
+      ### API
+      - name: console-api
+        image: registry.redhat.io/amq-streams/console-api-rhel9:2.7
+        ports:
+        - containerPort: 8080
+        # Adjust KAFKA and CONSOLE_KAFKA variables to match your Kafka cluster
+        env:
+        - name: KAFKA_SECURITY_PROTOCOL
+          value: SASL_SSL
+        - name: KAFKA_SASL_MECHANISM
+          value: SCRAM-SHA-512
+        - name: CONSOLE_KAFKA_EXAMPLE
+          value: netsentinel/console-kafka
+        - name: CONSOLE_KAFKA_EXAMPLE_BOOTSTRAP_SERVERS
+          # Replace with your Kafka's boostrap address
+          value: console-kafka-kafka-secure-bootstrap:9093
+        - name: CONSOLE_KAFKA_EXAMPLE_SASL_JAAS_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: console-kafka-user1
+              key: sasl.jaas.config
+      ### User Interface
+      - name: console-ui
+        image: registry.redhat.io/amq-streams/console-ui-rhel9:2.7
+        volumeMounts:
+        - mountPath: /app/.next/cache
+          name: cache
+        env:
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: console-ui-secrets
+              key: NEXTAUTH_SECRET
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: console-ui-secrets
+              key: SESSION_SECRET
+        - name: NEXTAUTH_URL
+          valueFrom:
+            configMapKeyRef:
+              name: netsentinel-kafka-domain
+              key: kafka.baseDomain
+        - name: BACKEND_URL
+          value: 'http://127.0.0.1:8080'
+        - name: CONSOLE_METRICS_PROMETHEUS_URL
+          value: 'http://prometheus-operated.netsentinel.svc.cluster.local:9090'
+        ports:
+        - containerPort: 3000

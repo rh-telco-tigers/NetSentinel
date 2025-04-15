@@ -1,0 +1,11 @@
+netsentinel:
+  replicas: 1
+
+createAppSecret: false
+
+secrets:
+  slack:
+    bot_token: "your-slack-token"
+    signing_secret: "your-signing-secret"
+  llm:
+    token: "your-llm-token"

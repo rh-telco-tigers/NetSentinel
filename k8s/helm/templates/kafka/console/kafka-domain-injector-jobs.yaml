@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-domain-injector
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kafka-domain-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "create", "update", "patch", "delete"]
+- apiGroups: ["config.openshift.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kafka-domain-crb
+subjects:
+- kind: ServiceAccount
+  name: kafka-domain-injector
+  namespace: netsentinel
+roleRef:
+  kind: ClusterRole
+  name: kafka-domain-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: inject-kafka-domain
+spec:
+  template:
+    spec:
+      serviceAccountName: kafka-domain-injector
+      containers:
+      - name: patcher
+        image: quay.io/openshift/origin-cli:4.14
+        command: ["/bin/sh", "-c"]
+        args:
+            - |
+                echo "🔄 Waiting for cluster base domain from OpenShift ingress..."
+                until BASE_DOMAIN=$(oc get ingresses.config.openshift.io cluster -o jsonpath="{.spec.domain}"); do
+                echo "⏳ Ingress domain not available yet. Retrying in 5s..."
+                sleep 10
+                done
+
+                # Check again just to be safe
+                if [ -z "$BASE_DOMAIN" ]; then
+                echo "❌ BASE_DOMAIN is still empty. Exiting."
+                exit 1
+                fi
+
+                echo "✅ Found base domain: $BASE_DOMAIN"
+
+                kubectl create configmap netsentinel-kafka-domain \
+                --from-literal=kafka.baseDomain=https://console-ui-route-netsentinel.$BASE_DOMAIN \
+                --dry-run=client -o yaml | kubectl apply -f -
+
+                echo "✅ ConfigMap created or updated successfully."
+      restartPolicy: OnFailure
+
