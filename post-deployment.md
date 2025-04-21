@@ -17,10 +17,10 @@ After setting up the cluster, you need to manually create the following secret:
 	  secret.yaml: |
 	    models:
 	      llm:
-	        token: "{{ .Values.secrets.llm.token }}"
+	        token: "replace-with-your-llm-token"
 	    slack:
-	      bot_token: "{{ .Values.secrets.slack.bot_token }}"
-	      signing_secret: "{{ .Values.secrets.slack.signing_secret }}"
+	      bot_token: "replace-with-your-bot-token"
+	      signing_secret: "replace-with-your-signing-secret"
 	{{- end }}
 
 
