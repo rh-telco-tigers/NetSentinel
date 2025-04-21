@@ -117,7 +117,7 @@ IV. Use the following manifest, replace the request_url using netsentinel routes
 	  socket_mode_enabled: false
 	  token_rotation_enabled: false
 
-#### **Note**: Replace the request_url field by the netsentinel route. Get the route using the below command
+#### **Note**: Replace the **request_url** field by the netsentinel route. Get the route using the below command
 
 	oc get routes -n netsentinel netsentinel-route
 
