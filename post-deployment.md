@@ -1,8 +1,8 @@
 ## Post Deployment Steps for Netsentinel
-After setting up the cluster, you need to manually create the following secret:
+After setting up the cluster, you need to manually create the following secret in the **netsentinel** namespace:
 
 
-	 {{- if .Values.createAppSecret }}
+	
 	apiVersion: v1
 	kind: Secret
 	metadata:
@@ -21,7 +21,7 @@ After setting up the cluster, you need to manually create the following secret:
 	    slack:
 	      bot_token: "replace-with-your-bot-token"
 	      signing_secret: "replace-with-your-signing-secret"
-	{{- end }}
+	
 
 
 
