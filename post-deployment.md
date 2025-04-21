@@ -81,7 +81,7 @@ III. Choose your workspace where you want to create this app
     ![Slack Workspace](./docs/images/slack/003-slack.png)
                                    
  
-IV. Use the following manifest, replace the request_url using netsentinel routes. This requires verified SSL certificates (self-signed certs won’t work).
+IV. Use the following manifest, replace the **request_url** using netsentinel routes. This requires verified SSL certificates (self-signed certs won’t work).
 
 	display_information:
 	  name: NetSentinelRHDev
