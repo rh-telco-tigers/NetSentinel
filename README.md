@@ -59,6 +59,6 @@ NetSentinel offers a glimpse into the future of AI-enhanced operational workflow
 ## Running the Application
 To test this application, follow the appropriate instructions based on your environment:
 
-- On RHDP: Refer to the instructions [steps-to-run-on-rhdp.md](./steps-to-run-on-rhdp.md) .
+- On RHDP: Refer to the instructions [steps-to-run-on-rhdp](./steps-to-run-on-rhdp.md) .
 
-- On On-Premises OpenShift Cluster: Follow the steps mentioned in [steps-to-run-on-prem.md](./steps-to-run-on-prem.md) file.
+- On On-Premises OpenShift Cluster: Follow the steps mentioned in [steps-to-run-on-prem](./steps-to-run-on-prem.md) file.
