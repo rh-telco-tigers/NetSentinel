@@ -35,3 +35,5 @@
       
           helm template netsentinel bootstrap/ --set=gitops.operator.install=true,gitops.argocd.install=true,apps.netsentinel.enabled=true | oc apply -f -
 
+## 4. Post Deployment Steps
+After the application is onboarded on to the cluster please follow the steps mentioned in [post-deployment](./post-deployment.md)
