@@ -25,13 +25,13 @@
     
     - ### Install GitOps Operator (e.g., Argo CD and related CRDs)
       
-      helm template netsentinel bootstrap/ --set=gitops.operator.install=true | oc apply -f -
+        helm template netsentinel bootstrap/ --set=gitops.operator.install=true | oc apply -f -
     
     - ### Step 2: Override argocd instance
       
-      helm template netsentinel bootstrap/ --set=gitops.operator.install=true,gitops.argocd.install=true | oc apply -f -
+        helm template netsentinel bootstrap/ --set=gitops.operator.install=true,gitops.argocd.install=true | oc apply -f -
 
     - ### Step 3: Deploy the main application components
       
-      helm template netsentinel bootstrap/ --set=gitops.operator.install=true,gitops.argocd.install=true,apps.netsentinel.enabled=true | oc apply -f -
+        helm template netsentinel bootstrap/ --set=gitops.operator.install=true,gitops.argocd.install=true,apps.netsentinel.enabled=true | oc apply -f -
 
