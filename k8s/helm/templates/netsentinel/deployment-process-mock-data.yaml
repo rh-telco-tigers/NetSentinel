@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: process-mock-data
+  labels:
+    app.kubernetes.io/name: process-mock-data
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: OpenShift
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: process-mock-data
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: process-mock-data
+    spec:
+      serviceAccountName: netsentinel-sa
+      initContainers:
+        - name: merge-config
+          image: docker.io/mikefarah/yq:4
+          command: ["sh", "-c"]
+          args:
+            - |
+              yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' /mnt/base/base.yaml /mnt/secret/secret.yaml > /mnt/final/config.yaml
+          volumeMounts:
+            - name: config-base
+              mountPath: /mnt/base
+            - name: config-secret
+              mountPath: /mnt/secret
+            - name: config-final
+              mountPath: /mnt/final
+      containers:
+        - name: process-mock-data
+          image: quay.io/bpandey/netsentinel:0.0.1-services
+          command: ["sh", "-c", "python process_mock_data.py"]
+          env:
+            - name: KAFKA_USERNAME
+              value: "netsentinel-kafka-user"
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: netsentinel-kafka-user
+                  key: password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "console-kafka-kafka-secure-bootstrap:9093"
+          volumeMounts:
+            - name: config-final
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+            - name: console-kafka-cluster-ca-cert
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+      volumes:
+        - name: config-base
+          configMap:
+            name: app-config-base
+        - name: config-secret
+          secret:
+            secretName: app-config-secret
+        - name: config-final
+          emptyDir: {}
+        - name: console-kafka-cluster-ca-cert
+          secret:
+            secretName: console-kafka-cluster-ca-cert
