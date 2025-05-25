@@ -26,8 +26,8 @@ roleRef:
   name: cluster-monitoring-view
 subjects:
   - kind: ServiceAccount
-    name: netsentenial-sa
-    namespace: netsentenial
+    name: netsentinel-sa
+    namespace: {{ .Release.NameSpace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -35,8 +35,8 @@ metadata:
   name: ocpclient-clusterrolebinding
 subjects:
   - kind: ServiceAccount
-    name: netsentenial-sa
-    namespace: netsentenial
+    name: netsentinel-sa
+    namespace: {{ .Release.NameSpace }}
 roleRef:
   kind: ClusterRole
   name: ocpclient-clusterrole
