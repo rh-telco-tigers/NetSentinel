@@ -38,10 +38,13 @@ spec:
           brokers:
           - broker: 0
             host: console-kafka-kafka-secure-0
+            advertisedPort: 9093
           - broker: 1
             host: console-kafka-kafka-secure-1
+            advertisedPort: 9093
           - broker: 2
             host: console-kafka-kafka-secure-2
+            advertisedPort: 9093
     replicas: 3
     storage:
       type: jbod
