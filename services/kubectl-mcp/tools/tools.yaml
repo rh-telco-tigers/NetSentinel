@@ -1,5 +1,19 @@
-- name: kubectl
+- name: oc
   description: Interact with Kubernetes clusters
-  command: kubectl
+  command: oc
   binary_check: true
   modifies_resource: true
+- name: helm
+  description: "Helm is the Kubernetes package manager and deployment tool. Use it to define, install, upgrade, and roll back applications packaged as Helm charts in a Kubernetes cluster."
+  command: "helm"
+  command_desc: |
+    Helm command-line interface, with the following core subcommands and usage patterns:    
+    - helm install <release-name> <chart> [flags]  
+      Install a chart into the cluster.      
+    - helm upgrade <release-name> <chart> [flags]  
+      Upgrade an existing release to a new chart version or configuration.      
+    - helm list [flags]  
+      List all releases in one or all namespaces.      
+    - helm uninstall <release-name> [flags]  
+      Uninstall a release and clean up associated resources.  
+    Use `helm --help` or `helm <subcommand> --help` to see full syntax, available flags, and examples for each command.

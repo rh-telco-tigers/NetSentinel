@@ -1,15 +1,20 @@
 
 podman build -t kubectl-ai-api . 
 
-export OPENAI_API_BASE=https://deepseek-r1-distill-qwen-14b-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com/v1
-export OPENAI_API_KEY=""
-export LLM_PROVIDER=openai
-export LLM_MODEL=deepseek-r1-distill-qwen-14b
+# export OPENAI_API_BASE=https://deepseek-r1-distill-qwen-14b-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com/v1
+# export OPENAI_API_KEY=""
+# export LLM_PROVIDER=openai
+# export LLM_MODEL=deepseek-r1-distill-qwen-14b
 
-export OPENAI_API_BASE=https://mistral-7b-instruct-v0-3-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1
+# export OPENAI_API_BASE=https://mistral-7b-instruct-v0-3-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1
+# export OPENAI_API_KEY=""
+# export LLM_PROVIDER=openai
+# export LLM_MODEL=mistral-7b-instruct
+
+export OPENAI_API_BASE=https://granite-3-8b-instruct-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1
 export OPENAI_API_KEY=""
 export LLM_PROVIDER=openai
-export LLM_MODEL=mistral-7b-instruct
+export LLM_MODEL=granite-3-8b-instruct
 
 podman run --rm -it \
   -v ~/.kube/config:/root/.kube/config \
@@ -48,3 +53,15 @@ curl -s -X POST http://localhost:8088/mcp/k8s \
   -d '{
     "query": "List all pods in namespace netsentinel. Respond ONLY with a JSON code block with the following format: ```json {\"action\": {\"name\": \"kubectl\", \"command\": \"kubectl get pods -n netsentinel\"}}```"
   }' | jq .
+
+
+
+kubectl-ai \
+  --quiet \
+  --enable-tool-use-shim \
+  --llm-provider "$LLM_PROVIDER" \
+  --model "$LLM_MODEL" \
+  --trace-path /tmp/kubectl-ai-trace.log \
+  --skip-permissions \
+  -v=10 \
+  "create a sample pod using nginx image in openshift cluster in netsentinel namespace"

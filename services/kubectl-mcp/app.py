@@ -10,7 +10,6 @@ logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s: %(
 
 # Paths and env variables
 KUBECTL_AI_PATH = "/usr/local/bin/kubectl-ai"
-KUBECONFIG_PATH = "/root/.kube/config"
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
 LLM_MODEL = os.getenv("LLM_MODEL", "mistral")
 TOOLS_CONFIG = "/app/tools/tools.yaml"
@@ -31,7 +30,6 @@ def handle_k8s():
             KUBECTL_AI_PATH,
             "--quiet",
             "--enable-tool-use-shim",
-            "--kubeconfig", KUBECONFIG_PATH,
             "--llm-provider", LLM_PROVIDER,
             "--model", LLM_MODEL,
             "--custom-tools-config", TOOLS_CONFIG,
