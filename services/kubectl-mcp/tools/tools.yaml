@@ -1,0 +1,5 @@
+- name: kubectl
+  description: Interact with Kubernetes clusters
+  command: kubectl
+  binary_check: true
+  modifies_resource: true
