@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: netsentinel
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubectl-ai-secret
+  namespace: netsentinel
+type: Opaque
+stringData:
+  OPENAI_API_KEY: "<insert-your-secret-key-here>"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubectl-ai-config
+  namespace: netsentinel
+data:
+  OPENAI_API_BASE: "https://granite-3-8b-instruct-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1"
+  LLM_PROVIDER: "openai"
+  LLM_MODEL: "granite-3-8b-instruct"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubectl-ai-api
+  namespace: netsentinel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubectl-ai-api
+  template:
+    metadata:
+      labels:
+        app: kubectl-ai-api
+    spec:
+      containers:
+        - name: kubectl-ai-api
+          image: quay.io/bpandey/netsentinel-kubectl-ai:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: kubectl-ai-config
+            - secretRef:
+                name: kubectl-ai-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubectl-ai-api
+  namespace: netsentinel
+spec:
+  selector:
+    app: kubectl-ai-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8088
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: kubectl-ai-api
+  namespace: netsentinel
+spec:
+  to:
+    kind: Service
+    name: kubectl-ai-api
+  port:
+    targetPort: http
+  tls:
+    termination: edge
