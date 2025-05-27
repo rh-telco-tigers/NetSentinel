@@ -1,8 +1,10 @@
+# Namespace
 apiVersion: v1
 kind: Namespace
 metadata:
   name: netsentinel
 ---
+# Secret with OpenAI API key
 apiVersion: v1
 kind: Secret
 metadata:
@@ -12,6 +14,7 @@ type: Opaque
 stringData:
   OPENAI_API_KEY: "<insert-your-secret-key-here>"
 ---
+# ConfigMap with AI config
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,6 +25,7 @@ data:
   LLM_PROVIDER: "openai"
   LLM_MODEL: "granite-3-8b-instruct"
 ---
+# Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -37,6 +41,7 @@ spec:
       labels:
         app: kubectl-ai-api
     spec:
+      serviceAccountName: kubectl-ai-sa
       containers:
         - name: kubectl-ai-api
           image: quay.io/bpandey/netsentinel-kubectl-ai:0.0.1
@@ -49,6 +54,7 @@ spec:
             - secretRef:
                 name: kubectl-ai-secret
 ---
+# Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -62,6 +68,7 @@ spec:
       port: 80
       targetPort: 8088
 ---
+# Route
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -75,3 +82,45 @@ spec:
     targetPort: http
   tls:
     termination: edge
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubectl-ai-sa
+  namespace: netsentinel
+---
+# Role (namespace-scoped permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubectl-ai-role
+  namespace: netsentinel
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints", "configmaps", "secrets", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch"]
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubectl-ai-rolebinding
+  namespace: netsentinel
+subjects:
+  - kind: ServiceAccount
+    name: kubectl-ai-sa
+    namespace: netsentinel
+roleRef:
+  kind: Role
+  name: kubectl-ai-role
+  apiGroup: rbac.authorization.k8s.io
