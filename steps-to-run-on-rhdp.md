@@ -4,7 +4,7 @@
 
 - Any OpenShift environment should work technically, provided there are no operator conflicts. To avoid issues, it’s recommended to start with a clean environment since the project requires installing multiple operators and configurations.
 - For testing purposes, we are using the following environment.
-  - Order an OCP demo cluster via this [URL](https://catalog.demo.redhat.com/catalog?item=babylon-catalog-prod/sandboxes-gpte.ocp-wksp.prod&utm_source=webapp&utm_medium=share-link)
+  - Order an OCP demo cluster via this [URL](https://catalog.demo.redhat.com/catalog?item=babylon-catalog-prod/community-content.com-telco-common.prod&utm_source=webapp&utm_medium=share-link)
   - Select **OpenShift Version 4.17** during setup.
   - Only a single control plane is sufficient.
   - If you are using **Model as a Service** for the LLM model, a CPU-only setup is adequate for deploying this project.
